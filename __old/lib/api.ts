@@ -5,8 +5,8 @@
 
 import { DspType, AmpParam, AMP_MODELS, STOMP_MODELS, MOD_MODELS, DELAY_MODELS, REVERB_MODELS, findModelById } from "./constants";
 import type { AmpState, EffectState, Preset, UpdateEvent } from "./types";
-import { getAmpDefaults, getEffectDefaults } from "./defaults";
-import { HIDProtocol } from "./protocol";
+import { getAmpDefaults, getEffectDefaults } from "../defaults";
+import { HIDProtocol } from "../protocol";
 
 /**
  * Main API for controlling Fender Mustang amplifiers
@@ -50,19 +50,32 @@ export class FuseAPI {
   /**
    * Get the current preset state
    */
-  getPreset(): Preset | null {
-    if (this.cache.size < 5) return null;
-
-    const ampState = this.parseAmpState();
-    const effectsChain = this.parseEffectsChain();
-
+  public getUiState() {
     return {
-      slot: this.activePresetSlot,
-      name: this.presets[this.activePresetSlot] || "Unknown",
-      amp: ampState,
-      effects: effectsChain,
+        amp: {
+            modelId: (this.state[DspType.AMP][16] << 8) | this.state[DspType.AMP][17],
+            volume: this.state[DspType.AMP][32],
+            gain:   this.state[DspType.AMP][33],
+            treble: this.state[DspType.AMP][36],
+            // ... etc
+        },
+        effects: [0, 1, 2, 3, 4, 5, 6, 7].map(slot => {
+            // Find which buffer belongs to this slot.
+            // Simplified logic: Check Stomps first, then others.
+            let buffer = this.state.stomps[slot];
+            
+            // If the buffer is empty or wrong slot, check fixed slots
+            if (slot === 1) buffer = this.state.stomps[1]; // Example mapping
+            // Note: In reality, you'd map slots to types. 
+            
+            // Better approach: Just return the enabled array and let UI read specific buffers
+            return {
+                slot: slot,
+                enabled: this.effectEnabled[slot]
+            };
+        })
     };
-  }
+}
 
   /**
    * Get list of all preset names

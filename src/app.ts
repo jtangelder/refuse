@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject} from "@angular/core";
-
-import { FuseAPI } from "./api";
-import { FuseLoader } from "./fuse_loader";
+import { MustangAPI } from "./lib2/api";
+import { FuseLoader } from "./lib2/loader";
 import { CommonModule } from "@angular/common";
 
 @Component({
@@ -16,7 +15,7 @@ import { CommonModule } from "@angular/common";
       <p>Connected: {{ api.isConnected }}</p>
     </div>
     <h2>Current Preset:</h2>
-    <pre>{{ api.getPreset() | json }}</pre>
+    <pre>{{ api.state | json }}</pre>
     <h2>Effect Chain:</h2>
     <div class="chain">
 
@@ -24,7 +23,7 @@ import { CommonModule } from "@angular/common";
   `,
 })
 export class App {
-  protected api = new FuseAPI();
+  protected api = new MustangAPI();
   protected loader = new FuseLoader(this.api);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
@@ -32,13 +31,14 @@ export class App {
     (window as any)["api"] = this.api;
 
     setInterval(() => {
-      this.changeDetector.detectChanges();
+      this.changeDetector.markForCheck()
     }, 1000);
   }
 
   async connect() {
     await this.api.connect();
-    this.api.monitorHardwareChanges((type) => {
+    this.api.monitorPhysicalChanges((...args) => {
+      console.log("Physical change detected:", args);
       this.changeDetector.detectChanges();
     });
   }
