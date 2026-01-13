@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject} from "@angular/core";
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from "@angular/core";
 import { MustangAPI } from "./lib2/api";
 import { FuseLoader } from "./lib2/loader";
 import { CommonModule } from "@angular/common";
@@ -37,8 +37,8 @@ export class App {
 
   async connect() {
     await this.api.connect();
-    this.api.monitorPhysicalChanges((...args) => {
-      console.log("Physical change detected:", args);
+    this.api.on('state-changed', () => {
+      console.log("State changed");
       this.changeDetector.detectChanges();
     });
   }
