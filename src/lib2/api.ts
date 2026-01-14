@@ -128,18 +128,15 @@ export class MustangAPI extends EventEmitter {
    * UI components should read directly from here.
    * Hardware changes write directly to here.
    */
+  /**
+   * SINGLE SOURCE OF TRUTH (Reactive State)
+   * UI components should read directly from here.
+   * Hardware changes write directly to here.
+   */
   public state = {
     [DspType.AMP]: new Uint8Array(64),
-    [DspType.MOD]: new Uint8Array(64),
-    [DspType.DELAY]: new Uint8Array(64),
-    [DspType.REVERB]: new Uint8Array(64),
-    // Stomp slots 0-3
-    stomps: [
-      new Uint8Array(64),
-      new Uint8Array(64),
-      new Uint8Array(64),
-      new Uint8Array(64),
-    ],
+    // All effect slots 0-7, can contain any DspType
+    slots: Array.from({ length: 8 }, () => new Uint8Array(64)),
   };
 
   /**
@@ -160,6 +157,8 @@ export class MustangAPI extends EventEmitter {
    * Cached preset metadata
    */
   public presets: Map<number, PresetMetadata> = new Map();
+
+  private isRefreshing = false;
 
   constructor() {
     super();
@@ -209,27 +208,29 @@ export class MustangAPI extends EventEmitter {
       console.log('HID Input:', data);
 
       // 1. LIVE KNOB CHANGES (Physical knob turned on amp)
-      // Opcode: 0x05 [Type] ... (from physical hardware)
-      if (b0 === OPCODES.LIVE_CHANGE) {
-        const type = data[1] as DspType;
+      // Format: [DSP_TYPE] ... where DSP_TYPE is 0x05-0x09
+      // byte[0] itself IS the DSP type for live hardware changes
+      if (b0 >= DspType.AMP && b0 <= DspType.REVERB) {
+        const type = data[0] as DspType;  // byte[0] is the DSP type
         const slot = data[13] || 0;
 
         // Update the correct buffer in 'this.state'
-        if (type === DspType.STOMP) {
-          if (slot >= 0 && slot < 4) this.state.stomps[slot].set(data);
-        } else if (this.state[type]) {
-          this.state[type].set(data);
-        }
-
-        // Emit appropriate event
+        const paramIndex = data[5];
+        const paramValue = data[10];
+        
         if (type === DspType.AMP) {
+          this.state[DspType.AMP][32 + paramIndex] = paramValue;
           const model = this.getAmpModel();
           const knobs = this.getAmpKnobs();
           this.emit('amp-changed', model?.name || 'Unknown', knobs);
         } else {
-          const effectModel = this.getEffectModel(slot);
-          const knobs = this.getEffectKnobs(slot);
-          this.emit('effect-changed', slot, effectModel?.name || 'Unknown', knobs);
+          // Hardware changes for effects use slot mapping
+          if (slot >= 0 && slot < 8) {
+            this.state.slots[slot][32 + paramIndex] = paramValue;
+            const effectModel = this.getEffectModel(slot);
+            const knobs = this.getEffectKnobs(slot);
+            this.emit('effect-changed', slot, effectModel?.name || 'Unknown', knobs);
+          }
         }
 
         this.emit('state-changed');
@@ -241,31 +242,60 @@ export class MustangAPI extends EventEmitter {
         const type = data[2];
         const slot = data[18];
 
-        // Handle preset name packets
-        if (type === OPCODES.PRESET_INFO) {
+        // 2a. Handle preset name/selection packets
+        // type 0x04 = Preset Info (software triggered or knob turn)
+        // type 0x00 = Mandatory Header / "Apply" Echo if b1=0x03, 
+        //             OR Hardware Preset Change if b1=0x01.
+        if (type === OPCODES.PRESET_INFO || type === 0x00) {
           const presetInfo = MustangProtocol.parsePresetName(data);
           if (presetInfo) {
             const { slot: presetSlot, name } = presetInfo;
+            const changed = this.currentPresetSlot !== presetSlot;
+            
             this.currentPresetSlot = presetSlot;
             this.presets.set(presetSlot, { slot: presetSlot, name });
             this.emit('preset-loaded', presetSlot, name);
+
+            // STABILITY FIX: ONLY refresh if this is a READ (0x01) packet from the hardware knob,
+            // and we aren't already in a refresh cycle.
+            // This prevents "Apply" echos (b1=0x03) from triggering infinite refresh loops.
+            if (type === 0x00 && b1 === OPCODES.DATA_READ && changed && !this.isRefreshing) {
+              console.log(`Hardware Preset Change to ${presetSlot} detected via Read Packet. Refreshing...`);
+              this.isRefreshing = true;
+              this.refreshState()
+                .then(() => this.refreshBypassStates())
+                .finally(() => {
+                  this.isRefreshing = false;
+                  this.emit('state-changed');
+                });
+            }
+            this.emit('state-changed');
           }
-          return;
+          
+          if (type === 0x00) return; // Never route Type 0x00 to effect slots (Protects Slot 0)
         }
 
-        // Update the correct buffer in 'this.state' (cast type back to DspType)
-        const dspType = type as DspType;
-        if (dspType === DspType.STOMP) {
-          if (slot >= 0 && slot < 4) this.state.stomps[slot].set(data);
-        } else if (this.state[dspType]) {
-          this.state[dspType].set(data);
+        // 2b. Handle DSP/Effect Data
+        // Valid effect types only: 0x06 (STOMP) to 0x09 (REVERB)
+        const isValidEffectType = type >= DspType.STOMP && type <= DspType.REVERB;
+        if (type === DspType.AMP) {
+          this.state[DspType.AMP].set(data);
+        } else if (isValidEffectType && slot >= 0 && slot < 8) {
+          // ENSURE SINGLETON (Move existing if duplicate type)
+          for (let i = 0; i < 8; i++) {
+            if (i !== slot && this.state.slots[i][2] === type) {
+              this.state.slots[i].fill(0);
+              this.effectEnabled[i] = true;
+            }
+          }
+          this.state.slots[slot].set(data);
         }
 
-        // Update Bypass Tracker from Byte 22 (Standard Protocol)
-        // 1 = Bypassed, 0 = Active
-        if (type !== DspType.AMP && type !== OPCODES.PRESET_INFO) {
-          this.effectEnabled[slot] = data[22] === 0;
-        }
+        // Update the correct buffer in 'this.state' (Already handled in 2b above)
+
+        // NOTE: We no longer update effectEnabled from Byte 22 here,
+        // as the amplifier sends inconsistent values in 0x1c packets
+        // after toggles. We trust the 0x19 response instead.
 
         // Emit appropriate event (only for 0x03 param changes, not state dumps)
         if (b1 === OPCODES.DATA_WRITE && type !== OPCODES.PRESET_INFO) {
@@ -289,6 +319,10 @@ export class MustangAPI extends EventEmitter {
         if (bypassInfo) {
           const { slot, enabled } = bypassInfo;
           this.effectEnabled[slot] = enabled;
+          // Sync Byte 22 in the buffer so future knob changes don't re-activate it
+          if (slot >= 0 && slot < 8) {
+            this.state.slots[slot][22] = enabled ? 0 : 1;
+          }
           this.emit('bypass-toggled', slot, enabled);
           this.emit('state-changed');
         }
@@ -455,16 +489,10 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   private getBufferForSlot(slot: number): { buffer: Uint8Array; type: DspType } | null {
-    if (slot >= 0 && slot <= 3) {
-      return { buffer: this.state.stomps[slot], type: DspType.STOMP };
-    } else if (slot === 4) {
-      return { buffer: this.state[DspType.MOD], type: DspType.MOD };
-    } else if (slot === 5 || slot === 6) {
-      return { buffer: this.state[DspType.DELAY], type: DspType.DELAY };
-    } else if (slot === 7) {
-      return { buffer: this.state[DspType.REVERB], type: DspType.REVERB };
-    }
-    return null;
+    if (slot < 0 || slot > 7) return null;
+    const buffer = this.state.slots[slot];
+    const type = buffer[2] as DspType;
+    return { buffer, type };
   }
 
   async setEffectById(slot: number, modelId: number): Promise<void> {
@@ -473,24 +501,27 @@ export class MustangAPI extends EventEmitter {
       throw new Error(`Unknown effect model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
     }
 
-    const slotInfo = this.getBufferForSlot(slot);
-    if (!slotInfo) throw new Error(`Invalid slot: ${slot}`);
+    if (slot < 0 || slot > 7) throw new Error(`Invalid slot: ${slot}`);
 
-    const { buffer, type } = slotInfo;
-
-    // Validate slot type matches effect type
-    if (type === DspType.STOMP && model.type !== DspType.STOMP) {
-      throw new Error(`Slot ${slot} is for stomps, but effect is ${DspType[model.type]}`);
-    } else if (type !== DspType.STOMP && model.type !== type) {
-      throw new Error(`Slot ${slot} is for ${DspType[type]}, but effect is ${DspType[model.type]}`);
+    // HARDWARE LIMIT: Only one effect of each type allowed in the chain
+    for (let i = 0; i < 8; i++) {
+      if (i === slot) continue; // Skip the slot we're currently setting
+      const otherModel = this.getEffectModel(i);
+      if (otherModel && otherModel.type === model.type) {
+        throw new Error(`Effect of type ${DspType[model.type]} already exists in slot ${i}`);
+      }
     }
 
+    const buffer = this.state.slots[slot];
+    buffer.fill(0); // Clear buffer
+    buffer[2] = model.type;
     buffer[16] = (modelId >> 8) & 0xff;
     buffer[17] = modelId & 0xff;
     buffer[18] = slot;
-    buffer[22] = 0; // Enable by default
-
-    await this.sendFullBuffer(type, slot, buffer);
+    this.effectEnabled[slot] = true; // Enable by default
+    buffer[22] = 0; 
+    
+    await this.sendFullBuffer(model.type, slot, buffer);
   }
 
   async setEffect(slot: number, name: string): Promise<void> {
@@ -502,15 +533,63 @@ export class MustangAPI extends EventEmitter {
     await this.setEffectById(slot, model.id);
   }
 
+  async swapEffects(slotA: number, slotB: number): Promise<void> {
+    if (slotA === slotB) return;
+    if (slotA < 0 || slotA > 7 || slotB < 0 || slotB > 7) {
+      throw new Error("Invalid slot indices for swap");
+    }
+
+    // 1. Clone buffers/states to preserve settings
+    const bufA = new Uint8Array(this.state.slots[slotA]);
+    const bufB = new Uint8Array(this.state.slots[slotB]);
+    const enabledA = this.effectEnabled[slotA];
+    const enabledB = this.effectEnabled[slotB];
+    const typeA = bufA[2];
+    const typeB = bufB[2];
+
+    // 2. Clear both slots first (Safe handling to avoid singleton collisions)
+    // We do this by sending "Empty" buffers to both.
+    await this.clearEffect(slotA);
+    await this.clearEffect(slotB);
+
+    // 3. Prepare Buffer A for Slot B
+    if (typeA !== 0) { // If A was not empty
+      bufA[18] = slotB; // Update slot index
+      bufA[22] = enabledA ? 0 : 1; // Sync bypass
+      this.effectEnabled[slotB] = enabledA; // Swap enablement
+      await this.sendFullBuffer(typeA, slotB, bufA);
+    } else {
+      // If A was empty, B ends up empty (already done by clear)
+      this.effectEnabled[slotB] = true;
+    }
+
+    // 4. Prepare Buffer B for Slot A
+    if (typeB !== 0) { // If B was not empty
+      bufB[18] = slotA; // Update slot index
+      bufB[22] = enabledB ? 0 : 1; // Sync bypass
+      this.effectEnabled[slotA] = enabledB; // Swap enablement
+      await this.sendFullBuffer(typeB, slotA, bufB);
+    } else {
+      // If B was empty, A ends up empty (already done by clear)
+      this.effectEnabled[slotA] = true;
+    }
+  }
+
   async clearEffect(slot: number): Promise<void> {
-    const slotInfo = this.getBufferForSlot(slot);
-    if (!slotInfo) throw new Error(`Invalid slot: ${slot}`);
+    if (slot < 0 || slot > 7) throw new Error(`Invalid slot: ${slot}`);
+    let currentType = this.state.slots[slot][2];
+    
+    // If type is 0 (already empty), defaulting to STOMP (0x06) is usually safe for clearing
+    if (currentType === 0) currentType = DspType.STOMP;
 
     const buffer = new Uint8Array(64);
     buffer[18] = slot;
     buffer[22] = 1; // Bypass
+    this.effectEnabled[slot] = false;
 
-    await this.sendFullBuffer(slotInfo.type, slot, buffer);
+    await this.sendFullBuffer(currentType, slot, buffer);
+    // Explicitly zero out the local buffer type after send
+    this.state.slots[slot][2] = 0;
   }
 
   getEffectModel(slot: number): ModelDef | null {
@@ -620,22 +699,32 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   async sendFullBuffer(type: DspType, slot: number, buffer: Uint8Array) {
-    // 1. Optimistic Update (UI updates instantly)
-    if (type === DspType.STOMP && slot < 4) {
-      this.state.stomps[slot].set(buffer);
-    } else if ((this.state as any)[type]) {
-      (this.state as any)[type].set(buffer);
+    // 1. Ensure mandatory protocol headers are set
+    // This is critical for new buffers (like from FuseLoader)
+    buffer[0] = OPCODES.DATA_PACKET;
+    buffer[1] = OPCODES.DATA_WRITE;
+    buffer[2] = type;
+    buffer[6] = this.protocol.getNextSequenceId();
+    buffer[7] = 0x01;
+
+    // 2. Optimistic Update (UI updates instantly)
+    if (type === DspType.AMP) {
+      this.state[DspType.AMP].set(buffer);
+    } else if (slot >= 0 && slot < 8) {
+      this.state.slots[slot].set(buffer);
     }
 
-    // 2. Sync Bypass Tracker (Byte 22)
-    if (type !== DspType.AMP) {
-      this.effectEnabled[slot] = buffer[22] === 0;
+    // 3. Sync Bypass Tracker (Byte 22)
+    // We ensure the buffer we're about to send matches our known bypass state.
+    // This prevents "drift" where a knob change re-activates a bypassed effect.
+    if (type !== DspType.AMP && slot >= 0 && slot < 8) {
+      buffer[22] = this.effectEnabled[slot] ? 0 : 1;
     }
 
-    // 3. Send packet using protocol layer
+    // 4. Send packet using protocol layer
     await this.protocol.sendPacket(buffer);
 
-    // 4. Send apply packet
+    // 5. Send apply packet
     const applyPacket = this.protocol.createApplyPacket(type);
     await this.protocol.sendPacket(applyPacket);
 
@@ -644,10 +733,12 @@ export class MustangAPI extends EventEmitter {
 
   async setParameter(type: DspType, slot: number, byteIndex: number, value: number) {
     let buffer: Uint8Array;
-    if (type === DspType.STOMP) {
-      buffer = this.state.stomps[slot];
+    if (type === DspType.AMP) {
+      buffer = this.state[DspType.AMP];
+    } else if (slot >= 0 && slot < 8) {
+      buffer = this.state.slots[slot];
     } else {
-      buffer = this.state[type];
+      throw new Error(`Invalid parameter target: type ${type}, slot ${slot}`);
     }
 
     buffer[byteIndex] = value;
@@ -655,8 +746,15 @@ export class MustangAPI extends EventEmitter {
   }
 
   async setEffectEnabled(slot: number, enabled: boolean) {
-    const packet = this.protocol.createBypassPacket(slot, enabled);
+    const slotInfo = this.getBufferForSlot(slot);
+    if (!slotInfo) return;
+    
+    // Update local state and buffer immediately
+    this.effectEnabled[slot] = enabled;
+    slotInfo.buffer[22] = enabled ? 0 : 1;
+    
+    const packet = this.protocol.createBypassPacket(slot, enabled, slotInfo.type);
     await this.protocol.sendPacket(packet);
-    // We rely on the hardware echo (0x19 0xc3) to update our local tracker
+    this.emit('state-changed');
   }
 }

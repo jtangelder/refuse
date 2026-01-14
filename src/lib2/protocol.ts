@@ -30,7 +30,7 @@ export const OPCODES = {
 
     // Bypass control
     BYPASS_PACKET: 0x19,
-    BYPASS_SET: 0x02,
+    BYPASS_SET: 0xc3,
     BYPASS_RESPONSE: 0xc3,
 
     // Live hardware changes
@@ -119,6 +119,14 @@ export class MustangProtocol {
     }
 
     /**
+     * Get the next sequence ID and increment it
+     */
+    public getNextSequenceId(): number {
+        this.sequenceId = (this.sequenceId + 1) & 0xff;
+        return this.sequenceId;
+    }
+
+    /**
      * Create a DSP parameter packet (amp/effect settings)
      */
     createDspPacket(options: {
@@ -136,8 +144,7 @@ export class MustangProtocol {
         packet[2] = options.type;
 
         // Sequence ID
-        this.sequenceId = (this.sequenceId + 1) & 0xff;
-        packet[6] = this.sequenceId;
+        packet[6] = this.getNextSequenceId();
         packet[7] = 0x01;
 
         // Model ID
@@ -185,12 +192,15 @@ export class MustangProtocol {
     /**
      * Create bypass toggle packet
      */
-    createBypassPacket(slot: number, enabled: boolean): Uint8Array {
+    createBypassPacket(slot: number, enabled: boolean, dspType: DspType): Uint8Array {
         const packet = new Uint8Array(64);
+
+        // Map DspType to family: 0x06 (STOMP) -> 3, 0x07 (MOD) -> 4, etc.
+        const family = dspType - 3;
 
         packet[0] = OPCODES.BYPASS_PACKET;
         packet[1] = OPCODES.BYPASS_SET;
-        packet[2] = 0x02; // Type (generic)
+        packet[2] = family;
         packet[3] = enabled ? 0x00 : 0x01; // 0=On, 1=Off
         packet[4] = slot;
 
@@ -323,7 +333,7 @@ export class MustangProtocol {
     static isPresetNamePacket(data: Uint8Array): boolean {
         return data[0] === OPCODES.DATA_PACKET &&
             data[1] === OPCODES.DATA_READ &&
-            data[2] === OPCODES.PRESET_INFO;
+            (data[2] === OPCODES.PRESET_INFO || data[2] === 0x00);
     }
 
     /**

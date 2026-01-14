@@ -16,6 +16,11 @@ export class FuseLoader {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlString, "text/xml");
 
+    console.log("FuseLoader: Clearing current effects for clean load...");
+    for (let i = 0; i < 8; i++) {
+        await this.api.clearEffect(i);
+    }
+
     console.log("FuseLoader: Loading...");
 
     await this.processModule(doc, "Amplifier", DspType.AMP);
@@ -25,6 +30,7 @@ export class FuseLoader {
     await this.processModule(doc, "FX Reverb", DspType.REVERB);
 
     console.log("FuseLoader: Complete.");
+    this.api.emit('state-changed');
   }
 
   private async processModule(doc: Document, selector: string, type: DspType) {
