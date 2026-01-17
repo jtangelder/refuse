@@ -5,7 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "private": true,
   "dependencies": {
@@ -28,6 +30,9 @@
     "@angular-devkit/build-angular": "^21.0.5",
     "@angular/cli": "^21.0.5",
     "@angular/compiler-cli": "^21.0.8",
-    "typescript": "^5.9.3"
+    "@vitest/coverage-v8": "^4.0.17",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.17"
   }
 }

@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal } from "@angular/core";
-import { MustangAPI, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS, DspType } from "./lib2/api";
-import { FuseLoader } from "./lib2/loader";
+import { MustangAPI, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS, DspType } from "./lib/api";
+import { FuseLoader } from "./lib/loader";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 
@@ -10,130 +10,172 @@ import { FormsModule } from "@angular/forms";
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="toolbar" style="padding: 10px; border-bottom: 2px solid #333; margin-bottom: 20px;">
-      <button (click)="connect()">Connect to Mustang</button>
-      <input type="file" (change)="loadPreset($event)" />
-      <span>Connected: {{ api.isConnected }}</span>
+    <div class="toolbar">
+      <div style="font-weight: bold; font-size: 1.2rem; margin-right: 20px;">MUSTANG TEST DASHBOARD</div>
       
-      <span *ngIf="api.isConnected" style="margin-left: 20px;">
-        <label>Preset Slot: </label>
+      <button *ngIf="!api.isConnected" (click)="connect()" class="success">Connect Amp</button>
+      <button *ngIf="api.isConnected" (click)="disconnect()" class="danger">Disconnect</button>
+      
+      <div *ngIf="api.isConnected" style="display: flex; gap: 15px; align-items: center; border-left: 1px solid #333; padding-left: 20px;">
+        <label>Preset:</label>
         <select [ngModel]="api.currentPresetSlot" (ngModelChange)="changePreset($event)">
           <option *ngFor="let i of range(24)" [value]="i">
-            {{ i }}: {{ api.presets.get(i)?.name || 'Preset ' + i }}
+            {{ i | number:'2.0' }}: {{ api.presets.get(i)?.name || 'Preset ' + i }}
           </option>
         </select>
-      </span>
-    </div>
-
-    <section *ngIf="api.isConnected" style="max-width: 1200px; margin: 0 auto;">
-      <div *ngIf="getAmpSettings() as amp" style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <h2 style="margin: 0;">Amp: 
-            <select [ngModel]="amp.model" (ngModelChange)="changeAmp($event)">
-              <option *ngFor="let model of ampModels" [value]="model.name">{{ model.name }}</option>
-            </select>
-          </h2>
-          <div>
-            <label>Cabinet: </label>
-            <select [ngModel]="api.getCabinet()?.name" (ngModelChange)="changeCabinet($event)">
-              <option *ngFor="let cab of cabModels" [value]="cab.name">{{ cab.name }}</option>
-            </select>
-          </div>
-        </div>
         
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
-          <div *ngFor="let knob of (getAmpKnobs() | keyvalue)" style="display: flex; flex-direction: column;">
-            <label style="font-size: 0.8em; color: #666;">{{ knob.key }}</label>
-            <input type="range" min="0" max="255" [value]="knob.value" (input)="changeAmpKnob(knob.key, $event)" />
-            <span style="font-size: 0.7em; text-align: center;">{{ knob.value }}</span>
-          </div>
+        <div style="display: flex; gap: 5px;">
+          <input type="text" [(ngModel)]="presetSaveName" placeholder="New Name" style="width: 120px;" />
+          <button (click)="savePreset()" class="secondary">Save</button>
         </div>
 
-        <details style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
-          <summary style="font-size: 0.9em; cursor: pointer; color: #555;">Advanced Amp Settings</summary>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px;">
-            <div *ngFor="let setting of advancedSettings" style="display: flex; flex-direction: column;">
-              <label style="font-size: 0.75em; color: #777;">{{ setting.label }}</label>
-              <input type="range" min="0" max="255" [value]="amp[setting.key]" (input)="changeAdvancedSetting(setting.key, $event)" />
-              <span style="font-size: 0.7em; text-align: center;">{{ amp[setting.key] }}</span>
-            </div>
-          </div>
-        </details>
-      </div>
-
-      <h3>Effects Chain:</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
-        <div *ngFor="let family of effectFamilies" 
-             style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: white;"
-             [style.border-left]="'10px solid ' + getFamilyColor(family.type)">
-          
-          <div style="margin-bottom: 12px;">
-            <strong style="display: block; font-size: 0.9em; text-transform: uppercase; color: #666; margin-bottom: 5px;">
-              {{ family.label }} ({{ getModelsForFamily(family.type).length }} models found)
-            </strong>
-            
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <select [ngModel]="getEffectForFamily(family.type)?.model || 'None'" 
-                      (ngModelChange)="changeEffectByFamily(family.type, $event)"
-                      style="flex: 1; padding: 5px;">
-                <option value="None">-- Empty slot --</option>
-                <option *ngFor="let model of getModelsForFamily(family.type)" [value]="model.name">{{ model.name }}</option>
-              </select>
-
-              <div *ngIf="getEffectForFamily(family.type)" style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-size: 0.8em; white-space: nowrap;">Slot: </label>
-                <select [ngModel]="getSlotForFamily(family.type)" 
-                        (ngModelChange)="moveEffect(family.type, $event)"
-                        style="padding: 2px;">
-                  <option *ngFor="let i of range(8)" [value]="i">{{ i }}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div *ngIf="getEffectForFamily(family.type) as effect">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-              <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" [ngModel]="effect.enabled" (ngModelChange)="toggleEffect(effect.slot, $event)" />
-                <span>{{ effect.enabled ? 'Active' : 'Bypassed' }}</span>
-              </label>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div *ngFor="let knob of (effect.knobs | keyvalue)" style="display: flex; flex-direction: column;">
-                <label style="font-size: 0.7em; color: #777;">{{ knob.key }}</label>
-                <input type="range" min="0" max="255" [value]="knob.value" (input)="changeEffectKnob(effect.slot, knob.key, $event)" />
-                <span style="font-size: 0.7em; text-align: center; color: #999;">{{ knob.value }}</span>
-              </div>
-            </div>
-          </div>
+        <div style="border-left: 1px solid #333; padding-left: 15px; display: flex; gap: 10px; align-items: center;">
+          <label class="secondary" style="font-size: 0.8rem; cursor: pointer;">
+            Import .fusepreset
+            <input type="file" (change)="importFusePreset($event)" style="display: none;" />
+          </label>
+          <button (click)="clearAllEffects()" class="danger" style="font-size: 0.8rem;">Clear All FX</button>
         </div>
       </div>
-    </section>
-
-    <div *ngIf="!api.isConnected" style="text-align: center; padding: 50px;">
-      <h2>Mustang Controller</h2>
-      <p>Connect your Fender Mustang amp via USB to start.</p>
-      <button (click)="connect()" style="padding: 10px 20px; font-size: 1.2em; cursor: pointer;">Connect Now</button>
     </div>
-    <section *ngIf="api.isConnected" style="margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
-      <h3>Raw Signal Chain (Hardware View)</h3>
-      <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 20px;">
-        <div *ngFor="let i of range(8)" 
-             style="min-width: 120px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: white;"
-             [style.background-color]="i === 4 ? '#fff3e0' : 'white'"
-             [style.border-color]="i === 4 ? '#ff9800' : '#ddd'">
-          <div style="font-size: 0.7em; color: #999; margin-bottom: 5px;">Slot {{ i }} {{ i === 4 ? '(Pre-amp)' : '' }}</div>
-          <div *ngIf="getEffectSettings(i) as effect; else emptySlot">
-            <div style="font-weight: bold; font-size: 0.85em; margin-bottom: 3px;">{{ effect.model }}</div>
-            <div [style.color]="getFamilyColor(effect.type)" style="font-size: 0.7em; text-transform: uppercase;">Type: {{ effect.type }}</div>
+
+    <main class="dashboard" *ngIf="api.isConnected">
+      <!-- Signal Chain Status -->
+      <section class="card" style="padding-bottom: 5px;">
+        <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;">HARDWARE SIGNAL CHAIN</h3>
+        <div class="signal-chain-strip">
+          <div *ngFor="let i of range(8)" class="slot" 
+               [class.active]="activeSlot === i" 
+               [class.empty]="!getEffectSettings(i)"
+               (click)="activeSlot = i">
+            <span class="slot-num">{{ i }}</span>
+            <div *ngIf="getEffectSettings(i) as effect; else emptySlot">
+              <div class="badge" [style.background]="getFamilyColor(effect.type)" style="margin-bottom: 5px;">{{ getFamilyLabel(effect.type) }}</div>
+              <div style="font-size: 0.85rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ effect.model }}</div>
+              <div style="font-size: 0.7rem; color: {{ effect.enabled ? '#2ecc71' : '#e74c3c' }}">{{ effect.enabled ? '● ACTIVE' : '○ BYPASSED' }}</div>
+            </div>
+            <ng-template #emptySlot>
+              <div style="font-style: italic; color: #444; font-size: 0.8rem; margin-top: 15px;">Empty</div>
+            </ng-template>
           </div>
-          <ng-template #emptySlot>
-            <div style="font-style: italic; color: #ccc; font-size: 0.85em;">-- Empty --</div>
-          </ng-template>
         </div>
+      </section>
+
+      <div class="grid">
+        <!-- Amp Control -->
+        <section class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Amplifier</h2>
+            <select [ngModel]="getAmpSettings()?.modelId" (ngModelChange)="changeAmp($event)">
+              <option *ngFor="let model of ampModels" [value]="model.id">{{ model.name }}</option>
+            </select>
+          </div>
+
+          <div class="knob-grid">
+            <div *ngFor="let knob of getAmpKnobs()" class="knob-control">
+              <label>{{ knob.name }}</label>
+              <input type="range" min="0" max="255" [value]="knob.value" (input)="changeAmpKnob(knob.index, $event)" />
+              <div class="val">{{ knob.value }}</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <label style="font-size: 0.8rem; color: var(--text-muted);">CABINET</label>
+            <select [ngModel]="api.getCabinetId()" (ngModelChange)="changeCabinet($event)" style="width: 100%; margin-top: 5px;">
+              <option *ngFor="let cab of cabModels" [value]="cab.id">{{ cab.name }}</option>
+            </select>
+          </div>
+
+          <details style="margin-top: 20px;">
+            <summary style="cursor: pointer; font-size: 0.85rem; color: var(--primary);">ADVANCED PARAMETERS</summary>
+            <div class="knob-grid" style="margin-top: 15px;">
+              <div *ngFor="let setting of advancedSettings" class="knob-control">
+                <label>{{ setting.label }}</label>
+                <input type="range" min="0" max="255" [value]="getAmpSettings()?.[setting.key]" (input)="changeAdvancedSetting(setting.key, $event)" />
+                <div class="val">{{ getAmpSettings()?.[setting.key] }}</div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- Slot Control -->
+        <section class="card" [style.border-color]="activeSlot !== null ? 'var(--primary)' : 'var(--border)'">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Slot {{ activeSlot !== null ? activeSlot : '' }} Control</h2>
+            <div *ngIf="activeSlot !== null" style="display: flex; gap: 10px;">
+               <button (click)="clearSlot(activeSlot)" class="danger" style="font-size: 0.7rem; padding: 4px 8px;">Clear</button>
+            </div>
+          </div>
+
+          <div *ngIf="activeSlot !== null; else noActiveSlot">
+            <div style="margin-bottom: 20px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">ASSIGN EFFECT</label>
+              <select [ngModel]="getEffectSettings(activeSlot)?.modelId || 0" (ngModelChange)="assignEffect(activeSlot, $event)" style="width: 100%;">
+                <option [value]="0">-- Empty --</option>
+                <optgroup label="STOMP">
+                   <option *ngFor="let m of getModelsForFamily(DspType.STOMP)" [value]="m.id">{{ m.name }}</option>
+                </optgroup>
+                <optgroup label="MOD">
+                   <option *ngFor="let m of getModelsForFamily(DspType.MOD)" [value]="m.id">{{ m.name }}</option>
+                </optgroup>
+                <optgroup label="DELAY">
+                   <option *ngFor="let m of getModelsForFamily(DspType.DELAY)" [value]="m.id">{{ m.name }}</option>
+                </optgroup>
+                <optgroup label="REVERB">
+                   <option *ngFor="let m of getModelsForFamily(DspType.REVERB)" [value]="m.id">{{ m.name }}</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div *ngIf="getEffectSettings(activeSlot) as effect">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                  <input type="checkbox" [ngModel]="effect.enabled" (ngModelChange)="toggleEffect(activeSlot, $event)" />
+                  <span style="font-weight: bold;">{{ effect.enabled ? 'ENABLED' : 'BYPASSED' }}</span>
+                </label>
+                <div style="font-size: 0.8rem; opacity: 0.6;">Type: 0x{{ effect.type.toString(16) }}</div>
+              </div>
+
+              <div class="knob-grid">
+                <div *ngFor="let knob of effect.knobs" class="knob-control">
+                  <label>{{ knob.name }}</label>
+                  <input type="range" min="0" max="255" [value]="knob.value" (input)="changeEffectKnob(activeSlot, knob.index, $event)" />
+                  <div class="val">{{ knob.value }}</div>
+                </div>
+              </div>
+
+              <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 10px;">MOVE/SWAP SLOT</label>
+                <div style="display: flex; gap: 10px;">
+                  <button *ngFor="let i of range(8)" 
+                          (click)="swapSlots(activeSlot, i)" 
+                          [disabled]="i === activeSlot"
+                          class="secondary"
+                          style="flex: 1; padding: 5px; font-size: 0.8rem;">
+                    {{ i }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div *ngIf="!getEffectSettings(activeSlot)" style="text-align: center; padding: 40px; color: #444; border: 2px dashed #333; border-radius: 8px;">
+              Select an effect model above to assign to this slot
+            </div>
+          </div>
+          <ng-template #noActiveSlot>
+            <div style="text-align: center; padding: 60px; color: #555;">
+              Click a slot in the signal chain above to view and edit its settings.
+            </div>
+          </ng-template>
+        </section>
       </div>
-    </section>
+    </main>
+
+    <div *ngIf="!api.isConnected" class="dashboard" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
+      <h1 style="font-size: 3rem; margin-bottom: 10px; color: var(--primary);">MUSTANG TESTER</h1>
+      <p style="color: var(--text-muted); margin-bottom: 30px;">High-fidelity feature validation toolkit for Fender Mustang USB HID</p>
+      <button (click)="connect()" style="font-size: 1.5rem; padding: 15px 40px;">INITIALIZE HID INTERFACE</button>
+    </div>
   `,
 })
 export class App {
@@ -146,12 +188,8 @@ export class App {
   protected cabModels = CABINET_MODELS;
   protected effectModels = Object.values(EFFECT_MODELS);
 
-  protected effectFamilies = [
-    { type: DspType.STOMP, label: 'Stompbox' },
-    { type: DspType.MOD, label: 'Modulation' },
-    { type: DspType.DELAY, label: 'Delay' },
-    { type: DspType.REVERB, label: 'Reverb' }
-  ];
+  protected activeSlot: number | null = null;
+  protected presetSaveName: string = "";
 
   protected advancedSettings: { key: string, label: string }[] = [
     { key: 'bias', label: 'Bias' },
@@ -162,98 +200,29 @@ export class App {
     { key: 'depth', label: 'Depth' }
   ];
 
-  protected state = signal(this.api.state);
-
   constructor() {
     (window as any)["api"] = this.api;
     this.api.on('state-changed', () => {
-      this.state.set({ ...this.api.state }); // Trigger signal change
+      this.changeDetector.markForCheck();
+    });
+    this.api.on('preset-loaded', (slot, name) => {
+      this.presetSaveName = name;
       this.changeDetector.markForCheck();
     });
   }
 
-  getAmpSettings() {
-    return this.api.getAmpSettings();
-  }
-
-  getAmpKnobs() {
-    return this.api.getAmpKnobs();
-  }
-
-  getEffectSettings(slot: number) {
-    return this.api.getEffectSettings(slot);
-  }
-
-  getEffectForFamily(type: number) {
-    for (let i = 0; i < 8; i++) {
-      const effect = this.getEffectSettings(i);
-      if (effect && effect.type === type) return effect;
-    }
-    return null;
-  }
-
-  getSlotForFamily(type: number) {
-    for (let i = 0; i < 8; i++) {
-      const effect = this.getEffectSettings(i);
-      if (effect && effect.type === type) return i;
-    }
-    return null; // Return null instead of 0
-  }
-
-  getModelsForFamily(type: DspType) {
-    const models = this.effectModels.filter(m => m.type === type);
-    return models;
-  }
-
-  getAvailableSlots() {
-    const usedSlots = new Set(this.range(8).filter(i => this.getEffectSettings(i) !== null));
-    return this.range(8).filter(i => !usedSlots.has(i));
-  }
-
-  getFamilyColor(type: DspType) {
-    switch (type) {
-      case DspType.STOMP: return '#e74c3c'; // Stomp - Red
-      case DspType.MOD: return '#3498db'; // Mod - Blue
-      case DspType.DELAY: return '#f1c40f'; // Delay - Yellow
-      case DspType.REVERB: return '#2ecc71'; // Reverb - Green
-      default: return '#ccc';
-    }
-  }
-
-  async changeEffectByFamily(type: DspType, name: string) {
-    const currentSlot = this.getSlotForFamily(type);
-    const existingEffect = this.getEffectForFamily(type);
-
-    if (name === 'None') {
-      if (existingEffect) await this.api.clearEffect(existingEffect.slot);
-      return;
-    }
-
-    // If already exists, just change the model in the same slot
-    if (existingEffect) {
-      await this.api.setEffect(existingEffect.slot, name);
-    } else {
-      // Find first available slot
-      const available = this.getAvailableSlots();
-      if (available.length > 0) {
-        await this.api.setEffect(available[0], name);
-      } else {
-        alert("No free slots available! Every slot is occupied.");
-      }
-    }
-  }
-
-  async moveEffect(type: DspType, newSlot: string) {
-    const slot = Number(newSlot);
-    const effect = this.getEffectForFamily(type);
-    if (!effect) return;
-    
-    // Use the robust swap logic in API which handles settings, enabling, and clearing
-    await this.api.swapEffects(effect.slot, slot);
-  }
+  // --- ACTIONS ---
 
   async connect() {
     await this.api.connect();
+    if (this.api.isConnected && this.api.currentPresetSlot !== null) {
+      this.presetSaveName = this.api.presets.get(this.api.currentPresetSlot)?.name || "";
+    }
+    this.changeDetector.markForCheck();
+  }
+
+  async disconnect() {
+    await this.api.disconnect();
     this.changeDetector.markForCheck();
   }
 
@@ -261,64 +230,101 @@ export class App {
     await this.api.loadPreset(Number(slot));
   }
 
-  async changeAmp(name: string) {
-    await this.api.setAmpModel(name);
+  async savePreset() {
+    if (this.api.currentPresetSlot === null) return;
+    await this.api.savePreset(this.api.currentPresetSlot, this.presetSaveName);
   }
 
-  async changeCabinet(name: string) {
-    await this.api.setCabinet(name);
+  async importFusePreset(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    await this.loader.loadPreset(text);
   }
 
-  async changeAmpKnob(name: string, event: any) {
-    const value = Number(event.target.value);
-    await this.api.setAmpKnob(name, value);
+  async clearAllEffects() {
+    if (!confirm("Remove all effects?")) return;
+    for (let i = 0; i < 8; i++) {
+      await this.api.clearEffect(i);
+    }
+  }
+
+  async clearSlot(slot: number) {
+    await this.api.clearEffect(slot);
+  }
+
+  async changeAmp(modelId: any) {
+    await this.api.setAmpModelById(Number(modelId));
+  }
+
+  async changeCabinet(id: any) {
+    await this.api.setCabinetById(Number(id));
+  }
+
+  async changeAmpKnob(index: number, event: any) {
+    await this.api.setAmpKnob(index, Number(event.target.value));
   }
 
   async changeAdvancedSetting(key: string, event: any) {
     const value = Number(event.target.value);
     const byteIndexMap: Record<string, number> = {
-      'bias': 42,
-      'noiseGate': 47,
-      'threshold': 48,
-      'sag': 51,
-      'brightness': 52,
-      'depth': 41
+      'bias': 42, 'noiseGate': 47, 'threshold': 48, 'sag': 51, 'brightness': 52, 'depth': 41
     };
     const byteIndex = byteIndexMap[key];
-    if (byteIndex) {
-      await this.api.setParameter(0x05, 0, byteIndex, value);
-    }
+    if (byteIndex) await this.api.setParameter(0x05, 0, byteIndex, value);
   }
 
-  async changeEffect(slot: number, name: string) {
-    if (name === 'None') {
+  async assignEffect(slot: number, modelId: any) {
+    const id = Number(modelId);
+    if (id === 0) {
       await this.api.clearEffect(slot);
     } else {
-      await this.api.setEffect(slot, name);
+      await this.api.setEffectById(slot, id);
     }
   }
 
-  async toggleEffect(slot: number, enabled: boolean) {
+  async toggleEffect(slot: number, enabled: any) {
     await this.api.setEffectEnabled(slot, enabled);
   }
 
-  async changeEffectKnob(slot: number, name: string, event: any) {
-    const value = Number(event.target.value);
-    await this.api.setEffectKnob(slot, name, value);
+  async changeEffectKnob(slot: number, index: number, event: any) {
+    await this.api.setEffectKnob(slot, index, Number(event.target.value));
   }
 
-  async loadPreset(event: any) {
-    const file = event.target.files[0];
-    const text = await file.text();
-    try {
-      await this.loader.loadPreset(text);
-      this.changeDetector.markForCheck();
-    } catch (err) {
-      console.error(err);
+  async swapSlots(slotA: number, slotB: number) {
+    await this.api.swapEffects(slotA, slotB);
+    this.activeSlot = slotB; // Follow the effect
+  }
+
+  // --- GETTERS ---
+
+  getAmpSettings() { return this.api.getAmpSettings() as any; }
+  getAmpKnobs() { return this.api.getAmpKnobs(); }
+  getEffectSettings(slot: number) { return this.api.getEffectSettings(slot); }
+  
+  getModelsForFamily(type: DspType) {
+    return this.effectModels.filter(m => m.type === type);
+  }
+
+  getFamilyLabel(type: DspType) {
+    switch(type) {
+      case DspType.STOMP: return 'STOMP';
+      case DspType.MOD: return 'MOD';
+      case DspType.DELAY: return 'DELAY';
+      case DspType.REVERB: return 'REVERB';
+      default: return 'UNKNOWN';
     }
   }
 
-  range(n: number) {
-    return Array.from({ length: n }, (_, i) => i);
+  getFamilyColor(type: DspType) {
+    switch (type) {
+      case DspType.STOMP: return '#e74c3c';
+      case DspType.MOD: return '#3498db';
+      case DspType.DELAY: return '#f1c40f';
+      case DspType.REVERB: return '#2ecc71';
+      default: return '#444';
+    }
   }
+
+  range(n: number) { return Array.from({ length: n }, (_, i) => i); }
 }

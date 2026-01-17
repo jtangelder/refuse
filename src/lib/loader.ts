@@ -11,17 +11,18 @@ export class FuseLoader {
   constructor(private api: MustangAPI) { }
 
   public async loadPreset(xmlString: string) {
+    console.debug(`[LOADER CALL] loadPreset (XML length: ${xmlString.length})`);
     if (!this.api.isConnected) throw new Error("Amp not connected");
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlString, "text/xml");
 
-    console.log("FuseLoader: Clearing current effects for clean load...");
+    console.debug("FuseLoader: Clearing current effects for clean load...");
     for (let i = 0; i < 8; i++) {
         await this.api.clearEffect(i);
     }
 
-    console.log("FuseLoader: Loading...");
+    console.debug("FuseLoader: Loading...");
 
     await this.processModule(doc, "Amplifier", DspType.AMP);
     await this.processModule(doc, "FX Stompbox", DspType.STOMP);
@@ -29,15 +30,19 @@ export class FuseLoader {
     await this.processModule(doc, "FX Delay", DspType.DELAY);
     await this.processModule(doc, "FX Reverb", DspType.REVERB);
 
-    console.log("FuseLoader: Complete.");
+    console.debug("FuseLoader: Complete.");
     this.api.emit('state-changed');
   }
 
   private async processModule(doc: Document, selector: string, type: DspType) {
     const container = doc.querySelector(selector);
-    if (!container) return;
+    if (!container) {
+      console.debug(`[LOADER] No module found for selector: ${selector}`);
+      return;
+    }
 
     const modules = container.querySelectorAll("Module");
+    console.debug(`[LOADER] Found ${modules.length} module(s) for ${selector}`);
     for (let i = 0; i < modules.length; i++) {
       const m = modules[i];
       const fuseId = parseInt(m.getAttribute("ID") || "0");
