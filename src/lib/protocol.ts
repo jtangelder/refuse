@@ -1,10 +1,3 @@
-/**
- * Fender Mustang USB HID Protocol Layer
- * 
- * This file handles low-level USB HID communication with the Fender Mustang amplifier.
- * It provides packet construction, sending, and receiving functionality.
- */
-
 import { FENDER_VID, DspType } from './models';
 
 /**

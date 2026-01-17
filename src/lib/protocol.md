@@ -1,6 +1,6 @@
 # Fender Mustang USB HID Protocol
 
-*Based on original reverse engineering by snhirsch/mustang-midi-bridge and updated with findings from the V11 TypeScript API implementation.*
+*Based on original reverse engineering by snhirsch/mustang-midi-bridge and updated with findings from the TypeScript API implementation.*
 
 ## Overview
 

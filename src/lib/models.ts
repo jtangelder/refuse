@@ -1,10 +1,3 @@
-/**
- * Fender Mustang Model Definitions
- * 
- * This file contains all amp, effect, and cabinet model definitions
- * used by the Fender Mustang amplifier protocol.
- */
-
 export enum DspType {
     AMP = 0x05,
     STOMP = 0x06,

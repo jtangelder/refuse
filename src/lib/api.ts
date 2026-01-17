@@ -1,17 +1,3 @@
-/**
- * FENDER MUSTANG API (v11 - Layered Architecture)
- * 
- * High-level API for controlling Fender Mustang amplifiers.
- * Built on top of the MustangProtocol layer for clean separation of concerns.
- * 
- * Features:
- * - Event-driven architecture for UI synchronization
- * - Automatic state management and hardware sync
- * - High-level methods with model lookups
- * - Preset management (save/load/list)
- * - Complete amp, effect, and cabinet control
- */
-
 import { MustangProtocol, OPCODES } from './protocol';
 import type { ModelDef } from './models';
 import {
