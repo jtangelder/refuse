@@ -11,22 +11,27 @@ import { FormsModule, NgModel } from "@angular/forms";
   template: `
     <label>
       <span class="name">{{ name }}</span> 
-      <span class="value">{{ value }}</span>
+      <span class="value">{{ toPercent(value) }}</span>
     </label>
-    <input type="range" min="0" max="255" (input)="onChange($event)">
+    <input type="range" 
+      min="0" max="255" 
+      [value]="value" 
+      (input)="onInput($event)">
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KnobComponent {
   @Input() name!: string;
   @Input() value!: number;
   @Output() valueChange = new EventEmitter<number>();
 
-  onChange(event: Event) {
+  toPercent(value: number) {
+    return Math.round(value / 2.55);
+  }
+
+  onInput(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.valueChange.emit(Number(value));
   }
-
 }
 
 @Component({
@@ -96,29 +101,37 @@ export class KnobComponent {
           <header>
             <h3>Amplifier</h3>
             <select [ngModel]="getAmpSettings()?.modelId" (ngModelChange)="changeAmp($event)">
-              <option *ngFor="let model of ampModels" [value]="model.id">{{ model.name }}</option>
+              @for (model of ampModels; track model.id) {
+                <option [value]="model.id">{{ model.name }}</option>
+              }
             </select>
           </header>
 
           <div class="knob-grid">
-            <div *ngFor="let knob of getAmpKnobs()" class="knob-control"> 
-              <app-knob [name]="knob.name" [value]="knob.value" (valueChange)="changeAmpKnob(knob.index, $event);"></app-knob>
-            </div>
+            @for (knob of getAmpKnobs(); track knob.name) {
+              <div class="knob-control"> 
+                <app-knob [name]="knob.name" [value]="knob.value" (valueChange)="changeAmpKnob(knob.index, $event);"></app-knob>
+              </div>
+            }
           </div>
 
           <div>
             <label>Cabinet</label>
             <select [ngModel]="api.getCabinetId()" (ngModelChange)="changeCabinet($event)">
-              <option *ngFor="let cab of cabModels" [value]="cab.id">{{ cab.name }}</option>
+              @for (cab of cabModels; track cab.id) {
+                <option [value]="cab.id">{{ cab.name }}</option>
+              }
             </select>
           </div>
 
           <details>
             <summary>Advanced parameters</summary>
             <div class="knob-grid">
-              <div *ngFor="let setting of advancedSettings" class="knob-control"> 
-                <app-knob [name]="setting.label" [value]="getAmpSettings()?.[setting.key]" (valueChange)="changeAdvancedSetting(setting.key, $event)"></app-knob>
-              </div>
+              @for (setting of advancedSettings; track setting.key) {
+                <div class="knob-control"> 
+                  <app-knob [name]="setting.label" [value]="getAmpSettings()?.[setting.key]" (valueChange)="changeAdvancedSetting(setting.key, $event)"></app-knob>
+                </div>
+              }
             </div>
           </details>
         </section>
@@ -131,16 +144,24 @@ export class KnobComponent {
               <select [ngModel]="getEffectSettings(activeSlot)?.modelId || 0" (ngModelChange)="assignEffect(activeSlot, $event)">
                   <option [value]="0">-- Empty --</option>
                   <optgroup label="Stompbox">
-                    <option *ngFor="let m of getModelsForFamily(DspType.STOMP)" [value]="m.id">{{ m.name }}</option>
+                    @for (m of getModelsForFamily(DspType.STOMP); track m.id) {
+                      <option [value]="m.id">{{ m.name }}</option>
+                    }
                   </optgroup>
                   <optgroup label="Modulation">
-                    <option *ngFor="let m of getModelsForFamily(DspType.MOD)" [value]="m.id">{{ m.name }}</option>
+                    @for (m of getModelsForFamily(DspType.MOD); track m.id) {
+                      <option [value]="m.id">{{ m.name }}</option>
+                    }
                   </optgroup>
                   <optgroup label="Delay">
-                    <option *ngFor="let m of getModelsForFamily(DspType.DELAY)" [value]="m.id">{{ m.name }}</option>
+                    @for (m of getModelsForFamily(DspType.DELAY); track m.id) {
+                      <option [value]="m.id">{{ m.name }}</option>
+                    }
                   </optgroup>
                   <optgroup label="Reverb">
-                    <option *ngFor="let m of getModelsForFamily(DspType.REVERB)" [value]="m.id">{{ m.name }}</option>
+                    @for (m of getModelsForFamily(DspType.REVERB); track m.id) {
+                      <option [value]="m.id">{{ m.name }}</option>
+                    }
                   </optgroup>
                 </select>
             </div>
@@ -157,21 +178,24 @@ export class KnobComponent {
               </div>
 
               <div class="knob-grid">
-                <div *ngFor="let knob of effect.knobs" class="knob-control">
-                  <app-knob [name]="knob.name" [value]="knob.value" (valueChange)="changeEffectKnob(activeSlot, knob.index, $event)"></app-knob>
-                </div>
+                @for (knob of effect.knobs; track knob.index) {
+                  <div class="knob-control">
+                    <app-knob [name]="knob.name" [value]="knob.value" (valueChange)="changeEffectKnob(activeSlot, knob.index, $event)"></app-knob>
+                  </div>
+                }
               </div>
 
               <div>
                 <label>Slot</label>
                 <div>
-                  <button *ngFor="let i of range(8)" 
-                          (click)="swapSlots(activeSlot, i)" 
-                          [disabled]="i === activeSlot"
-                          class="secondary"
-                          style="padding: 4px 8px; font-size: 0.8rem; margin-right: 5px;">
-                    {{ i }}
-                  </button>
+                  @for (i of range(8); track i) {
+                    <button (click)="swapSlots(activeSlot, i)" 
+                            [disabled]="i === activeSlot"
+                            class="secondary"
+                            style="padding: 4px 8px; font-size: 0.8rem; margin-right: 5px;">
+                      {{ i }}
+                    </button>
+                  }
                   <button (click)="clearSlot(activeSlot)"
                           class="secondary" style="padding: 4px 8px; font-size: 0.8rem;">Clear</button>
                 </div>
