@@ -36,7 +36,10 @@ export class KnobComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container">
-      @if (!api.isConnected) {
+      @if (api.isConnected) {
+        @if (!isReady) {
+          <div class="loading-overlay"><h1>Receiving data from the amplifier...</h1></div>
+        }
       <div class="sidebar">
         <header>
           <h1>ReFUSE</h1>
@@ -64,9 +67,7 @@ export class KnobComponent {
           <input #fileInput type="file" (change)="importFusePreset($event)" style="display: none;" />
         </div>
     </div>
-
-      }
-    <main class="dashboard" *ngIf="api.isConnected">
+    <main class="dashboard">
       <!-- Signal Chain Status -->
       <div class="signal-chain-strip">
         <div class="amplifier">
@@ -190,8 +191,9 @@ export class KnobComponent {
         </section>
       </div>
     </main>
-
-    <div *ngIf="!api.isConnected" class="welcome">
+    }
+    @else {
+    <div class="welcome">
       <div class="illustration">
         <img src="assets/mustang-intro.webp" />
       </div>
@@ -226,7 +228,7 @@ export class KnobComponent {
       </div>
 
     </div>
-    </div>
+    }
     `,
 })
 export class App {
@@ -257,7 +259,8 @@ export class App {
   constructor() {
     (window as any)["api"] = this.api;
 
-    this.api.on('connected', () => {
+    this.api.on('connected', async () => {
+      await sleep(1000);
       this.isReady = true;
       this.changeDetector.markForCheck();
     });
@@ -392,4 +395,8 @@ export class App {
   }
 
   range(n: number) { return Array.from({ length: n }, (_, i) => i); }
+}
+
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
