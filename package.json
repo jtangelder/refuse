@@ -1,5 +1,5 @@
 {
-  "name": "mustang",
+  "name": "refuse",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -31,6 +31,7 @@
     "@angular/cli": "^21.0.5",
     "@angular/compiler-cli": "^21.0.8",
     "@vitest/coverage-v8": "^4.0.17",
+    "angular-cli-ghpages": "^3.0.2",
     "jsdom": "^27.4.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"

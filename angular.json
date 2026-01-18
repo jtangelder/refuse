@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "mustang": {
+    "refuse": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/mustang",
+            "outputPath": "dist/refuse",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": [
@@ -57,13 +57,16 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "mustang:build:production"
+              "buildTarget": "refuse:build:production"
             },
             "development": {
-              "buildTarget": "mustang:build:development"
+              "buildTarget": "refuse:build:development"
             }
           },
           "defaultConfiguration": "development"
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy"
         }
       }
     }

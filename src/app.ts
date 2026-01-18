@@ -1,169 +1,189 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal } from "@angular/core";
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject, signal, Input, Output, EventEmitter, viewChild } from "@angular/core";
 import { MustangAPI, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS, DspType } from "./lib/api";
 import { FuseLoader } from "./lib/loader";
 import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, NgModel } from "@angular/forms";
+
+@Component({
+  selector: "app-knob",
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <label>
+      <span class="name">{{ name }}</span> 
+      <span class="value">{{ value }}</span>
+    </label>
+    <input type="range" min="0" max="255" (input)="onChange($event)">
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class KnobComponent {
+  @Input() name!: string;
+  @Input() value!: number;
+  @Output() valueChange = new EventEmitter<number>();
+
+  onChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.valueChange.emit(Number(value));
+  }
+
+}
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, KnobComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="toolbar">
-      <div style="font-weight: bold; font-size: 1.2rem; margin-right: 20px;">MUSTANG TEST DASHBOARD</div>
-      
-      <button *ngIf="!api.isConnected" (click)="connect()" class="success">Connect Amp</button>
-      <button *ngIf="api.isConnected" (click)="disconnect()" class="danger">Disconnect</button>
-      
-      <div *ngIf="api.isConnected" style="display: flex; gap: 15px; align-items: center; border-left: 1px solid #333; padding-left: 20px;">
-        <label>Preset:</label>
-        <select [ngModel]="api.currentPresetSlot" (ngModelChange)="changePreset($event)">
-          <option *ngFor="let i of range(24)" [value]="i">
-            {{ i | number:'2.0' }}: {{ api.presets.get(i)?.name || 'Preset ' + i }}
-          </option>
-        </select>
-        
-        <div style="display: flex; gap: 5px;">
-          <input type="text" [(ngModel)]="presetSaveName" placeholder="New Name" style="width: 120px;" />
-          <button (click)="savePreset()" class="secondary">Save</button>
-        </div>
+    <div class="container">
+      @if (!api.isConnected) {
+      <div class="sidebar">
+        <header>
+          <h1>ReFUSE</h1>
+          <div class="connection">
+            <button *ngIf="!api.isConnected" (click)="connect()" class="success">Connect Amp</button>
+            <button *ngIf="api.isConnected" (click)="disconnect()" class="danger">Disconnect</button>
+          </div>  
+        </header>
 
-        <div style="border-left: 1px solid #333; padding-left: 15px; display: flex; gap: 10px; align-items: center;">
-          <label class="secondary" style="font-size: 0.8rem; cursor: pointer;">
-            Import .fusepreset
-            <input type="file" (change)="importFusePreset($event)" style="display: none;" />
-          </label>
-          <button (click)="clearAllEffects()" class="danger" style="font-size: 0.8rem;">Clear All FX</button>
+        <div class="presets">
+          <h3>Presets</h3>
+          <ul>
+            <li *ngFor="let i of range(24)">
+              <button (click)="changePreset(i)" [class.active]="api.currentPresetSlot === i">
+                <span class="slot-num">{{ i | number:'2.0' }}:</span> 
+                <span>{{ api.presets.get(i)?.name || 'Preset ' + i }}</span>
+              </button>
+            </li>
+          </ul>
         </div>
-      </div>
+        <hr>
+        <div class="preset-controls">
+          <button (click)="savePreset()" class="secondary">Save preset</button>
+          <button class="secondary" (click)="fileInput.click()">Import preset</button>
+          <input #fileInput type="file" (change)="importFusePreset($event)" style="display: none;" />
+        </div>
     </div>
 
+      }
     <main class="dashboard" *ngIf="api.isConnected">
       <!-- Signal Chain Status -->
-      <section class="card" style="padding-bottom: 5px;">
-        <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;">HARDWARE SIGNAL CHAIN</h3>
-        <div class="signal-chain-strip">
-          <div *ngFor="let i of range(8)" class="slot" 
-               [class.active]="activeSlot === i" 
-               [class.empty]="!getEffectSettings(i)"
-               (click)="activeSlot = i">
-            <span class="slot-num">{{ i }}</span>
-            <div *ngIf="getEffectSettings(i) as effect; else emptySlot">
-              <div class="badge" [style.background]="getFamilyColor(effect.type)" style="margin-bottom: 5px;">{{ getFamilyLabel(effect.type) }}</div>
-              <div style="font-size: 0.85rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ effect.model }}</div>
-              <div style="font-size: 0.7rem; color: {{ effect.enabled ? '#2ecc71' : '#e74c3c' }}">{{ effect.enabled ? '● ACTIVE' : '○ BYPASSED' }}</div>
-            </div>
-            <ng-template #emptySlot>
-              <div style="font-style: italic; color: #444; font-size: 0.8rem; margin-top: 15px;">Empty</div>
-            </ng-template>
-          </div>
+      <div class="signal-chain-strip">
+        <div class="amplifier">
+          Amplifier
         </div>
-      </section>
+        <div *ngFor="let i of range(8)" class="slot" 
+              [class.active]="activeSlot === i" 
+              [class.empty]="!getEffectSettings(i)"
+              [style.order]="i * 10"
+              (click)="activeSlot = i">
+          <span class="slot-num">{{ i }}</span>
+          <div *ngIf="getEffectSettings(i) as effect; else emptySlot">
+            <div class="badge" [style.background]="getFamilyColor(effect.type)">{{ getFamilyLabel(effect.type) }}</div>
+            <div>{{ effect.model }}</div>
+            <div>{{ effect.enabled ? '● ACTIVE' : '○ BYPASSED' }}</div>
+          </div>
+          <ng-template #emptySlot>
+            <div>Empty</div>
+          </ng-template>
+        </div>
+      </div>
 
       <div class="grid">
         <!-- Amp Control -->
         <section class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Amplifier</h2>
+          <header>
+            <h3>Amplifier</h3>
             <select [ngModel]="getAmpSettings()?.modelId" (ngModelChange)="changeAmp($event)">
               <option *ngFor="let model of ampModels" [value]="model.id">{{ model.name }}</option>
             </select>
-          </div>
+          </header>
 
           <div class="knob-grid">
-            <div *ngFor="let knob of getAmpKnobs()" class="knob-control">
-              <label>{{ knob.name }}</label>
-              <input type="range" min="0" max="255" [value]="knob.value" (input)="changeAmpKnob(knob.index, $event)" />
-              <div class="val">{{ knob.value }}</div>
+            <div *ngFor="let knob of getAmpKnobs()" class="knob-control"> 
+              <app-knob [name]="knob.name" [value]="knob.value" (valueChange)="changeAmpKnob(knob.index, $event);"></app-knob>
             </div>
           </div>
 
-          <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
-            <label style="font-size: 0.8rem; color: var(--text-muted);">CABINET</label>
-            <select [ngModel]="api.getCabinetId()" (ngModelChange)="changeCabinet($event)" style="width: 100%; margin-top: 5px;">
+          <div>
+            <label>Cabinet</label>
+            <select [ngModel]="api.getCabinetId()" (ngModelChange)="changeCabinet($event)">
               <option *ngFor="let cab of cabModels" [value]="cab.id">{{ cab.name }}</option>
             </select>
           </div>
 
-          <details style="margin-top: 20px;">
-            <summary style="cursor: pointer; font-size: 0.85rem; color: var(--primary);">ADVANCED PARAMETERS</summary>
-            <div class="knob-grid" style="margin-top: 15px;">
-              <div *ngFor="let setting of advancedSettings" class="knob-control">
-                <label>{{ setting.label }}</label>
-                <input type="range" min="0" max="255" [value]="getAmpSettings()?.[setting.key]" (input)="changeAdvancedSetting(setting.key, $event)" />
-                <div class="val">{{ getAmpSettings()?.[setting.key] }}</div>
+          <details>
+            <summary>Advanced parameters</summary>
+            <div class="knob-grid">
+              <div *ngFor="let setting of advancedSettings" class="knob-control"> 
+                <app-knob [name]="setting.label" [value]="getAmpSettings()?.[setting.key]" (valueChange)="changeAdvancedSetting(setting.key, $event)"></app-knob>
               </div>
             </div>
           </details>
         </section>
 
         <!-- Slot Control -->
-        <section class="card" [style.border-color]="activeSlot !== null ? 'var(--primary)' : 'var(--border)'">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2>Slot {{ activeSlot !== null ? activeSlot : '' }} Control</h2>
-            <div *ngIf="activeSlot !== null" style="display: flex; gap: 10px;">
-               <button (click)="clearSlot(activeSlot)" class="danger" style="font-size: 0.7rem; padding: 4px 8px;">Clear</button>
+        <section class="card">
+          <header>
+            <h3>Slot {{ activeSlot !== null ? activeSlot : '' }}</h3>
+            <div *ngIf="activeSlot !== null">
+              <select [ngModel]="getEffectSettings(activeSlot)?.modelId || 0" (ngModelChange)="assignEffect(activeSlot, $event)">
+                  <option [value]="0">-- Empty --</option>
+                  <optgroup label="Stompbox">
+                    <option *ngFor="let m of getModelsForFamily(DspType.STOMP)" [value]="m.id">{{ m.name }}</option>
+                  </optgroup>
+                  <optgroup label="Modulation">
+                    <option *ngFor="let m of getModelsForFamily(DspType.MOD)" [value]="m.id">{{ m.name }}</option>
+                  </optgroup>
+                  <optgroup label="Delay">
+                    <option *ngFor="let m of getModelsForFamily(DspType.DELAY)" [value]="m.id">{{ m.name }}</option>
+                  </optgroup>
+                  <optgroup label="Reverb">
+                    <option *ngFor="let m of getModelsForFamily(DspType.REVERB)" [value]="m.id">{{ m.name }}</option>
+                  </optgroup>
+                </select>
             </div>
-          </div>
+          </header>
 
           <div *ngIf="activeSlot !== null; else noActiveSlot">
-            <div style="margin-bottom: 20px;">
-              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 5px;">ASSIGN EFFECT</label>
-              <select [ngModel]="getEffectSettings(activeSlot)?.modelId || 0" (ngModelChange)="assignEffect(activeSlot, $event)" style="width: 100%;">
-                <option [value]="0">-- Empty --</option>
-                <optgroup label="STOMP">
-                   <option *ngFor="let m of getModelsForFamily(DspType.STOMP)" [value]="m.id">{{ m.name }}</option>
-                </optgroup>
-                <optgroup label="MOD">
-                   <option *ngFor="let m of getModelsForFamily(DspType.MOD)" [value]="m.id">{{ m.name }}</option>
-                </optgroup>
-                <optgroup label="DELAY">
-                   <option *ngFor="let m of getModelsForFamily(DspType.DELAY)" [value]="m.id">{{ m.name }}</option>
-                </optgroup>
-                <optgroup label="REVERB">
-                   <option *ngFor="let m of getModelsForFamily(DspType.REVERB)" [value]="m.id">{{ m.name }}</option>
-                </optgroup>
-              </select>
-            </div>
-
             <div *ngIf="getEffectSettings(activeSlot) as effect">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <div>
+                <label>
                   <input type="checkbox" [ngModel]="effect.enabled" (ngModelChange)="toggleEffect(activeSlot, $event)" />
-                  <span style="font-weight: bold;">{{ effect.enabled ? 'ENABLED' : 'BYPASSED' }}</span>
+                  <span>{{ effect.enabled ? 'Active' : 'Bypassed' }}</span>
                 </label>
-                <div style="font-size: 0.8rem; opacity: 0.6;">Type: 0x{{ effect.type.toString(16) }}</div>
+                <div>Type: 0x{{ effect.type.toString(16) }}</div>
               </div>
 
               <div class="knob-grid">
                 <div *ngFor="let knob of effect.knobs" class="knob-control">
-                  <label>{{ knob.name }}</label>
-                  <input type="range" min="0" max="255" [value]="knob.value" (input)="changeEffectKnob(activeSlot, knob.index, $event)" />
-                  <div class="val">{{ knob.value }}</div>
+                  <app-knob [name]="knob.name" [value]="knob.value" (valueChange)="changeEffectKnob(activeSlot, knob.index, $event)"></app-knob>
                 </div>
               </div>
 
-              <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
-                <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 10px;">MOVE/SWAP SLOT</label>
-                <div style="display: flex; gap: 10px;">
+              <div>
+                <label>Slot</label>
+                <div>
                   <button *ngFor="let i of range(8)" 
                           (click)="swapSlots(activeSlot, i)" 
                           [disabled]="i === activeSlot"
                           class="secondary"
-                          style="flex: 1; padding: 5px; font-size: 0.8rem;">
+                          style="padding: 4px 8px; font-size: 0.8rem; margin-right: 5px;">
                     {{ i }}
                   </button>
+                  <button (click)="clearSlot(activeSlot)"
+                          class="secondary" style="padding: 4px 8px; font-size: 0.8rem;">Clear</button>
                 </div>
               </div>
             </div>
             
-            <div *ngIf="!getEffectSettings(activeSlot)" style="text-align: center; padding: 40px; color: #444; border: 2px dashed #333; border-radius: 8px;">
-              Select an effect model above to assign to this slot
+            <div *ngIf="!getEffectSettings(activeSlot)">
+              <p>Select an effect model above to assign to this slot.</p>
+              <p>Note, an effect can only be assigned to one slot at a time.</p>
             </div>
           </div>
           <ng-template #noActiveSlot>
-            <div style="text-align: center; padding: 60px; color: #555;">
+            <div>
               Click a slot in the signal chain above to view and edit its settings.
             </div>
           </ng-template>
@@ -171,14 +191,48 @@ import { FormsModule } from "@angular/forms";
       </div>
     </main>
 
-    <div *ngIf="!api.isConnected" class="dashboard" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
-      <h1 style="font-size: 3rem; margin-bottom: 10px; color: var(--primary);">MUSTANG TESTER</h1>
-      <p style="color: var(--text-muted); margin-bottom: 30px;">High-fidelity feature validation toolkit for Fender Mustang USB HID</p>
-      <button (click)="connect()" style="font-size: 1.5rem; padding: 15px 40px;">INITIALIZE HID INTERFACE</button>
+    <div *ngIf="!api.isConnected" class="welcome">
+      <div class="illustration">
+        <img src="assets/mustang-intro.webp" />
+      </div>
+      <div class="message">
+        <h1>Unofficial Fender FUSE replacement</h1>
+
+        <p>This tool restores the editing functionality lost when Fender 
+          <a href="https://support.fender.com/en-us/knowledgebase/article/KA-01924" target="_blank">discontinued</a> their FUSE application.</p>
+
+        <p>It provides a simple interface to manage your presets, configure signal chains, and 
+          access the "hidden" amp models that require software control. No installation is needed; 
+          it runs entirely via your browser's USB connection.</p>
+
+        <p><strong>Get started by connecting your amplifier to your computer via USB.</strong></p>
+        <div class="connect">
+            <button (click)="connect()" class="success">
+              <span class="icon">usb</span>
+              Connect your amp
+            </button>
+        </div>
+
+        <p *ngIf="!isSupported" class="unsupported">
+          ⚠️ WebHID not detected. This application requires a browser with WebHID support 
+          (<a href="https://caniuse.com/webhid" target="_blank">like Chrome, Edge or Opera</a>).
+        </p>
+
+        <p class="disclaimer">
+          <em>This is a hobby project, not affiliated with Fender in any way. Please 
+          <a href="https://github.com/jtangelder/mustang" target="_blank">contribute on GitHub</a> 
+          if you find it useful.</em>
+        </p>
+      </div>
+
     </div>
-  `,
+    </div>
+    `,
 })
 export class App {
+  protected isSupported = !!(navigator as any).hid;
+  protected isReady = false;
+
   protected DspType = DspType;
   protected api = new MustangAPI();
   protected loader = new FuseLoader(this.api);
@@ -202,6 +256,15 @@ export class App {
 
   constructor() {
     (window as any)["api"] = this.api;
+
+    this.api.on('connected', () => {
+      this.isReady = true;
+      this.changeDetector.markForCheck();
+    });
+    this.api.on('disconnected', () => {
+      this.isReady = false;
+      this.changeDetector.markForCheck();
+    });
     this.api.on('state-changed', () => {
       this.changeDetector.markForCheck();
     });
@@ -232,6 +295,9 @@ export class App {
 
   async savePreset() {
     if (this.api.currentPresetSlot === null) return;
+    const name = window.prompt('Enter a name for your preset', this.presetSaveName);
+    if (!name) return;
+    this.presetSaveName = name;
     await this.api.savePreset(this.api.currentPresetSlot, this.presetSaveName);
   }
 
@@ -261,12 +327,11 @@ export class App {
     await this.api.setCabinetById(Number(id));
   }
 
-  async changeAmpKnob(index: number, event: any) {
-    await this.api.setAmpKnob(index, Number(event.target.value));
+  async changeAmpKnob(index: number, value: number) {
+    await this.api.setAmpKnob(index, value);
   }
 
-  async changeAdvancedSetting(key: string, event: any) {
-    const value = Number(event.target.value);
+  async changeAdvancedSetting(key: string, value: number) {
     const byteIndexMap: Record<string, number> = {
       'bias': 42, 'noiseGate': 47, 'threshold': 48, 'sag': 51, 'brightness': 52, 'depth': 41
     };
@@ -287,8 +352,8 @@ export class App {
     await this.api.setEffectEnabled(slot, enabled);
   }
 
-  async changeEffectKnob(slot: number, index: number, event: any) {
-    await this.api.setEffectKnob(slot, index, Number(event.target.value));
+  async changeEffectKnob(slot: number, index: number, value: number) {
+    await this.api.setEffectKnob(slot, index, value);
   }
 
   async swapSlots(slotA: number, slotB: number) {
@@ -301,13 +366,13 @@ export class App {
   getAmpSettings() { return this.api.getAmpSettings() as any; }
   getAmpKnobs() { return this.api.getAmpKnobs(); }
   getEffectSettings(slot: number) { return this.api.getEffectSettings(slot); }
-  
+
   getModelsForFamily(type: DspType) {
     return this.effectModels.filter(m => m.type === type);
   }
 
   getFamilyLabel(type: DspType) {
-    switch(type) {
+    switch (type) {
       case DspType.STOMP: return 'STOMP';
       case DspType.MOD: return 'MOD';
       case DspType.DELAY: return 'DELAY';

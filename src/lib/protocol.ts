@@ -1,4 +1,5 @@
 import { FENDER_VID, DspType } from './models';
+import { debug } from './helpers';
 
 /**
  * Protocol opcodes used in USB HID communication
@@ -54,7 +55,7 @@ export class MustangProtocol {
             this.device = devices[0];
             await this.device.open();
 
-            console.debug(`Connected: ${this.device.productName}`);
+            debug(`Connected: ${this.device.productName}`);
 
             // Handshake
             await this.sendRaw(new Uint8Array([OPCODES.INIT_1]));
@@ -85,7 +86,7 @@ export class MustangProtocol {
 
         this.device.addEventListener("inputreport", (e: any) => {
             const data = new Uint8Array(e.data.buffer);
-            console.debug(`HID RECV [raw]: [${Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]`);
+            debug(`HID RECV [raw]: [${Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]`);
             callback(data);
         });
     }
@@ -160,7 +161,7 @@ export class MustangProtocol {
             });
         }
 
-        console.debug(`[PROTOCOL] Created DSP Packet (Type: 0x${options.type.toString(16)}, Slot: ${options.slot}, Model: 0x${options.modelId.toString(16)})`);
+        debug(`[PROTOCOL] Created DSP Packet (Type: 0x${options.type.toString(16)}, Slot: ${options.slot}, Model: 0x${options.modelId.toString(16)})`);
         return packet;
     }
 
@@ -181,7 +182,7 @@ export class MustangProtocol {
         // PacketSerializer logic for Apply headers
         packet[4] = dspType === DspType.MOD ? 0x01 : 0x02;
 
-        console.debug(`[PROTOCOL] Created Apply Packet (Type: 0x${dspType.toString(16)})`);
+        debug(`[PROTOCOL] Created Apply Packet (Type: 0x${dspType.toString(16)})`);
         return packet;
     }
 
@@ -200,7 +201,7 @@ export class MustangProtocol {
         packet[3] = enabled ? 0x00 : 0x01; // 0=On, 1=Off
         packet[4] = slot;
 
-        console.debug(`[PROTOCOL] Created Bypass Packet (Slot: ${slot}, Enabled: ${enabled}, Family: ${family})`);
+        debug(`[PROTOCOL] Created Bypass Packet (Slot: ${slot}, Enabled: ${enabled}, Family: ${family})`);
         return packet;
     }
 
@@ -226,7 +227,7 @@ export class MustangProtocol {
         const nameBytes = new TextEncoder().encode(name);
         packet.set(nameBytes, 16);
 
-        console.debug(`[PROTOCOL] Created Preset Save Packet (Slot: ${slot}, Name: "${name}")`);
+        debug(`[PROTOCOL] Created Preset Save Packet (Slot: ${slot}, Name: "${name}")`);
         return packet;
     }
 
@@ -246,7 +247,7 @@ export class MustangProtocol {
         packet[5] = 0x00;
         packet[6] = 0x01;
 
-        console.debug(`[PROTOCOL] Created Preset Load Packet (Slot: ${slot})`);
+        debug(`[PROTOCOL] Created Preset Load Packet (Slot: ${slot})`);
         return packet;
     }
 
@@ -264,7 +265,7 @@ export class MustangProtocol {
         if (!this.device) throw new Error("Not connected");
 
         try {
-            console.debug(`HID SEND [raw]: [${Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]`);
+            debug(`HID SEND [raw]: [${Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]`);
             await this.device.sendReport(0, data);
         } catch (e) {
             console.error("HID Send Error:", e);
@@ -305,7 +306,7 @@ export class MustangProtocol {
         }
 
         const result = { type, slot, modelId, bypass, knobs };
-        console.debug(`[PROTOCOL] Parsed DSP Data:`, result);
+        debug(`[PROTOCOL] Parsed DSP Data:`, result);
         return result;
     }
 
@@ -327,7 +328,7 @@ export class MustangProtocol {
         const enabled = status === 0;
 
         const result = { slot, enabled };
-        console.debug(`[PROTOCOL] Parsed Bypass Response:`, result);
+        debug(`[PROTOCOL] Parsed Bypass Response:`, result);
         return result;
     }
 
@@ -351,7 +352,7 @@ export class MustangProtocol {
         const name = this.decodeString(nameBytes);
 
         const result = { slot, name };
-        console.debug(`[PROTOCOL] Parsed Preset Name:`, result);
+        debug(`[PROTOCOL] Parsed Preset Name:`, result);
         return result;
     }
 }

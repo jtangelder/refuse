@@ -7,6 +7,7 @@ import {
   CABINET_MODELS,
 } from './models';
 import { getModelDefault } from './defaults';
+import { debug } from './helpers';
 
 // --- TYPE DEFINITIONS ---
 
@@ -101,7 +102,7 @@ class EventEmitter {
   }
 
   emit<K extends keyof MustangEvents>(event: K, ...args: Parameters<MustangEvents[K]>): void {
-    console.debug(`[EVENT] ${String(event)}:`, ...args);
+    debug(`[EVENT] ${String(event)}:`, ...args);
     const callbacks = this.events.get(event);
     if (callbacks) {
       callbacks.forEach(cb => cb(...args));
@@ -173,14 +174,14 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   async connect(): Promise<boolean> {
-    console.debug('[API CALL] connect()');
+    debug('[API CALL] connect()');
     const connected = await this.protocol.connect();
     if (!connected) {
-      console.debug('[API] Connection failed');
+      debug('[API] Connection failed');
       return false;
     }
 
-    console.debug('[API] Connected. Initiating state sync...');
+    debug('[API] Connected. Initiating state sync...');
     // Automatically start monitoring and sync state
     this.startMonitoring();
     await this.refreshState();
@@ -191,7 +192,7 @@ export class MustangAPI extends EventEmitter {
   }
 
   async disconnect(): Promise<void> {
-    console.debug('[API CALL] disconnect()');
+    debug('[API CALL] disconnect()');
     await this.protocol.disconnect();
     this.emit('disconnected');
   }
@@ -206,7 +207,7 @@ export class MustangAPI extends EventEmitter {
       const b0 = data[0];
       const b1 = data[1];
 
-      // console.debug('HID Input:', data); // Already logged in protocol layer
+      // debug('HID Input:', data); // Already logged in protocol layer
 
       // 1. LIVE KNOB CHANGES (Physical knob turned on amp)
       // Format: [DSP_TYPE] ... where DSP_TYPE is 0x05-0x09
@@ -218,7 +219,7 @@ export class MustangAPI extends EventEmitter {
         // Update the correct buffer in 'this.state'
         const paramIndex = data[5];
         const paramValue = data[10];
-        
+
         if (type === DspType.AMP) {
           this.state[DspType.AMP][32 + paramIndex] = paramValue;
           const modelId = this.getAmpModelId();
@@ -252,7 +253,7 @@ export class MustangAPI extends EventEmitter {
           if (presetInfo) {
             const { slot: presetSlot, name } = presetInfo;
             const changed = this.currentPresetSlot !== presetSlot;
-            
+
             this.currentPresetSlot = presetSlot;
 
             // FIX: Only update name if it's non-empty, OR if it's an explicit Name packet (Type 0x04)
@@ -268,7 +269,7 @@ export class MustangAPI extends EventEmitter {
             // and we aren't already in a refresh cycle.
             // This prevents "Apply" echos (b1=0x03) from triggering infinite refresh loops.
             if (type === 0x00 && b1 === OPCODES.DATA_READ && changed && !this.isRefreshing) {
-              console.debug(`Hardware Preset Change to ${presetSlot} detected via Read Packet. Refreshing...`);
+              debug(`Hardware Preset Change to ${presetSlot} detected via Read Packet. Refreshing...`);
               this.isRefreshing = true;
               this.refreshState()
                 .then(() => this.refreshBypassStates())
@@ -279,7 +280,7 @@ export class MustangAPI extends EventEmitter {
             }
             this.emit('state-changed');
           }
-          
+
           if (type === 0x00) return; // Never route Type 0x00 to effect slots (Protects Slot 0)
         }
 
@@ -343,7 +344,7 @@ export class MustangAPI extends EventEmitter {
    * Called automatically by connect() - you don't need to call it manually.
    */
   private async refreshState() {
-    console.debug('[API] Requesting full state dump...');
+    debug('[API] Requesting full state dump...');
     await this.protocol.requestState();
   }
 
@@ -352,7 +353,7 @@ export class MustangAPI extends EventEmitter {
    * Called automatically by connect() - you don't need to call it manually.
    */
   private async refreshBypassStates(): Promise<void> {
-    console.debug('[API] Requesting bypass states...');
+    debug('[API] Requesting bypass states...');
     return new Promise<void>(async (resolve) => {
       const pending = new Set([0, 1, 2, 3, 4, 5, 6, 7]); // All effect slots
       const listener = (data: Uint8Array) => {
@@ -385,7 +386,7 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   async savePreset(slot: number, name: string): Promise<void> {
-    console.debug(`[API CALL] savePreset(slot: ${slot}, name: "${name}")`);
+    debug(`[API CALL] savePreset(slot: ${slot}, name: "${name}")`);
     const packet = this.protocol.createPresetSavePacket(slot, name);
     await this.protocol.sendPacket(packet);
 
@@ -395,7 +396,7 @@ export class MustangAPI extends EventEmitter {
   }
 
   async loadPreset(slot: number): Promise<void> {
-    console.debug(`[API CALL] loadPreset(slot: ${slot})`);
+    debug(`[API CALL] loadPreset(slot: ${slot})`);
     const packet = this.protocol.createPresetLoadPacket(slot);
     await this.protocol.sendPacket(packet);
   }
@@ -409,7 +410,7 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   async setAmpModelById(modelId: number): Promise<void> {
-    console.debug(`[API CALL] setAmpModelById(modelId: 0x${modelId.toString(16)})`);
+    debug(`[API CALL] setAmpModelById(modelId: 0x${modelId.toString(16)})`);
     const model = Object.values(AMP_MODELS).find(m => m.id === modelId);
     if (!model) throw new Error(`Unknown amp model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
 
@@ -435,7 +436,7 @@ export class MustangAPI extends EventEmitter {
   }
 
   async setAmpKnob(index: number, value: number): Promise<void> {
-    console.debug(`[API CALL] setAmpKnob(index: ${index}, value: ${value})`);
+    debug(`[API CALL] setAmpKnob(index: ${index}, value: ${value})`);
     await this.setParameter(DspType.AMP, 0, 32 + index, value);
   }
 
@@ -495,7 +496,7 @@ export class MustangAPI extends EventEmitter {
   }
 
   async setEffectById(slot: number, modelId: number): Promise<void> {
-    console.debug(`[API CALL] setEffectById(slot: ${slot}, modelId: 0x${modelId.toString(16)})`);
+    debug(`[API CALL] setEffectById(slot: ${slot}, modelId: 0x${modelId.toString(16)})`);
     const model = Object.values(EFFECT_MODELS).find(m => m.id === modelId);
     if (!model) {
       throw new Error(`Unknown effect model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
@@ -518,27 +519,27 @@ export class MustangAPI extends EventEmitter {
     buffer[17] = modelId & 0xff;
     buffer[18] = slot;
     this.effectEnabled[slot] = true; // Enable by default
-    buffer[22] = 0; 
-    
+    buffer[22] = 0;
+
     await this.sendFullBuffer(model.type, slot, buffer);
   }
 
   async setEffectEnabled(slot: number, enabled: boolean) {
-    console.debug(`[API CALL] setEffectEnabled(slot: ${slot}, enabled: ${enabled})`);
+    debug(`[API CALL] setEffectEnabled(slot: ${slot}, enabled: ${enabled})`);
     const slotInfo = this.getBufferForSlot(slot);
     if (!slotInfo) return;
-    
+
     // Update local state and buffer immediately
     this.effectEnabled[slot] = enabled;
     slotInfo.buffer[22] = enabled ? 0 : 1;
-    
+
     const packet = this.protocol.createBypassPacket(slot, enabled, slotInfo.type);
     await this.protocol.sendPacket(packet);
     this.emit('state-changed');
   }
 
   async swapEffects(slotA: number, slotB: number): Promise<void> {
-    console.debug(`[API CALL] swapEffects(slotA: ${slotA}, slotB: ${slotB})`);
+    debug(`[API CALL] swapEffects(slotA: ${slotA}, slotB: ${slotB})`);
     if (slotA === slotB) return;
     if (slotA < 0 || slotA > 7 || slotB < 0 || slotB > 7) {
       throw new Error("Invalid slot indices for swap");
@@ -552,7 +553,7 @@ export class MustangAPI extends EventEmitter {
     const typeA = bufA[2];
     const typeB = bufB[2];
 
-    console.debug(`[API] Swapping effects: Slot ${slotA} (Type 0x${typeA.toString(16)}) <-> Slot ${slotB} (Type 0x${typeB.toString(16)})`);
+    debug(`[API] Swapping effects: Slot ${slotA} (Type 0x${typeA.toString(16)}) <-> Slot ${slotB} (Type 0x${typeB.toString(16)})`);
 
     // 2. Clear both slots first (Safe handling to avoid singleton collisions)
     // We do this by sending "Empty" buffers to both.
@@ -583,10 +584,10 @@ export class MustangAPI extends EventEmitter {
   }
 
   async clearEffect(slot: number): Promise<void> {
-    console.debug(`[API CALL] clearEffect(slot: ${slot})`);
+    debug(`[API CALL] clearEffect(slot: ${slot})`);
     if (slot < 0 || slot > 7) throw new Error(`Invalid slot: ${slot}`);
     let currentType = this.state.slots[slot][2];
-    
+
     // If type is 0 (already empty), defaulting to STOMP (0x06) is usually safe for clearing
     if (currentType === 0) currentType = DspType.STOMP;
 
@@ -617,7 +618,7 @@ export class MustangAPI extends EventEmitter {
   }
 
   async setEffectKnob(slot: number, index: number, value: number): Promise<void> {
-    console.debug(`[API CALL] setEffectKnob(slot: ${slot}, index: ${index}, value: ${value})`);
+    debug(`[API CALL] setEffectKnob(slot: ${slot}, index: ${index}, value: ${value})`);
     const slotInfo = this.getBufferForSlot(slot);
     if (!slotInfo || (slotInfo.type as number) === 0) throw new Error(`No effect in slot ${slot}`);
     await this.setParameter(slotInfo.type, slot, 32 + index, value);
@@ -664,7 +665,7 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   async setCabinetById(id: number): Promise<void> {
-    console.debug(`[API CALL] setCabinetById(id: 0x${id.toString(16)})`);
+    debug(`[API CALL] setCabinetById(id: 0x${id.toString(16)})`);
     const cabinet = CABINET_MODELS.find(c => c.id === id);
     if (!cabinet) {
       throw new Error(`Unknown cabinet ID: 0x${id.toString(16).padStart(2, '0')}`);
@@ -724,7 +725,7 @@ export class MustangAPI extends EventEmitter {
   }
 
   async setParameter(type: DspType, slot: number, byteIndex: number, value: number) {
-    console.debug(`[API CALL] setParameter(type: 0x${type.toString(16)}, slot: ${slot}, byteIndex: ${byteIndex}, value: ${value})`);
+    debug(`[API CALL] setParameter(type: 0x${type.toString(16)}, slot: ${slot}, byteIndex: ${byteIndex}, value: ${value})`);
     let buffer: Uint8Array;
     if (type === DspType.AMP) {
       buffer = this.state[DspType.AMP];
