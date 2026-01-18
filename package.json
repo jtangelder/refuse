@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "deploy": "vitest run && ng deploy --dir=dist/refuse"
+    "deploy": "vitest run && ng deploy --dir=dist/refuse",
+    "lint": "eslint src/**/*.ts"
   },
   "private": true,
   "dependencies": {
@@ -31,9 +32,13 @@
     "@angular-devkit/build-angular": "^21.0.5",
     "@angular/cli": "^21.0.5",
     "@angular/compiler-cli": "^21.0.8",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
     "@vitest/coverage-v8": "^4.0.17",
     "angular-cli-ghpages": "^3.0.2",
+    "eslint": "^9.39.2",
     "jsdom": "^27.4.0",
+    "prettier": "^3.8.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"
   }

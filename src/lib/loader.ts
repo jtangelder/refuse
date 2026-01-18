@@ -1,14 +1,8 @@
-import {
-  MustangAPI,
-  DspType,
-} from "./api";
-import {
-  AMP_MODELS,
-  EFFECT_MODELS,
-} from "./models";
+import { MustangAPI, DspType } from "./api";
+import { AMP_MODELS, EFFECT_MODELS } from "./models";
 
 export class FuseLoader {
-  constructor(private api: MustangAPI) { }
+  constructor(private api: MustangAPI) {}
 
   public async loadPreset(xmlString: string) {
     console.debug(`[LOADER CALL] loadPreset (XML length: ${xmlString.length})`);
@@ -19,7 +13,7 @@ export class FuseLoader {
 
     console.debug("FuseLoader: Clearing current effects for clean load...");
     for (let i = 0; i < 8; i++) {
-        await this.api.clearEffect(i);
+      await this.api.clearEffect(i);
     }
 
     console.debug("FuseLoader: Loading...");
@@ -31,7 +25,7 @@ export class FuseLoader {
     await this.processModule(doc, "FX Reverb", DspType.REVERB);
 
     console.debug("FuseLoader: Complete.");
-    this.api.emit('state-changed');
+    this.api.emit("state-changed");
   }
 
   private async processModule(doc: Document, selector: string, type: DspType) {

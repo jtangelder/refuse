@@ -1,11 +1,11 @@
-import { AMP_MODELS, EFFECT_MODELS } from './models';
+import { AMP_MODELS, EFFECT_MODELS } from "./models";
 
 /**
  * Model Default Buffers
- * 
+ *
  * Contains default 64-byte payloads for amp and effect models.
  */
-
+// prettier-ignore
 export const MODEL_DEFAULTS: Record<number, number[]> = {
   // AMP MODELS
   [AMP_MODELS.F57_DELUXE.id]: [ // '57 Deluxe
@@ -255,4 +255,3 @@ export function getModelDefault(id: number): Uint8Array | null {
   const data = MODEL_DEFAULTS[id];
   return data ? new Uint8Array(data) : null;
 }
-

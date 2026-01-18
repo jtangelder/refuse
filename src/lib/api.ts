@@ -1,21 +1,22 @@
-import { MustangProtocol, OPCODES } from './protocol';
-import type { ModelDef } from './models';
-import {
-  DspType,
-  AMP_MODELS,
-  EFFECT_MODELS,
-  CABINET_MODELS,
-} from './models';
-import { getModelDefault } from './defaults';
-import { debug } from './helpers';
+import { MustangProtocol, OPCODES } from "./protocol";
+import type { ModelDef } from "./models";
+import { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from "./models";
+import { getModelDefault } from "./defaults";
+import { debug } from "./helpers";
 
 // --- TYPE DEFINITIONS ---
 
 // Re-export types
-export type { ModelDef } from './models';
+export type { ModelDef } from "./models";
 
 // Re-export values (enums, constants, objects)
-export { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS, FENDER_VID } from './models';
+export {
+  DspType,
+  AMP_MODELS,
+  EFFECT_MODELS,
+  CABINET_MODELS,
+  FENDER_VID,
+} from "./models";
 
 export interface PresetMetadata {
   slot: number;
@@ -70,28 +71,39 @@ export interface Preset {
 type EventCallback = (...args: any[]) => void;
 
 export type MustangEvents = {
-  'connected': () => void;
-  'disconnected': () => void;
-  'preset-loaded': (slot: number, name: string) => void;
-  'amp-changed': (modelId: number, knobs: KnobInfo[]) => void;
-  'effect-changed': (slot: number, modelId: number, knobs: KnobInfo[]) => void;
-  'bypass-toggled': (slot: number, enabled: boolean) => void;
-  'knob-changed': (type: 'amp' | 'effect', slot: number, knobName: string, value: number) => void;
-  'cabinet-changed': (cabinetId: number) => void;
-  'state-changed': () => void;
+  connected: () => void;
+  disconnected: () => void;
+  "preset-loaded": (slot: number, name: string) => void;
+  "amp-changed": (modelId: number, knobs: KnobInfo[]) => void;
+  "effect-changed": (slot: number, modelId: number, knobs: KnobInfo[]) => void;
+  "bypass-toggled": (slot: number, enabled: boolean) => void;
+  "knob-changed": (
+    type: "amp" | "effect",
+    slot: number,
+    knobName: string,
+    value: number,
+  ) => void;
+  "cabinet-changed": (cabinetId: number) => void;
+  "state-changed": () => void;
 };
 
 class EventEmitter {
   private events: Map<string, EventCallback[]> = new Map();
 
-  on<K extends keyof MustangEvents>(event: K, callback: MustangEvents[K]): void {
+  on<K extends keyof MustangEvents>(
+    event: K,
+    callback: MustangEvents[K],
+  ): void {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
     this.events.get(event)!.push(callback as EventCallback);
   }
 
-  off<K extends keyof MustangEvents>(event: K, callback: MustangEvents[K]): void {
+  off<K extends keyof MustangEvents>(
+    event: K,
+    callback: MustangEvents[K],
+  ): void {
     const callbacks = this.events.get(event);
     if (callbacks) {
       const index = callbacks.indexOf(callback as EventCallback);
@@ -101,11 +113,14 @@ class EventEmitter {
     }
   }
 
-  emit<K extends keyof MustangEvents>(event: K, ...args: Parameters<MustangEvents[K]>): void {
+  emit<K extends keyof MustangEvents>(
+    event: K,
+    ...args: Parameters<MustangEvents[K]>
+  ): void {
     debug(`[EVENT] ${String(event)}:`, ...args);
     const callbacks = this.events.get(event);
     if (callbacks) {
-      callbacks.forEach(cb => cb(...args));
+      callbacks.forEach((cb) => cb(...args));
     }
   }
 
@@ -140,8 +155,14 @@ export class MustangAPI extends EventEmitter {
    * Indices 0-7 correspond to effect slots.
    */
   public effectEnabled: boolean[] = [
-    true, true, true, true,
-    true, true, true, true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
   ];
 
   /**
@@ -174,27 +195,27 @@ export class MustangAPI extends EventEmitter {
   // ==========================================
 
   async connect(): Promise<boolean> {
-    debug('[API CALL] connect()');
+    debug("[API CALL] connect()");
     const connected = await this.protocol.connect();
     if (!connected) {
-      debug('[API] Connection failed');
+      debug("[API] Connection failed");
       return false;
     }
 
-    debug('[API] Connected. Initiating state sync...');
+    debug("[API] Connected. Initiating state sync...");
     // Automatically start monitoring and sync state
     this.startMonitoring();
     await this.refreshState();
     await this.refreshBypassStates();
 
-    this.emit('connected');
+    this.emit("connected");
     return true;
   }
 
   async disconnect(): Promise<void> {
-    debug('[API CALL] disconnect()');
+    debug("[API CALL] disconnect()");
     await this.protocol.disconnect();
-    this.emit('disconnected');
+    this.emit("disconnected");
   }
 
   /**
@@ -213,7 +234,7 @@ export class MustangAPI extends EventEmitter {
       // Format: [DSP_TYPE] ... where DSP_TYPE is 0x05-0x09
       // byte[0] itself IS the DSP type for live hardware changes
       if (b0 >= DspType.AMP && b0 <= DspType.REVERB) {
-        const type = data[0] as DspType;  // byte[0] is the DSP type
+        const type = data[0] as DspType; // byte[0] is the DSP type
         const slot = data[13] || 0;
 
         // Update the correct buffer in 'this.state'
@@ -224,29 +245,32 @@ export class MustangAPI extends EventEmitter {
           this.state[DspType.AMP][32 + paramIndex] = paramValue;
           const modelId = this.getAmpModelId();
           const knobs = this.getAmpKnobs();
-          this.emit('amp-changed', modelId, knobs);
+          this.emit("amp-changed", modelId, knobs);
         } else {
           // Hardware changes for effects use slot mapping
           if (slot >= 0 && slot < 8) {
             this.state.slots[slot][32 + paramIndex] = paramValue;
             const modelId = this.getEffectModelId(slot);
             const knobs = this.getEffectKnobs(slot);
-            this.emit('effect-changed', slot, modelId, knobs);
+            this.emit("effect-changed", slot, modelId, knobs);
           }
         }
 
-        this.emit('state-changed');
+        this.emit("state-changed");
       }
 
       // 2. DATA UPDATES (Software changes & state dumps)
       // 0x1c 0x03 (Param Change) OR 0x1c 0x01 (Preset Load/State Response)
-      else if (b0 === OPCODES.DATA_PACKET && (b1 === OPCODES.DATA_WRITE || b1 === OPCODES.DATA_READ)) {
+      else if (
+        b0 === OPCODES.DATA_PACKET &&
+        (b1 === OPCODES.DATA_WRITE || b1 === OPCODES.DATA_READ)
+      ) {
         const type = data[2];
         const slot = data[18];
 
         // 2a. Handle preset name/selection packets
         // type 0x04 = Preset Info (software triggered or knob turn)
-        // type 0x00 = Mandatory Header / "Apply" Echo if b1=0x03, 
+        // type 0x00 = Mandatory Header / "Apply" Echo if b1=0x03,
         //             OR Hardware Preset Change if b1=0x01.
         if (type === OPCODES.PRESET_INFO || type === 0x00) {
           const presetInfo = MustangProtocol.parsePresetName(data);
@@ -260,25 +284,35 @@ export class MustangAPI extends EventEmitter {
             // If it's Type 0x00 (generic), it might have an empty name which we should ignore.
             // ADDED FIX: Also ensure byte 3 is 0x00. Non-zero values (0x01/0x02) indicate Effect Presets (Mod/Delay knobs)
             // which should NOT be added to the main preset list.
-            if ((type === OPCODES.PRESET_INFO || name.length > 0) && data[3] === 0x00) {
+            if (
+              (type === OPCODES.PRESET_INFO || name.length > 0) &&
+              data[3] === 0x00
+            ) {
               this.presets.set(presetSlot, { slot: presetSlot, name });
-              this.emit('preset-loaded', presetSlot, name);
+              this.emit("preset-loaded", presetSlot, name);
             }
 
             // STABILITY FIX: ONLY refresh if this is a READ (0x01) packet from the hardware knob,
             // and we aren't already in a refresh cycle.
             // This prevents "Apply" echos (b1=0x03) from triggering infinite refresh loops.
-            if (type === 0x00 && b1 === OPCODES.DATA_READ && changed && !this.isRefreshing) {
-              debug(`Hardware Preset Change to ${presetSlot} detected via Read Packet. Refreshing...`);
+            if (
+              type === 0x00 &&
+              b1 === OPCODES.DATA_READ &&
+              changed &&
+              !this.isRefreshing
+            ) {
+              debug(
+                `Hardware Preset Change to ${presetSlot} detected via Read Packet. Refreshing...`,
+              );
               this.isRefreshing = true;
               this.refreshState()
                 .then(() => this.refreshBypassStates())
                 .finally(() => {
                   this.isRefreshing = false;
-                  this.emit('state-changed');
+                  this.emit("state-changed");
                 });
             }
-            this.emit('state-changed');
+            this.emit("state-changed");
           }
 
           if (type === 0x00) return; // Never route Type 0x00 to effect slots (Protects Slot 0)
@@ -286,7 +320,8 @@ export class MustangAPI extends EventEmitter {
 
         // 2b. Handle DSP/Effect Data
         // Valid effect types only: 0x06 (STOMP) to 0x09 (REVERB)
-        const isValidEffectType = type >= DspType.STOMP && type <= DspType.REVERB;
+        const isValidEffectType =
+          type >= DspType.STOMP && type <= DspType.REVERB;
         if (type === DspType.AMP) {
           this.state[DspType.AMP].set(data);
         } else if (isValidEffectType && slot >= 0 && slot < 8) {
@@ -311,14 +346,14 @@ export class MustangAPI extends EventEmitter {
           if (type === DspType.AMP) {
             const modelId = this.getAmpModelId();
             const knobs = this.getAmpKnobs();
-            this.emit('amp-changed', modelId, knobs);
+            this.emit("amp-changed", modelId, knobs);
           } else {
             const modelId = this.getEffectModelId(slot);
             const knobs = this.getEffectKnobs(slot);
-            this.emit('effect-changed', slot, modelId, knobs);
+            this.emit("effect-changed", slot, modelId, knobs);
           }
 
-          this.emit('state-changed');
+          this.emit("state-changed");
         }
       }
 
@@ -332,8 +367,8 @@ export class MustangAPI extends EventEmitter {
           if (slot >= 0 && slot < 8) {
             this.state.slots[slot][22] = enabled ? 0 : 1;
           }
-          this.emit('bypass-toggled', slot, enabled);
-          this.emit('state-changed');
+          this.emit("bypass-toggled", slot, enabled);
+          this.emit("state-changed");
         }
       }
     });
@@ -344,7 +379,7 @@ export class MustangAPI extends EventEmitter {
    * Called automatically by connect() - you don't need to call it manually.
    */
   private async refreshState() {
-    debug('[API] Requesting full state dump...');
+    debug("[API] Requesting full state dump...");
     await this.protocol.requestState();
   }
 
@@ -353,7 +388,7 @@ export class MustangAPI extends EventEmitter {
    * Called automatically by connect() - you don't need to call it manually.
    */
   private async refreshBypassStates(): Promise<void> {
-    debug('[API] Requesting bypass states...');
+    debug("[API] Requesting bypass states...");
     return new Promise<void>(async (resolve) => {
       const pending = new Set([0, 1, 2, 3, 4, 5, 6, 7]); // All effect slots
       const listener = (data: Uint8Array) => {
@@ -411,8 +446,11 @@ export class MustangAPI extends EventEmitter {
 
   async setAmpModelById(modelId: number): Promise<void> {
     debug(`[API CALL] setAmpModelById(modelId: 0x${modelId.toString(16)})`);
-    const model = Object.values(AMP_MODELS).find(m => m.id === modelId);
-    if (!model) throw new Error(`Unknown amp model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
+    const model = Object.values(AMP_MODELS).find((m) => m.id === modelId);
+    if (!model)
+      throw new Error(
+        `Unknown amp model ID: 0x${modelId.toString(16).padStart(4, "0")}`,
+      );
 
     let buffer = getModelDefault(modelId);
     if (!buffer) {
@@ -427,7 +465,7 @@ export class MustangAPI extends EventEmitter {
 
   getAmpModel(): ModelDef | null {
     const modelId = this.getAmpModelId();
-    return Object.values(AMP_MODELS).find(m => m.id === modelId) || null;
+    return Object.values(AMP_MODELS).find((m) => m.id === modelId) || null;
   }
 
   getAmpModelId(): number {
@@ -450,7 +488,7 @@ export class MustangAPI extends EventEmitter {
         knobs.push({
           name,
           value: this.state[DspType.AMP][32 + index],
-          index
+          index,
         });
       }
     });
@@ -480,7 +518,7 @@ export class MustangAPI extends EventEmitter {
       cabinet: buf[49],
       sag: buf[51],
       brightness: buf[52],
-      knobs: this.getAmpKnobs()
+      knobs: this.getAmpKnobs(),
     };
   }
 
@@ -488,7 +526,9 @@ export class MustangAPI extends EventEmitter {
   // HIGH-LEVEL EFFECT CONTROL
   // ==========================================
 
-  private getBufferForSlot(slot: number): { buffer: Uint8Array; type: DspType } | null {
+  private getBufferForSlot(
+    slot: number,
+  ): { buffer: Uint8Array; type: DspType } | null {
     if (slot < 0 || slot > 7) return null;
     const buffer = this.state.slots[slot];
     const type = buffer[2] as DspType;
@@ -496,10 +536,14 @@ export class MustangAPI extends EventEmitter {
   }
 
   async setEffectById(slot: number, modelId: number): Promise<void> {
-    debug(`[API CALL] setEffectById(slot: ${slot}, modelId: 0x${modelId.toString(16)})`);
-    const model = Object.values(EFFECT_MODELS).find(m => m.id === modelId);
+    debug(
+      `[API CALL] setEffectById(slot: ${slot}, modelId: 0x${modelId.toString(16)})`,
+    );
+    const model = Object.values(EFFECT_MODELS).find((m) => m.id === modelId);
     if (!model) {
-      throw new Error(`Unknown effect model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
+      throw new Error(
+        `Unknown effect model ID: 0x${modelId.toString(16).padStart(4, "0")}`,
+      );
     }
 
     if (slot < 0 || slot > 7) throw new Error(`Invalid slot: ${slot}`);
@@ -509,7 +553,9 @@ export class MustangAPI extends EventEmitter {
       if (i === slot) continue; // Skip the slot we're currently setting
       const otherModel = this.getEffectModel(i);
       if (otherModel && otherModel.type === model.type) {
-        throw new Error(`Effect of type ${DspType[model.type]} already exists in slot ${i}`);
+        throw new Error(
+          `Effect of type ${DspType[model.type]} already exists in slot ${i}`,
+        );
       }
     }
 
@@ -533,9 +579,13 @@ export class MustangAPI extends EventEmitter {
     this.effectEnabled[slot] = enabled;
     slotInfo.buffer[22] = enabled ? 0 : 1;
 
-    const packet = this.protocol.createBypassPacket(slot, enabled, slotInfo.type);
+    const packet = this.protocol.createBypassPacket(
+      slot,
+      enabled,
+      slotInfo.type,
+    );
     await this.protocol.sendPacket(packet);
-    this.emit('state-changed');
+    this.emit("state-changed");
   }
 
   async swapEffects(slotA: number, slotB: number): Promise<void> {
@@ -553,7 +603,9 @@ export class MustangAPI extends EventEmitter {
     const typeA = bufA[2];
     const typeB = bufB[2];
 
-    debug(`[API] Swapping effects: Slot ${slotA} (Type 0x${typeA.toString(16)}) <-> Slot ${slotB} (Type 0x${typeB.toString(16)})`);
+    debug(
+      `[API] Swapping effects: Slot ${slotA} (Type 0x${typeA.toString(16)}) <-> Slot ${slotB} (Type 0x${typeB.toString(16)})`,
+    );
 
     // 2. Clear both slots first (Safe handling to avoid singleton collisions)
     // We do this by sending "Empty" buffers to both.
@@ -561,7 +613,8 @@ export class MustangAPI extends EventEmitter {
     await this.clearEffect(slotB);
 
     // 3. Prepare Buffer A for Slot B
-    if (typeA !== 0) { // If A was not empty
+    if (typeA !== 0) {
+      // If A was not empty
       bufA[18] = slotB; // Update slot index
       bufA[22] = enabledA ? 0 : 1; // Sync bypass
       this.effectEnabled[slotB] = enabledA; // Swap enablement
@@ -572,7 +625,8 @@ export class MustangAPI extends EventEmitter {
     }
 
     // 4. Prepare Buffer B for Slot A
-    if (typeB !== 0) { // If B was not empty
+    if (typeB !== 0) {
+      // If B was not empty
       bufB[18] = slotA; // Update slot index
       bufB[22] = enabledB ? 0 : 1; // Sync bypass
       this.effectEnabled[slotA] = enabledB; // Swap enablement
@@ -608,7 +662,7 @@ export class MustangAPI extends EventEmitter {
     const modelId = (slotInfo.buffer[16] << 8) | slotInfo.buffer[17];
     if (modelId === 0) return null;
 
-    return Object.values(EFFECT_MODELS).find(m => m.id === modelId) || null;
+    return Object.values(EFFECT_MODELS).find((m) => m.id === modelId) || null;
   }
 
   getEffectModelId(slot: number): number {
@@ -617,14 +671,19 @@ export class MustangAPI extends EventEmitter {
     return (slotInfo.buffer[16] << 8) | slotInfo.buffer[17];
   }
 
-  async setEffectKnob(slot: number, index: number, value: number): Promise<void> {
-    debug(`[API CALL] setEffectKnob(slot: ${slot}, index: ${index}, value: ${value})`);
+  async setEffectKnob(
+    slot: number,
+    index: number,
+    value: number,
+  ): Promise<void> {
+    debug(
+      `[API CALL] setEffectKnob(slot: ${slot}, index: ${index}, value: ${value})`,
+    );
     const slotInfo = this.getBufferForSlot(slot);
-    if (!slotInfo || (slotInfo.type as number) === 0) throw new Error(`No effect in slot ${slot}`);
+    if (!slotInfo || (slotInfo.type as number) === 0)
+      throw new Error(`No effect in slot ${slot}`);
     await this.setParameter(slotInfo.type, slot, 32 + index, value);
   }
-
-
 
   getEffectKnobs(slot: number): KnobInfo[] {
     const model = this.getEffectModel(slot);
@@ -639,7 +698,7 @@ export class MustangAPI extends EventEmitter {
         knobs.push({
           name,
           value: slotInfo.buffer[32 + index],
-          index
+          index,
         });
       }
     });
@@ -666,21 +725,23 @@ export class MustangAPI extends EventEmitter {
 
   async setCabinetById(id: number): Promise<void> {
     debug(`[API CALL] setCabinetById(id: 0x${id.toString(16)})`);
-    const cabinet = CABINET_MODELS.find(c => c.id === id);
+    const cabinet = CABINET_MODELS.find((c) => c.id === id);
     if (!cabinet) {
-      throw new Error(`Unknown cabinet ID: 0x${id.toString(16).padStart(2, '0')}`);
+      throw new Error(
+        `Unknown cabinet ID: 0x${id.toString(16).padStart(2, "0")}`,
+      );
     }
 
     const buffer = this.state[DspType.AMP];
     buffer[49] = id;
 
     await this.sendFullBuffer(DspType.AMP, 0, buffer);
-    this.emit('cabinet-changed', id);
+    this.emit("cabinet-changed", id);
   }
 
   getCabinet(): { id: number; name: string } | null {
     const id = this.state[DspType.AMP][49];
-    return CABINET_MODELS.find(c => c.id === id) || null;
+    return CABINET_MODELS.find((c) => c.id === id) || null;
   }
 
   getCabinetId(): number {
@@ -721,11 +782,18 @@ export class MustangAPI extends EventEmitter {
     const applyPacket = this.protocol.createApplyPacket(type);
     await this.protocol.sendPacket(applyPacket);
 
-    this.emit('state-changed');
+    this.emit("state-changed");
   }
 
-  async setParameter(type: DspType, slot: number, byteIndex: number, value: number) {
-    debug(`[API CALL] setParameter(type: 0x${type.toString(16)}, slot: ${slot}, byteIndex: ${byteIndex}, value: ${value})`);
+  async setParameter(
+    type: DspType,
+    slot: number,
+    byteIndex: number,
+    value: number,
+  ) {
+    debug(
+      `[API CALL] setParameter(type: 0x${type.toString(16)}, slot: ${slot}, byteIndex: ${byteIndex}, value: ${value})`,
+    );
     let buffer: Uint8Array;
     if (type === DspType.AMP) {
       buffer = this.state[DspType.AMP];
@@ -738,6 +806,4 @@ export class MustangAPI extends EventEmitter {
     buffer[byteIndex] = value;
     await this.sendFullBuffer(type, slot, buffer);
   }
-
-
 }

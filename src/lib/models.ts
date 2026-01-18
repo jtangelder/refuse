@@ -1,23 +1,23 @@
 export enum DspType {
-    AMP = 0x05,
-    STOMP = 0x06,
-    MOD = 0x07,
-    DELAY = 0x08,
-    REVERB = 0x09,
+  AMP = 0x05,
+  STOMP = 0x06,
+  MOD = 0x07,
+  DELAY = 0x08,
+  REVERB = 0x09,
 }
 
 export interface ModelDef {
-    id: number;
-    name: string;
-    type: DspType;
-    knobs: string[];
+  id: number;
+  name: string;
+  type: DspType;
+  knobs: string[];
 }
 
 const m = (
-    id: number,
-    name: string,
-    type: DspType,
-    knobs: string[]
+  id: number,
+  name: string,
+  type: DspType,
+  knobs: string[],
 ): ModelDef => ({ id, name, type, knobs });
 
 // prettier-ignore
