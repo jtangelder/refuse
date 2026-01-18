@@ -1,9 +1,12 @@
 import { ChangeDetectorRef, Component, inject, Input } from "@angular/core";
 import type { MustangAPI } from "../lib/api";
 import { FuseLoader } from "../lib/loader";
+import { CommonModule } from "@angular/common";
 
 @Component({
   selector: "app-sidebar",
+  standalone: true,
+  imports: [CommonModule],
   template: `
     <div class="sidebar">
       <header>
@@ -56,7 +59,7 @@ export class SidebarComponent {
 
   protected presetSaveName: string = "";
 
-  constructor() {
+  ngOnInit() {
     this.api.on("connected", () => {
       if (this.api.currentPresetSlot !== null) {
         this.presetSaveName =
