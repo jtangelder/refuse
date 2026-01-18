@@ -1,21 +1,15 @@
-import { ChangeDetectorRef, Component, inject, Input } from "@angular/core";
-import {
-  AMP_MODELS,
-  CABINET_MODELS,
-  DspType,
-  EFFECT_MODELS,
-  MustangAPI,
-} from "../lib/api";
+import { Component, inject } from "@angular/core";
+import { AMP_MODELS, CABINET_MODELS, DspType, EFFECT_MODELS } from "../lib/api";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { KnobComponent } from "./knob";
+import { MustangService } from "../mustang_service";
 
 @Component({
   selector: "app-dashboard",
   standalone: true,
   imports: [CommonModule, FormsModule, KnobComponent],
-  template: ` <main class="dashboard">
-    <!-- Signal Chain Status -->
+  template: ` <!-- Signal Chain Status -->
     <div class="signal-chain-strip">
       <div class="amplifier">Amplifier</div>
       <div
@@ -193,13 +187,10 @@ import { KnobComponent } from "./knob";
           </div>
         </ng-template>
       </section>
-    </div>
-  </main>`,
+    </div>`,
 })
 export class DashboardComponent {
-  @Input() api!: MustangAPI;
-
-  private readonly changeDetector = inject(ChangeDetectorRef);
+  protected readonly api = inject(MustangService);
 
   protected activeSlot: number | null = null;
 

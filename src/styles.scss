@@ -11,7 +11,6 @@
 }
 
 body {
-  font-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -113,7 +112,7 @@ input[type="number"] {
   height: 100vh;
 }
 
-.sidebar {
+app-sidebar {
   display: flex;
   flex-direction: column;
   background: #111;
@@ -168,7 +167,7 @@ input[type="number"] {
   }
 }
 
-.welcome {
+app-welcome {
   flex: 1;
   overflow: auto;
   padding: 40px 20px;
@@ -213,7 +212,7 @@ input[type="number"] {
   }
 }
 
-.dashboard {
+app-dashboard {
   padding: 20px;
   flex: 1;
   overflow: auto;

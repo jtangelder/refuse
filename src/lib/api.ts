@@ -71,6 +71,7 @@ export interface Preset {
 type EventCallback = (...args: any[]) => void;
 
 export type MustangEvents = {
+  connecting: () => void;
   connected: () => void;
   disconnected: () => void;
   "preset-loaded": (slot: number, name: string) => void;
@@ -97,7 +98,7 @@ class EventEmitter {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
-    this.events.get(event)!.push(callback as EventCallback);
+    this.events.get(event)!.push(callback);
   }
 
   off<K extends keyof MustangEvents>(
@@ -106,7 +107,7 @@ class EventEmitter {
   ): void {
     const callbacks = this.events.get(event);
     if (callbacks) {
-      const index = callbacks.indexOf(callback as EventCallback);
+      const index = callbacks.indexOf(callback);
       if (index > -1) {
         callbacks.splice(index, 1);
       }
@@ -134,11 +135,6 @@ class EventEmitter {
 export class MustangAPI extends EventEmitter {
   private protocol: MustangProtocol;
 
-  /**
-   * SINGLE SOURCE OF TRUTH (Reactive State)
-   * UI components should read directly from here.
-   * Hardware changes write directly to here.
-   */
   /**
    * SINGLE SOURCE OF TRUTH (Reactive State)
    * UI components should read directly from here.
@@ -180,6 +176,10 @@ export class MustangAPI extends EventEmitter {
   constructor() {
     super();
     this.protocol = new MustangProtocol();
+  }
+
+  public get isSupported(): boolean {
+    return this.protocol.isSupported;
   }
 
   public get isConnected(): boolean {

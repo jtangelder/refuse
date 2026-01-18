@@ -1,61 +1,64 @@
-import { ChangeDetectorRef, Component, inject, Input } from "@angular/core";
-import type { MustangAPI } from "../lib/api";
-import { FuseLoader } from "../lib/loader";
+import { ChangeDetectorRef, Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { MustangService } from "../mustang_service";
 
 @Component({
   selector: "app-sidebar",
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="sidebar">
-      <header>
-        <h1>ReFUSE</h1>
-        <div class="connection">
-          <button *ngIf="!api.isConnected" (click)="connect()" class="success">
-            Connect Amp
-          </button>
-          <button *ngIf="api.isConnected" (click)="disconnect()" class="danger">
-            Disconnect
-          </button>
-        </div>
-      </header>
-
-      <div class="presets">
-        <h3>Presets</h3>
-        <ul>
-          <li *ngFor="let i of range(24)">
-            <button
-              (click)="changePreset(i)"
-              [class.active]="api.currentPresetSlot === i"
-            >
-              <span class="slot-num">{{ i | number: "2.0" }}:</span>
-              <span>{{ api.presets.get(i)?.name || "Preset " + i }}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-      <hr />
-      <div class="preset-controls">
-        <button (click)="savePreset()" class="secondary">Save preset</button>
-        <button class="secondary" (click)="fileInput.click()">
-          Import preset
+    <header>
+      <h1>ReFUSE</h1>
+      <div class="connection">
+        <button
+          *ngIf="!api.isConnected"
+          (click)="api.connect()"
+          class="success"
+        >
+          Connect Amp
         </button>
-        <input
-          #fileInput
-          type="file"
-          (change)="importFusePreset($event)"
-          style="display: none;"
-        />
+        <button
+          *ngIf="api.isConnected"
+          (click)="api.disconnect()"
+          class="danger"
+        >
+          Disconnect
+        </button>
       </div>
+    </header>
+
+    <div class="presets">
+      <h3>Presets ({{ api.currentPresetSlot }})</h3>
+      <ul>
+        <li *ngFor="let i of range(24)">
+          <button
+            (click)="changePreset(i)"
+            [class.active]="api.currentPresetSlot === i"
+          >
+            <span class="slot-num">{{ i | number: "2.0" }}:</span>
+            <span>{{ api.presets.get(i)?.name || "Preset " + i }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+    <hr />
+    <div class="preset-controls">
+      <button (click)="savePreset()" class="secondary">Save preset</button>
+      <button class="secondary" (click)="fileInput.click()">
+        Import preset
+      </button>
+      <input
+        #fileInput
+        type="file"
+        (change)="importFusePreset($event)"
+        style="display: none;"
+      />
     </div>
   `,
 })
 export class SidebarComponent {
-  @Input() api!: MustangAPI;
-
-  protected loader = new FuseLoader(this.api);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  protected readonly api = inject(MustangService);
 
   protected presetSaveName: string = "";
 
@@ -69,7 +72,8 @@ export class SidebarComponent {
 
     this.api.on("preset-loaded", (slot, name) => {
       this.presetSaveName = name;
-      this.changeDetector.markForCheck();
+      console.log(slot, this.api.currentPresetSlot);
+      this.changeDetector.detectChanges();
     });
   }
 
@@ -92,7 +96,7 @@ export class SidebarComponent {
     const file = event.target.files[0];
     if (!file) return;
     const text = await file.text();
-    await this.loader.loadPreset(text);
+    await this.api.loadPresetFile(text);
   }
 
   range(n: number) {
