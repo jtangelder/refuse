@@ -13,6 +13,9 @@
     "noEmit": false,
     "composite": false
   },
+  "angularCompilerOptions": {
+    "strictTemplates": true
+  },
   "include": ["src"],
   "exclude": ["**/*.test.ts"]
 }

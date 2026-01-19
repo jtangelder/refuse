@@ -41,7 +41,6 @@ import { MustangService } from "../mustang_service";
         </li>
       </ul>
     </div>
-    <hr />
     <div class="preset-controls">
       <button (click)="savePreset()" class="secondary">Save preset</button>
       <button class="secondary" (click)="fileInput.click()">

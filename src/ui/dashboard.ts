@@ -1,12 +1,12 @@
-import { Component, inject } from "@angular/core";
-import { AMP_MODELS, CABINET_MODELS, DspType, EFFECT_MODELS } from "../lib/api";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { KnobComponent } from "./knob";
-import { MustangService } from "../mustang_service";
+import { Component, inject } from '@angular/core';
+import { AMP_MODELS, CABINET_MODELS, DspType, EFFECT_MODELS } from '../lib/api';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { KnobComponent } from './knob';
+import { MustangService } from '../mustang_service';
 
 @Component({
-  selector: "app-dashboard",
+  selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule, KnobComponent],
   template: ` <!-- Signal Chain Status -->
@@ -26,7 +26,7 @@ import { MustangService } from "../mustang_service";
             {{ getFamilyLabel(effect.type) }}
           </div>
           <div>{{ effect.model }}</div>
-          <div>{{ effect.enabled ? "● ACTIVE" : "○ BYPASSED" }}</div>
+          <div>{{ effect.enabled ? '● ACTIVE' : '○ BYPASSED' }}</div>
         </div>
         <ng-template #emptySlot>
           <div>Empty</div>
@@ -39,10 +39,7 @@ import { MustangService } from "../mustang_service";
       <section class="card">
         <header>
           <h3>Amplifier</h3>
-          <select
-            [ngModel]="getAmpSettings()?.modelId"
-            (ngModelChange)="changeAmp($event)"
-          >
+          <select [ngModel]="getAmpSettings()?.modelId" (ngModelChange)="changeAmp($event)">
             @for (model of ampModels; track model.id) {
               <option [value]="model.id">{{ model.name }}</option>
             }
@@ -63,10 +60,7 @@ import { MustangService } from "../mustang_service";
 
         <div>
           <label>Cabinet</label>
-          <select
-            [ngModel]="api.getCabinetId()"
-            (ngModelChange)="changeCabinet($event)"
-          >
+          <select [ngModel]="api.getCabinetId()" (ngModelChange)="changeCabinet($event)">
             @for (cab of cabModels; track cab.id) {
               <option [value]="cab.id">{{ cab.name }}</option>
             }
@@ -92,7 +86,7 @@ import { MustangService } from "../mustang_service";
       <!-- Slot Control -->
       <section class="card">
         <header>
-          <h3>Slot {{ activeSlot !== null ? activeSlot : "" }}</h3>
+          <h3>Slot {{ activeSlot !== null ? activeSlot : '' }}</h3>
           <div *ngIf="activeSlot !== null">
             <select
               [ngModel]="getEffectSettings(activeSlot)?.modelId || 0"
@@ -127,12 +121,8 @@ import { MustangService } from "../mustang_service";
           <div *ngIf="getEffectSettings(activeSlot) as effect">
             <div>
               <label>
-                <input
-                  type="checkbox"
-                  [ngModel]="effect.enabled"
-                  (ngModelChange)="toggleEffect(activeSlot, $event)"
-                />
-                <span>{{ effect.enabled ? "Active" : "Bypassed" }}</span>
+                <input type="checkbox" [ngModel]="effect.enabled" (ngModelChange)="toggleEffect(activeSlot, $event)" />
+                <span>{{ effect.enabled ? 'Active' : 'Bypassed' }}</span>
               </label>
               <div>Type: 0x{{ effect.type.toString(16) }}</div>
             </div>
@@ -143,9 +133,7 @@ import { MustangService } from "../mustang_service";
                   <app-knob
                     [name]="knob.name"
                     [value]="knob.value"
-                    (valueChange)="
-                      changeEffectKnob(activeSlot, knob.index, $event)
-                    "
+                    (valueChange)="changeEffectKnob(activeSlot, knob.index, $event)"
                   ></app-knob>
                 </div>
               }
@@ -164,11 +152,7 @@ import { MustangService } from "../mustang_service";
                     {{ i }}
                   </button>
                 }
-                <button
-                  (click)="clearSlot(activeSlot)"
-                  class="secondary"
-                  style="padding: 4px 8px; font-size: 0.8rem;"
-                >
+                <button (click)="clearSlot(activeSlot)" class="secondary" style="padding: 4px 8px; font-size: 0.8rem;">
                   Clear
                 </button>
               </div>
@@ -181,10 +165,7 @@ import { MustangService } from "../mustang_service";
           </div>
         </div>
         <ng-template #noActiveSlot>
-          <div>
-            Click a slot in the signal chain above to view and edit its
-            settings.
-          </div>
+          <div>Click a slot in the signal chain above to view and edit its settings.</div>
         </ng-template>
       </section>
     </div>`,
@@ -194,17 +175,18 @@ export class DashboardComponent {
 
   protected activeSlot: number | null = null;
 
+  protected DspType = DspType;
   protected ampModels = Object.values(AMP_MODELS);
   protected cabModels = CABINET_MODELS;
   protected effectModels = Object.values(EFFECT_MODELS);
 
   protected advancedSettings: { key: string; label: string }[] = [
-    { key: "bias", label: "Bias" },
-    { key: "noiseGate", label: "Noise Gate" },
-    { key: "threshold", label: "Gate Thresh" },
-    { key: "sag", label: "Sag" },
-    { key: "brightness", label: "Brightness" },
-    { key: "depth", label: "Depth" },
+    { key: 'bias', label: 'Bias' },
+    { key: 'noiseGate', label: 'Noise Gate' },
+    { key: 'threshold', label: 'Gate Thresh' },
+    { key: 'sag', label: 'Sag' },
+    { key: 'brightness', label: 'Brightness' },
+    { key: 'depth', label: 'Depth' },
   ];
 
   async clearSlot(slot: number) {
@@ -271,36 +253,36 @@ export class DashboardComponent {
   }
 
   getModelsForFamily(type: DspType) {
-    return this.effectModels.filter((m) => m.type === type);
+    return this.effectModels.filter(m => m.type === type);
   }
 
   getFamilyLabel(type: DspType) {
     switch (type) {
       case DspType.STOMP:
-        return "STOMP";
+        return 'STOMP';
       case DspType.MOD:
-        return "MOD";
+        return 'MOD';
       case DspType.DELAY:
-        return "DELAY";
+        return 'DELAY';
       case DspType.REVERB:
-        return "REVERB";
+        return 'REVERB';
       default:
-        return "UNKNOWN";
+        return 'UNKNOWN';
     }
   }
 
   getFamilyColor(type: DspType) {
     switch (type) {
       case DspType.STOMP:
-        return "#e74c3c";
+        return '#e74c3c';
       case DspType.MOD:
-        return "#3498db";
+        return '#3498db';
       case DspType.DELAY:
-        return "#f1c40f";
+        return '#f1c40f';
       case DspType.REVERB:
-        return "#2ecc71";
+        return '#2ecc71';
       default:
-        return "#444";
+        return '#444';
     }
   }
 
