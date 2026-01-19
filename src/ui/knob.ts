@@ -1,20 +1,14 @@
-import { Component, Input, Output, EventEmitter } from "@angular/core";
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: "app-knob",
+  selector: 'app-knob',
   standalone: true,
   template: `
     <label>
       <span class="name">{{ name }}</span>
       <span class="value">{{ toPercent(value) }}</span>
     </label>
-    <input
-      type="range"
-      min="0"
-      max="255"
-      [value]="value"
-      (input)="onInput($event)"
-    />
+    <input type="range" min="0" max="255" [value]="value" (input)="onInput($event)" />
   `,
 })
 export class KnobComponent {
@@ -26,8 +20,24 @@ export class KnobComponent {
     return Math.round(value / 2.55);
   }
 
-  onInput(event: Event) {
+  // Don't flood the API with knob changes
+  onInput = throttle(this.emitValueChange.bind(this), 50);
+
+  private emitValueChange(event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this.valueChange.emit(Number(value));
   }
+}
+
+function throttle<T extends (...args: any[]) => any>(func: T, ms: number) {
+  let inThrottle: boolean;
+  return function (...args: Parameters<T>) {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, ms);
+    }
+  };
 }

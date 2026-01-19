@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { MustangAPI } from "./api";
-import { MustangProtocol } from "./protocol";
-import { DspType, AMP_MODELS, EFFECT_MODELS } from "./models";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { MustangAPI } from './api';
+import { MustangProtocol } from './protocol';
+import { DspType, AMP_MODELS, EFFECT_MODELS } from './models';
 
 // Mock the protocol layer
-vi.mock("./protocol", () => {
+vi.mock('./protocol', () => {
   return {
     OPCODES: {
       DATA_PACKET: 0x1c,
@@ -30,11 +30,9 @@ vi.mock("./protocol", () => {
           this.listeners.push(cb);
         });
 
-        this.removeEventListener = vi
-          .fn()
-          .mockImplementation((cb: Function) => {
-            this.listeners = this.listeners.filter((f: any) => f !== cb);
-          });
+        this.removeEventListener = vi.fn().mockImplementation((cb: Function) => {
+          this.listeners = this.listeners.filter((f: any) => f !== cb);
+        });
 
         this.emitReport = (data: Uint8Array) => {
           this.listeners.forEach((cb: any) => cb(data));
@@ -47,20 +45,16 @@ vi.mock("./protocol", () => {
         this.sendPacket = vi.fn().mockResolvedValue(undefined);
         this.createApplyPacket = vi.fn().mockReturnValue(new Uint8Array(64));
         this.createBypassPacket = vi.fn().mockReturnValue(new Uint8Array(64));
-        this.createPresetSavePacket = vi
-          .fn()
-          .mockReturnValue(new Uint8Array(64));
-        this.createPresetLoadPacket = vi
-          .fn()
-          .mockReturnValue(new Uint8Array(64));
+        this.createPresetSavePacket = vi.fn().mockReturnValue(new Uint8Array(64));
+        this.createPresetLoadPacket = vi.fn().mockReturnValue(new Uint8Array(64));
       });
 
       // Add static methods to the constructor
       (Mock as any).parsePresetName = (data: Uint8Array) => {
-        if (data[2] !== 0x04) return null;
+        if (data[2] !== 0x04 && data[2] !== 0x00) return null;
         const slot = data[4];
         const nameBytes = data.slice(16, 48);
-        let name = "";
+        let name = '';
         for (const b of nameBytes) {
           if (b === 0) break;
           name += String.fromCharCode(b);
@@ -77,10 +71,9 @@ vi.mock("./protocol", () => {
           knobs: Array.from(data.slice(32, 64)),
         };
       };
-      (Mock as any).isBypassResponse = (data: Uint8Array) =>
-        data[0] === 0x19 && data[1] === 0xc3;
+      (Mock as any).isBypassResponse = (data: Uint8Array) => data[0] === 0x19 && data[1] === 0xc3;
       (Mock as any).decodeString = (bytes: Uint8Array) => {
-        let s = "";
+        let s = '';
         for (const b of bytes) {
           if (b === 0) break;
           s += String.fromCharCode(b);
@@ -88,16 +81,14 @@ vi.mock("./protocol", () => {
         return s;
       };
       (Mock as any).isPresetNamePacket = (data: Uint8Array) =>
-        data[0] === 0x1c &&
-        data[1] === 0x01 &&
-        (data[2] === 0x04 || data[2] === 0x00);
+        data[0] === 0x1c && data[1] === 0x01 && (data[2] === 0x04 || data[2] === 0x00);
 
       return Mock;
     })(),
   };
 });
 
-describe("MustangAPI", () => {
+describe('MustangAPI', () => {
   let api: MustangAPI;
 
   beforeEach(() => {
@@ -109,10 +100,10 @@ describe("MustangAPI", () => {
     vi.useRealTimers();
   });
 
-  describe("High-level Amp Control", () => {
-    it("should update local state when setting amp model", async () => {
+  describe('High-level Amp Control', () => {
+    it('should update local state when setting amp model', async () => {
       const modelName = "'57 Deluxe";
-      const model = Object.values(AMP_MODELS).find((m) => m.name === modelName);
+      const model = Object.values(AMP_MODELS).find(m => m.name === modelName);
 
       await api.setAmpModelById(model!.id);
 
@@ -120,7 +111,7 @@ describe("MustangAPI", () => {
       expect(api.getAmpModelId()).toBe(model!.id);
     });
 
-    it("should calculate amp knobs correctly from state", () => {
+    it('should calculate amp knobs correctly from state', () => {
       // Manually set some state
       api.state[DspType.AMP][16] = 0x67; // '57 Deluxe modelId (0x6700)
       api.state[DspType.AMP][17] = 0x00;
@@ -128,50 +119,40 @@ describe("MustangAPI", () => {
       api.state[DspType.AMP][33] = 100; // Gain
 
       const knobs = api.getAmpKnobs();
-      expect(knobs.find((k) => k.name === "Vol")?.value).toBe(200);
-      expect(knobs.find((k) => k.name === "Gain")?.value).toBe(100);
+      expect(knobs.find(k => k.name === 'Vol')?.value).toBe(200);
+      expect(knobs.find(k => k.name === 'Gain')?.value).toBe(100);
     });
 
-    it("should set cabinet model correctly", async () => {
+    it('should set cabinet model correctly', async () => {
       await api.setCabinetById(0x02); // 4x10 '59 Bassman
 
       expect(api.state[DspType.AMP][49]).toBe(0x02);
     });
 
-    it("should throw error for unknown cabinet ID", async () => {
-      await expect(api.setCabinetById(0xff)).rejects.toThrow(
-        /Unknown cabinet ID/,
-      );
+    it('should throw error for unknown cabinet ID', async () => {
+      await expect(api.setCabinetById(0xff)).rejects.toThrow(/Unknown cabinet ID/);
     });
   });
 
-  describe("High-level Effect Control", () => {
-    it("should manage effect slots correctly", async () => {
-      const model = Object.values(EFFECT_MODELS).find(
-        (m) => m.name === "Overdrive",
-      );
+  describe('High-level Effect Control', () => {
+    it('should manage effect slots correctly', async () => {
+      const model = Object.values(EFFECT_MODELS).find(m => m.name === 'Overdrive');
       await api.setEffectById(2, model!.id);
 
-      expect(api.getEffectModel(2)?.name).toBe("Overdrive");
+      expect(api.getEffectModel(2)?.name).toBe('Overdrive');
       expect(api.getEffectSettings(2)?.enabled).toBe(true);
     });
 
-    it("should throw error when setting duplicate effect types", async () => {
-      const model = Object.values(EFFECT_MODELS).find(
-        (m) => m.name === "Overdrive",
-      );
+    it('should throw error when setting duplicate effect types', async () => {
+      const model = Object.values(EFFECT_MODELS).find(m => m.name === 'Overdrive');
       await api.setEffectById(0, model!.id);
 
       // Try to set another stomp at slot 1
-      await expect(api.setEffectById(1, model!.id)).rejects.toThrow(
-        /already exists/,
-      );
+      await expect(api.setEffectById(1, model!.id)).rejects.toThrow(/already exists/);
     });
 
-    it("should clear effects", async () => {
-      const model = Object.values(EFFECT_MODELS).find(
-        (m) => m.name === "Overdrive",
-      );
+    it('should clear effects', async () => {
+      const model = Object.values(EFFECT_MODELS).find(m => m.name === 'Overdrive');
       await api.setEffectById(0, model!.id);
       expect(api.getEffectModel(0)).not.toBeNull();
 
@@ -179,52 +160,44 @@ describe("MustangAPI", () => {
       expect(api.getEffectModel(0)).toBeNull();
     });
 
-    it("should throw error for unknown effect identification", () => {
+    it('should throw error for unknown effect identification', () => {
       expect(api.getEffectModel(99)).toBeNull();
       expect(api.getEffectModelId(99)).toBe(0);
     });
 
-    it("should throw error when setting effect with unknown model ID", async () => {
-      await expect(api.setEffectById(0, 0xdead)).rejects.toThrow(
-        /Unknown effect model ID/,
-      );
+    it('should throw error when setting effect with unknown model ID', async () => {
+      await expect(api.setEffectById(0, 0xdead)).rejects.toThrow(/Unknown effect model ID/);
     });
 
-    it("should throw error for invalid slot in effect operations", async () => {
-      await expect(api.setEffectById(9, 0x3c00)).rejects.toThrow(
-        /Invalid slot/,
-      );
+    it('should throw error for invalid slot in effect operations', async () => {
+      await expect(api.setEffectById(9, 0x3c00)).rejects.toThrow(/Invalid slot/);
       await expect(api.clearEffect(9)).rejects.toThrow(/Invalid slot/);
-      await expect(api.swapEffects(0, 9)).rejects.toThrow(
-        /Invalid slot indices/,
-      );
+      await expect(api.swapEffects(0, 9)).rejects.toThrow(/Invalid slot indices/);
     });
 
-    it("should handle setParameter to invalid target", async () => {
-      await expect(api.setParameter(DspType.MOD, -1, 32, 100)).rejects.toThrow(
-        /Invalid parameter target/,
-      );
+    it('should handle setParameter to invalid target', async () => {
+      await expect(api.setParameter(DspType.MOD, -1, 32, 100)).rejects.toThrow(/Invalid parameter target/);
     });
 
-    it("should swap effects between slots", async () => {
+    it('should swap effects between slots', async () => {
       // Setup: OVERDRIVE in slot 0, SINE_FLANGER in slot 2
       await api.setEffectById(0, EFFECT_MODELS.OVERDRIVE.id);
       await api.setEffectById(2, EFFECT_MODELS.SINE_FLANGER.id);
 
-      expect(api.getEffectModel(0)?.name).toBe("Overdrive");
-      expect(api.getEffectModel(2)?.name).toBe("Sine Flanger");
+      expect(api.getEffectModel(0)?.name).toBe('Overdrive');
+      expect(api.getEffectModel(2)?.name).toBe('Sine Flanger');
 
       await api.swapEffects(0, 2);
 
-      expect(api.getEffectModel(0)?.name).toBe("Sine Flanger");
-      expect(api.getEffectModel(2)?.name).toBe("Overdrive");
+      expect(api.getEffectModel(0)?.name).toBe('Sine Flanger');
+      expect(api.getEffectModel(2)?.name).toBe('Overdrive');
     });
   });
 
-  describe("Connection \u0026 Synchronization", () => {
-    it("should sync presets after successful connection", async () => {
+  describe('Connection \u0026 Synchronization', () => {
+    it('should sync presets after successful connection', async () => {
       const presetNameSpy = vi.fn();
-      api.on("preset-loaded", presetNameSpy);
+      api.on('preset-loaded', presetNameSpy);
 
       await api.connect();
       expect(api.isConnected).toBe(true);
@@ -239,9 +212,8 @@ describe("MustangAPI", () => {
       slot0NamePacket[2] = 0x04;
       slot0NamePacket[4] = 0x00; // Slot 0
       // "Brutal Metal II" starts at 16
-      const name = "Brutal Metal II";
-      for (let i = 0; i < name.length; i++)
-        slot0NamePacket[16 + i] = name.charCodeAt(i);
+      const name = 'Brutal Metal II';
+      for (let i = 0; i < name.length; i++) slot0NamePacket[16 + i] = name.charCodeAt(i);
 
       // Simulate real-world preset name packet (Slot 1: Super-Live Album)
       const slot1NamePacket = new Uint8Array(64);
@@ -249,22 +221,86 @@ describe("MustangAPI", () => {
       slot1NamePacket[1] = 0x01;
       slot1NamePacket[2] = 0x04;
       slot1NamePacket[4] = 0x01; // Slot 1
-      const name1 = "Super-Live Album";
-      for (let i = 0; i < name1.length; i++)
-        slot1NamePacket[16 + i] = name1.charCodeAt(i);
+      const name1 = 'Super-Live Album';
+      for (let i = 0; i < name1.length; i++) slot1NamePacket[16 + i] = name1.charCodeAt(i);
 
       // Emit reports
       protocolMock.emitReport(slot0NamePacket);
       protocolMock.emitReport(slot1NamePacket);
 
       // Verify state
-      expect(api.presets.get(0)?.name).toBe("Brutal Metal II");
-      expect(api.presets.get(1)?.name).toBe("Super-Live Album");
-      expect(presetNameSpy).toHaveBeenCalledWith(0, "Brutal Metal II");
-      expect(presetNameSpy).toHaveBeenCalledWith(1, "Super-Live Album");
+      expect(api.presets.get(0)?.name).toBe('Brutal Metal II');
+      expect(api.presets.get(1)?.name).toBe('Super-Live Album');
+      expect(presetNameSpy).toHaveBeenCalledWith(0, 'Brutal Metal II');
+      expect(presetNameSpy).toHaveBeenCalledWith(1, 'Super-Live Album');
     });
 
-    it("should sync full signal chain with multiple effects from real trace", async () => {
+    it('should NOT update currentPresetSlot for effect preset packets', async () => {
+      await api.connect();
+      const protocolMock = (api as any).protocol;
+
+      // 1. Initial state: Slot 5
+      const mainPresetPacket = new Uint8Array(64);
+      mainPresetPacket[0] = 0x1c;
+      mainPresetPacket[1] = 0x01;
+      mainPresetPacket[2] = 0x04;
+      mainPresetPacket[3] = 0x00; // Main preset
+      mainPresetPacket[4] = 0x05; // Slot 5
+      protocolMock.emitReport(mainPresetPacket);
+      expect(api.currentPresetSlot).toBe(5);
+
+      // 2. Effect preset packet (should be ignored for currentPresetSlot)
+      const effectPresetPacket = new Uint8Array(64);
+      effectPresetPacket[0] = 0x1c;
+      effectPresetPacket[1] = 0x01;
+      effectPresetPacket[2] = 0x04;
+      effectPresetPacket[3] = 0x01; // MOD effect preset
+      effectPresetPacket[4] = 11; // Slot 11 (the bug report mentioned)
+      protocolMock.emitReport(effectPresetPacket);
+
+      // Should STILL be 5
+      expect(api.currentPresetSlot).toBe(5);
+    });
+
+    it('should NOT trigger refresh for effect preset packets', async () => {
+      await api.connect();
+      const protocolMock = (api as any).protocol;
+      const refreshSpy = vi.spyOn(api as any, 'refreshState');
+
+      // Set initial main preset
+      const mainPresetPacket = new Uint8Array(64);
+      mainPresetPacket[0] = 0x1c;
+      mainPresetPacket[1] = 0x01;
+      mainPresetPacket[2] = 0x04;
+      mainPresetPacket[3] = 0x00;
+      mainPresetPacket[4] = 0x05;
+      protocolMock.emitReport(mainPresetPacket);
+      refreshSpy.mockClear();
+
+      // Emit effect preset packet (byte 3 = 0x01, type 0x00 is often used for echoes/hardware changes)
+      const effectPacket = new Uint8Array(64);
+      effectPacket[0] = 0x1c;
+      effectPacket[1] = 0x01;
+      effectPacket[2] = 0x00; // Type 0x00 triggers the stability fix check
+      effectPacket[3] = 0x01; // MOD effect preset
+      effectPacket[4] = 0x0b; // Slot 11
+      protocolMock.emitReport(effectPacket);
+
+      expect(refreshSpy).not.toHaveBeenCalled();
+
+      // Emit main preset change (byte 3 = 0x00)
+      const newMainPacket = new Uint8Array(64);
+      newMainPacket[0] = 0x1c;
+      newMainPacket[1] = 0x01;
+      newMainPacket[2] = 0x00;
+      newMainPacket[3] = 0x00;
+      newMainPacket[4] = 0x06;
+      protocolMock.emitReport(newMainPacket);
+
+      expect(refreshSpy).toHaveBeenCalled();
+    });
+
+    it('should sync full signal chain with multiple effects from real trace', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
 
@@ -300,16 +336,16 @@ describe("MustangAPI", () => {
       protocolMock.emitReport(delayPacket);
       protocolMock.emitReport(reverbPacket);
 
-      expect(api.getEffectModel(5)?.name).toBe("Triangle Chorus");
-      expect(api.getEffectModel(6)?.name).toBe("Ducking Delay");
-      expect(api.getEffectModel(7)?.name).toBe("Small Hall");
+      expect(api.getEffectModel(5)?.name).toBe('Triangle Chorus');
+      expect(api.getEffectModel(6)?.name).toBe('Ducking Delay');
+      expect(api.getEffectModel(7)?.name).toBe('Small Hall');
 
       // Other slots should be empty
       expect(api.getEffectModel(0)).toBeNull();
       expect(api.getEffectModel(1)).toBeNull();
     });
 
-    it("should handle singleton migration (hardware moves an effect)", async () => {
+    it('should handle singleton migration (hardware moves an effect)', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
 
@@ -322,7 +358,7 @@ describe("MustangAPI", () => {
       stomp0Packet[17] = 0x00;
       stomp0Packet[18] = 0x00;
       protocolMock.emitReport(stomp0Packet);
-      expect(api.getEffectModel(0)?.name).toBe("Overdrive");
+      expect(api.getEffectModel(0)?.name).toBe('Overdrive');
 
       // 2. Simulate Hardware moving STOMP to Slot 1
       const stomp1Packet = new Uint8Array(64);
@@ -335,14 +371,14 @@ describe("MustangAPI", () => {
       protocolMock.emitReport(stomp1Packet);
 
       // Verify Slot 1 has it, and Slot 0 is now empty
-      expect(api.getEffectModel(1)?.name).toBe("Overdrive");
+      expect(api.getEffectModel(1)?.name).toBe('Overdrive');
       expect(api.getEffectModel(0)).toBeNull();
     });
 
-    it("should ignore apply packet echoes to prevent infinite loops", async () => {
+    it('should ignore apply packet echoes to prevent infinite loops', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
-      const refreshSpy = vi.spyOn(api as any, "refreshState");
+      const refreshSpy = vi.spyOn(api as any, 'refreshState');
 
       // b1 = 0x03 is DATA_WRITE (Software change echo)
       const echoPacket = new Uint8Array(64);
@@ -354,7 +390,7 @@ describe("MustangAPI", () => {
       expect(refreshSpy).not.toHaveBeenCalled();
     });
 
-    it("should sync bypass state from 0x19 reports", async () => {
+    it('should sync bypass state from 0x19 reports', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
 
@@ -370,29 +406,29 @@ describe("MustangAPI", () => {
       bypassReport[4] = 0x02;
 
       // Mock protocol.isBypassResponse and parseBypassResponse since they are used in the real code
-      (protocolMock.constructor as any).isBypassResponse = (data: Uint8Array) =>
-        data[0] === 0x19 && data[1] === 0xc3;
-      (protocolMock.constructor as any).parseBypassResponse = (
-        data: Uint8Array,
-      ) => ({ slot: data[4], enabled: data[3] === 0x00 });
+      (protocolMock.constructor as any).isBypassResponse = (data: Uint8Array) => data[0] === 0x19 && data[1] === 0xc3;
+      (protocolMock.constructor as any).parseBypassResponse = (data: Uint8Array) => ({
+        slot: data[4],
+        enabled: data[3] === 0x00,
+      });
 
       protocolMock.emitReport(bypassReport);
 
       expect(api.getEffectSettings(2)?.enabled).toBe(false);
     });
 
-    it("should test savePreset and getPresetList", async () => {
+    it('should test savePreset and getPresetList', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
 
-      await api.savePreset(1, "New Name");
+      await api.savePreset(1, 'New Name');
       expect(protocolMock.createPresetSavePacket).toHaveBeenCalled();
 
       await api.getPresetList();
       expect(protocolMock.requestState).toHaveBeenCalled();
     });
 
-    it("should handle disconnect", async () => {
+    it('should handle disconnect', async () => {
       await api.connect();
       expect(api.isConnected).toBe(true);
 
@@ -400,7 +436,7 @@ describe("MustangAPI", () => {
       expect(api.isConnected).toBe(false);
     });
 
-    it("should handle refreshBypassStates timeout", async () => {
+    it('should handle refreshBypassStates timeout', async () => {
       vi.useFakeTimers();
       const connectPromise = api.connect();
 
@@ -412,11 +448,11 @@ describe("MustangAPI", () => {
       vi.useRealTimers();
     });
 
-    it("should update state on live hardware knob turn", async () => {
+    it('should update state on live hardware knob turn', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
       const ampChangedSpy = vi.fn();
-      api.on("amp-changed", ampChangedSpy);
+      api.on('amp-changed', ampChangedSpy);
 
       // Pre-requisite: Set an amp model so we have a knob schema
       await api.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
@@ -430,15 +466,15 @@ describe("MustangAPI", () => {
       protocolMock.emitReport(knobPacket);
 
       const knobs = api.getAmpKnobs();
-      expect(knobs.find((k) => k.name === "Vol")?.value).toBe(150);
+      expect(knobs.find(k => k.name === 'Vol')?.value).toBe(150);
       expect(ampChangedSpy).toHaveBeenCalled();
     });
 
-    it("should update state on live hardware effect knob turn", async () => {
+    it('should update state on live hardware effect knob turn', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
       const effectChangedSpy = vi.fn();
-      api.on("effect-changed", effectChangedSpy);
+      api.on('effect-changed', effectChangedSpy);
 
       // Pre-requisite: Set a stomp in slot 2
       await api.setEffectById(2, EFFECT_MODELS.OVERDRIVE.id);
@@ -453,19 +489,15 @@ describe("MustangAPI", () => {
       protocolMock.emitReport(knobPacket);
 
       const knobs = api.getEffectKnobs(2);
-      expect(knobs.find((k) => k.name === "Gain")?.value).toBe(200);
-      expect(effectChangedSpy).toHaveBeenCalledWith(
-        2,
-        EFFECT_MODELS.OVERDRIVE.id,
-        expect.anything(),
-      );
+      expect(knobs.find(k => k.name === 'Gain')?.value).toBe(200);
+      expect(effectChangedSpy).toHaveBeenCalledWith(2, EFFECT_MODELS.OVERDRIVE.id, expect.anything());
     });
   });
 
-  describe("Event System", () => {
-    it("should emit state-changed when parameters are set", async () => {
+  describe('Event System', () => {
+    it('should emit state-changed when parameters are set', async () => {
       const spy = vi.fn();
-      api.on("state-changed", spy);
+      api.on('state-changed', spy);
 
       await api.setAmpKnob(0, 123);
       expect(spy).toHaveBeenCalled();
