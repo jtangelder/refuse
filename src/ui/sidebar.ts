@@ -1,6 +1,6 @@
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MustangService } from '../mustang_service';
+import { FuseService } from '../fuse_service';
 
 @Component({
   selector: 'app-sidebar',
@@ -10,8 +10,8 @@ import { MustangService } from '../mustang_service';
     <header>
       <h1>ReFUSE</h1>
       <div class="connection">
-        <button *ngIf="!api.isConnected" (click)="api.connect()" class="success">Connect Amp</button>
-        <button *ngIf="api.isConnected" (click)="api.disconnect()" class="danger">Disconnect</button>
+        <button *ngIf="!service.connected()" (click)="service.api.connect()" class="success">Connect Amp</button>
+        <button *ngIf="service.connected()" (click)="service.api.disconnect()" class="danger">Disconnect</button>
       </div>
     </header>
 
@@ -19,9 +19,9 @@ import { MustangService } from '../mustang_service';
       <h3>Presets</h3>
       <ul>
         <li *ngFor="let i of range(24)">
-          <button (click)="changePreset(i)" [class.active]="api.currentPresetSlot === i">
+          <button (click)="changePreset(i)" [class.active]="service.currentPresetSlot() === i">
             <span class="slot-num">{{ i + 1 | number: '2.0' }}:</span>
-            <span>{{ api.presets.get(i)?.name || 'Preset ' + (i + 1) }}</span>
+            <span>{{ service.presets().get(i)?.name || 'Preset ' + (i + 1) }}</span>
           </button>
         </li>
       </ul>
@@ -34,42 +34,36 @@ import { MustangService } from '../mustang_service';
   `,
 })
 export class SidebarComponent {
-  private readonly changeDetector = inject(ChangeDetectorRef);
-  protected readonly api = inject(MustangService);
+  protected readonly service = inject(FuseService);
 
-  protected presetSaveName: string = '';
-
-  ngOnInit() {
-    this.api.on('connected', () => {
-      if (this.api.currentPresetSlot !== null) {
-        this.presetSaveName = this.api.presets.get(this.api.currentPresetSlot)?.name || '';
-      }
-    });
-
-    this.api.on('preset-loaded', (slot, name) => {
-      this.presetSaveName = name;
-      console.log(slot, this.api.currentPresetSlot);
-      this.changeDetector.detectChanges();
-    });
-  }
+  private presetSaveName = computed(() => {
+    const slot = this.service.currentPresetSlot();
+    if (slot === null) return '';
+    return this.service.presets().get(slot)?.name || '';
+  });
 
   async changePreset(slot: number) {
-    await this.api.loadPreset(Number(slot));
+    await this.service.api.presets.loadPreset(Number(slot));
   }
 
   async savePreset() {
-    if (this.api.currentPresetSlot === null) return;
-    const name = window.prompt('Enter a name for your preset', this.presetSaveName);
+    const slot = this.service.currentPresetSlot();
+    if (slot === null || slot === undefined) return;
+
+    // We can use the computed signal for default name
+    const currentName = this.presetSaveName();
+
+    const name = window.prompt('Enter a name for your preset', currentName);
     if (!name) return;
-    this.presetSaveName = name;
-    await this.api.savePreset(this.api.currentPresetSlot, this.presetSaveName);
+
+    await this.service.api.presets.savePreset(slot, name);
   }
 
   async importFusePreset(event: any) {
     const file = event.target.files[0];
     if (!file) return;
     const text = await file.text();
-    await this.api.loadPresetFile(text);
+    await this.service.api.presets.loadXml(text);
   }
 
   range(n: number) {

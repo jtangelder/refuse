@@ -1,5 +1,5 @@
-import { FENDER_VID, DspType } from "./models";
-import { debug } from "./helpers";
+import { FENDER_VID, DspType } from './models';
+import { debug } from './helpers';
 
 /**
  * Protocol opcodes used in USB HID communication
@@ -34,7 +34,7 @@ export const OPCODES = {
 /**
  * Low-level protocol handler for Fender Mustang USB HID communication
  */
-export class MustangProtocol {
+export class FuseProtocol {
   private device: any | null = null;
   private sequenceId = 0;
 
@@ -51,7 +51,7 @@ export class MustangProtocol {
    */
   async connect(): Promise<boolean> {
     if (!this.isSupported) {
-      console.error("Connection failed: WebHID is not supported");
+      console.error('Connection failed: WebHID is not supported');
       return false;
     }
 
@@ -68,13 +68,11 @@ export class MustangProtocol {
 
       // Handshake
       await this.sendRaw(new Uint8Array([OPCODES.INIT_1]));
-      await this.sendRaw(
-        new Uint8Array([OPCODES.INIT_2_BYTE1, OPCODES.INIT_2_BYTE2]),
-      );
+      await this.sendRaw(new Uint8Array([OPCODES.INIT_2_BYTE1, OPCODES.INIT_2_BYTE2]));
 
       return true;
     } catch (err) {
-      console.error("Connection failed", err);
+      console.error('Connection failed', err);
       return false;
     }
   }
@@ -95,12 +93,12 @@ export class MustangProtocol {
   addEventListener(callback: (data: Uint8Array) => void): void {
     if (!this.device) return;
 
-    this.device.addEventListener("inputreport", (e: any) => {
+    this.device.addEventListener('inputreport', (e: any) => {
       const data = new Uint8Array(e.data.buffer);
       debug(
         `HID RECV [raw]: [${Array.from(data)
-          .map((b) => "0x" + b.toString(16).padStart(2, "0"))
-          .join(", ")}]`,
+          .map(b => '0x' + b.toString(16).padStart(2, '0'))
+          .join(', ')}]`,
       );
       callback(data);
     });
@@ -111,25 +109,21 @@ export class MustangProtocol {
    */
   removeEventListener(callback: (data: Uint8Array) => void): void {
     if (!this.device) return;
-    this.device.removeEventListener("inputreport", callback);
+    this.device.removeEventListener('inputreport', callback);
   }
 
   /**
    * Request full state dump from amplifier
    */
   async requestState(): Promise<void> {
-    await this.sendRaw(
-      new Uint8Array([OPCODES.REQUEST_STATE, OPCODES.REQUEST_STATE_BYTE2]),
-    );
+    await this.sendRaw(new Uint8Array([OPCODES.REQUEST_STATE, OPCODES.REQUEST_STATE_BYTE2]));
   }
 
   /**
    * Request bypass states for all effect slots
    */
   async requestBypassStates(): Promise<void> {
-    await this.sendRaw(
-      new Uint8Array([OPCODES.REQUEST_BYPASS, OPCODES.REQUEST_BYPASS_BYTE2]),
-    );
+    await this.sendRaw(new Uint8Array([OPCODES.REQUEST_BYPASS, OPCODES.REQUEST_BYPASS_BYTE2]));
   }
 
   /**
@@ -210,11 +204,7 @@ export class MustangProtocol {
   /**
    * Create bypass toggle packet
    */
-  createBypassPacket(
-    slot: number,
-    enabled: boolean,
-    dspType: DspType,
-  ): Uint8Array {
+  createBypassPacket(slot: number, enabled: boolean, dspType: DspType): Uint8Array {
     const packet = new Uint8Array(64);
 
     // Map DspType to family: 0x06 (STOMP) -> 3, 0x07 (MOD) -> 4, etc.
@@ -226,9 +216,7 @@ export class MustangProtocol {
     packet[3] = enabled ? 0x00 : 0x01; // 0=On, 1=Off
     packet[4] = slot;
 
-    debug(
-      `[PROTOCOL] Created Bypass Packet (Slot: ${slot}, Enabled: ${enabled}, Family: ${family})`,
-    );
+    debug(`[PROTOCOL] Created Bypass Packet (Slot: ${slot}, Enabled: ${enabled}, Family: ${family})`);
     return packet;
   }
 
@@ -236,8 +224,8 @@ export class MustangProtocol {
    * Create preset save packet
    */
   createPresetSavePacket(slot: number, name: string): Uint8Array {
-    if (slot < 0 || slot > 23) throw new Error("Slot must be 0-23");
-    if (name.length > 32) throw new Error("Name too long (max 32 chars)");
+    if (slot < 0 || slot > 23) throw new Error('Slot must be 0-23');
+    if (name.length > 32) throw new Error('Name too long (max 32 chars)');
 
     const packet = new Uint8Array(64);
 
@@ -254,9 +242,7 @@ export class MustangProtocol {
     const nameBytes = new TextEncoder().encode(name);
     packet.set(nameBytes, 16);
 
-    debug(
-      `[PROTOCOL] Created Preset Save Packet (Slot: ${slot}, Name: "${name}")`,
-    );
+    debug(`[PROTOCOL] Created Preset Save Packet (Slot: ${slot}, Name: "${name}")`);
     return packet;
   }
 
@@ -264,7 +250,7 @@ export class MustangProtocol {
    * Create preset load packet
    */
   createPresetLoadPacket(slot: number): Uint8Array {
-    if (slot < 0 || slot > 23) throw new Error("Slot must be 0-23");
+    if (slot < 0 || slot > 23) throw new Error('Slot must be 0-23');
 
     const packet = new Uint8Array(64);
 
@@ -291,17 +277,17 @@ export class MustangProtocol {
    * Send raw data to the amplifier
    */
   private async sendRaw(data: Uint8Array): Promise<void> {
-    if (!this.device) throw new Error("Not connected");
+    if (!this.device) throw new Error('Not connected');
 
     try {
       debug(
         `HID SEND [raw]: [${Array.from(data)
-          .map((b) => "0x" + b.toString(16).padStart(2, "0"))
-          .join(", ")}]`,
+          .map(b => '0x' + b.toString(16).padStart(2, '0'))
+          .join(', ')}]`,
       );
       await this.device.sendReport(0, data);
     } catch (e) {
-      console.error("HID Send Error:", e);
+      console.error('HID Send Error:', e);
       throw e;
     }
   }
@@ -347,17 +333,13 @@ export class MustangProtocol {
    * Check if packet is a bypass response
    */
   static isBypassResponse(data: Uint8Array): boolean {
-    return (
-      data[0] === OPCODES.BYPASS_PACKET && data[1] === OPCODES.BYPASS_RESPONSE
-    );
+    return data[0] === OPCODES.BYPASS_PACKET && data[1] === OPCODES.BYPASS_RESPONSE;
   }
 
   /**
    * Parse bypass response
    */
-  static parseBypassResponse(
-    data: Uint8Array,
-  ): { slot: number; enabled: boolean } | null {
+  static parseBypassResponse(data: Uint8Array): { slot: number; enabled: boolean } | null {
     if (!this.isBypassResponse(data)) return null;
 
     const status = data[3]; // 0=On, 1=Off
@@ -383,9 +365,7 @@ export class MustangProtocol {
   /**
    * Parse preset name from packet
    */
-  static parsePresetName(
-    data: Uint8Array,
-  ): { slot: number; name: string } | null {
+  static parsePresetName(data: Uint8Array): { slot: number; name: string } | null {
     if (!this.isPresetNamePacket(data)) return null;
 
     const slot = data[4];

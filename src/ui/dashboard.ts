@@ -1,9 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { AMP_MODELS, CABINET_MODELS, DspType, EFFECT_MODELS } from '../lib/api';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KnobComponent } from './knob';
-import { MustangService } from '../mustang_service';
+import { FuseService } from '../fuse_service';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,12 +16,12 @@ import { MustangService } from '../mustang_service';
         *ngFor="let i of range(8)"
         class="slot"
         [class.active]="activeSlot === i"
-        [class.empty]="!getEffectSettings(i)"
+        [class.empty]="!allEffectSettings()[i]"
         [style.order]="i * 10"
         (click)="activeSlot = i"
       >
         <span class="slot-num">{{ i }}</span>
-        <div *ngIf="getEffectSettings(i) as effect; else emptySlot">
+        <div *ngIf="allEffectSettings()[i] as effect; else emptySlot">
           <div class="badge" [style.background]="getFamilyColor(effect.type)">
             {{ getFamilyLabel(effect.type) }}
           </div>
@@ -39,7 +39,7 @@ import { MustangService } from '../mustang_service';
       <section class="card">
         <header>
           <h3>Amplifier</h3>
-          <select [ngModel]="getAmpSettings()?.modelId" (ngModelChange)="changeAmp($event)">
+          <select [ngModel]="ampSettings()?.modelId" (ngModelChange)="changeAmp($event)">
             @for (model of ampModels; track model.id) {
               <option [value]="model.id">{{ model.name }}</option>
             }
@@ -47,7 +47,7 @@ import { MustangService } from '../mustang_service';
         </header>
 
         <div class="knob-grid">
-          @for (knob of getAmpKnobs(); track knob.name) {
+          @for (knob of ampKnobs(); track knob.name) {
             <div class="knob-control">
               <app-knob
                 [name]="knob.name"
@@ -60,7 +60,7 @@ import { MustangService } from '../mustang_service';
 
         <div>
           <label>Cabinet</label>
-          <select [ngModel]="api.getCabinetId()" (ngModelChange)="changeCabinet($event)">
+          <select [ngModel]="service.amp().cabinetId" (ngModelChange)="changeCabinet($event)">
             @for (cab of cabModels; track cab.id) {
               <option [value]="cab.id">{{ cab.name }}</option>
             }
@@ -74,7 +74,7 @@ import { MustangService } from '../mustang_service';
               <div class="knob-control">
                 <app-knob
                   [name]="setting.label"
-                  [value]="getAmpSettings()?.[setting.key]"
+                  [value]="getAmpSetting(setting.key)"
                   (valueChange)="changeAdvancedSetting(setting.key, $event)"
                 ></app-knob>
               </div>
@@ -89,7 +89,7 @@ import { MustangService } from '../mustang_service';
           <h3>Slot {{ activeSlot !== null ? activeSlot : '' }}</h3>
           <div *ngIf="activeSlot !== null">
             <select
-              [ngModel]="getEffectSettings(activeSlot)?.modelId || 0"
+              [ngModel]="allEffectSettings()[activeSlot]?.modelId || 0"
               (ngModelChange)="assignEffect(activeSlot, $event)"
             >
               <option [value]="0">-- Empty --</option>
@@ -118,7 +118,7 @@ import { MustangService } from '../mustang_service';
         </header>
 
         <div *ngIf="activeSlot !== null; else noActiveSlot">
-          <div *ngIf="getEffectSettings(activeSlot) as effect">
+          <div *ngIf="allEffectSettings()[activeSlot] as effect">
             <div>
               <label>
                 <input type="checkbox" [ngModel]="effect.enabled" (ngModelChange)="toggleEffect(activeSlot, $event)" />
@@ -159,7 +159,7 @@ import { MustangService } from '../mustang_service';
             </div>
           </div>
 
-          <div *ngIf="!getEffectSettings(activeSlot)">
+          <div *ngIf="!allEffectSettings()[activeSlot]">
             <p>Select an effect model above to assign to this slot.</p>
             <p>Note, an effect can only be assigned to one slot at a time.</p>
           </div>
@@ -171,7 +171,7 @@ import { MustangService } from '../mustang_service';
     </div>`,
 })
 export class DashboardComponent {
-  protected readonly api = inject(MustangService);
+  protected readonly service = inject(FuseService);
 
   protected activeSlot: number | null = null;
 
@@ -189,20 +189,38 @@ export class DashboardComponent {
     { key: 'depth', label: 'Depth' },
   ];
 
+  // Computed signals
+  ampSettings = computed(() => {
+    // We access ampState to register dependency
+    this.service.amp();
+    return this.service.api.amp.getSettings() as any;
+  });
+
+  ampKnobs = computed(() => {
+    this.service.amp();
+    return this.service.api.amp.getAmpKnobs();
+  });
+
+  allEffectSettings = computed(() => {
+    this.service.effects(); // Dependency
+    // We map over 0..7
+    return this.range(8).map(i => this.service.api.effects.getSettings(i));
+  });
+
   async clearSlot(slot: number) {
-    await this.api.clearEffect(slot);
+    await this.service.api.effects.clearEffect(slot);
   }
 
   async changeAmp(modelId: any) {
-    await this.api.setAmpModelById(Number(modelId));
+    await this.service.api.amp.setAmpModelById(Number(modelId));
   }
 
   async changeCabinet(id: any) {
-    await this.api.setCabinetById(Number(id));
+    await this.service.api.amp.setCabinetById(Number(id));
   }
 
   async changeAmpKnob(index: number, value: number) {
-    await this.api.setAmpKnob(index, value);
+    await this.service.api.amp.setAmpKnob(index, value);
   }
 
   async changeAdvancedSetting(key: string, value: number) {
@@ -215,41 +233,39 @@ export class DashboardComponent {
       depth: 41,
     };
     const byteIndex = byteIndexMap[key];
-    if (byteIndex) await this.api.setParameter(0x05, 0, byteIndex, value);
+    if (byteIndex) {
+      // Map byte index to knob index (assuming offset 32)
+      const knobIndex = byteIndex - 32;
+      await this.service.api.amp.setAmpKnob(knobIndex, value);
+    }
   }
 
   async assignEffect(slot: number, modelId: any) {
     const id = Number(modelId);
     if (id === 0) {
-      await this.api.clearEffect(slot);
+      await this.service.api.effects.clearEffect(slot);
     } else {
-      await this.api.setEffectById(slot, id);
+      await this.service.api.effects.setEffectById(slot, id);
     }
   }
 
   async toggleEffect(slot: number, enabled: any) {
-    await this.api.setEffectEnabled(slot, enabled);
+    await this.service.api.effects.setEffectEnabled(slot, enabled);
   }
 
   async changeEffectKnob(slot: number, index: number, value: number) {
-    await this.api.setEffectKnob(slot, index, value);
+    await this.service.api.effects.setEffectKnob(slot, index, value);
   }
 
   async swapSlots(slotA: number, slotB: number) {
-    await this.api.swapEffects(slotA, slotB);
+    await this.service.api.effects.swapEffects(slotA, slotB);
     this.activeSlot = slotB; // Follow the effect
   }
 
-  // --- GETTERS ---
-
-  getAmpSettings() {
-    return this.api.getAmpSettings() as any;
-  }
-  getAmpKnobs() {
-    return this.api.getAmpKnobs();
-  }
-  getEffectSettings(slot: number) {
-    return this.api.getEffectSettings(slot);
+  // Helper because getAmpSettings returns any or AmpSettings, and we need keyed access
+  getAmpSetting(key: string): any {
+    const s = this.ampSettings();
+    return s ? s[key] : 0;
   }
 
   getModelsForFamily(type: DspType) {

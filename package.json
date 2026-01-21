@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "deploy": "vitest run && ng deploy --dir=dist/refuse",
     "lint": "eslint src/**/*.ts"

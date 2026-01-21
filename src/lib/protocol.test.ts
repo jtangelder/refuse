@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { MustangProtocol, OPCODES } from "./protocol";
-import { DspType } from "./models";
+import { describe, it, expect } from 'vitest';
+import { FuseProtocol, OPCODES } from './protocol';
+import { DspType } from './models';
 
-describe("MustangProtocol", () => {
-  const protocol = new MustangProtocol();
+describe('FuseProtocol', () => {
+  const protocol = new FuseProtocol();
 
-  describe("Packet Creation", () => {
-    it("should create a correct DSP packet for Amp settings", () => {
+  describe('Packet Creation', () => {
+    it('should create a correct DSP packet for Amp settings', () => {
       const packet = protocol.createDspPacket({
         type: DspType.AMP,
         slot: 0,
@@ -29,7 +29,7 @@ describe("MustangProtocol", () => {
       expect(packet[36]).toBe(75);
     });
 
-    it("should create a correct bypass toggle packet", () => {
+    it('should create a correct bypass toggle packet', () => {
       const packet = protocol.createBypassPacket(2, false, DspType.MOD);
 
       expect(packet[0]).toBe(OPCODES.BYPASS_PACKET);
@@ -39,7 +39,7 @@ describe("MustangProtocol", () => {
       expect(packet[4]).toBe(2); // Slot
     });
 
-    it("should create a correct preset load packet", () => {
+    it('should create a correct preset load packet', () => {
       const packet = protocol.createPresetLoadPacket(10);
 
       expect(packet[0]).toBe(OPCODES.DATA_PACKET);
@@ -48,8 +48,8 @@ describe("MustangProtocol", () => {
       expect(packet[4]).toBe(10); // Slot
     });
 
-    it("should create a correct preset save packet", () => {
-      const name = "My Cool Preset";
+    it('should create a correct preset save packet', () => {
+      const name = 'My Cool Preset';
       const packet = protocol.createPresetSavePacket(5, name);
 
       expect(packet[0]).toBe(OPCODES.DATA_PACKET);
@@ -58,13 +58,13 @@ describe("MustangProtocol", () => {
       expect(packet[4]).toBe(5);
 
       // Name check
-      const decodedName = MustangProtocol.decodeString(packet.slice(16, 48));
+      const decodedName = FuseProtocol.decodeString(packet.slice(16, 48));
       expect(decodedName).toBe(name);
     });
   });
 
-  describe("Static Parsing Methods", () => {
-    it("should parse DSP data correctly", () => {
+  describe('Static Parsing Methods', () => {
+    it('should parse DSP data correctly', () => {
       const data = new Uint8Array(64);
       data[2] = DspType.STOMP;
       data[16] = 0x01;
@@ -74,7 +74,7 @@ describe("MustangProtocol", () => {
       data[32] = 128;
       data[33] = 64;
 
-      const parsed = MustangProtocol.parseDspData(data);
+      const parsed = FuseProtocol.parseDspData(data);
       expect(parsed).not.toBeNull();
       expect(parsed?.type).toBe(DspType.STOMP);
       expect(parsed?.modelId).toBe(0x012a);
@@ -84,57 +84,51 @@ describe("MustangProtocol", () => {
       expect(parsed?.knobs[1]).toBe(64);
     });
 
-    it("should detect and parse bypass response", () => {
+    it('should detect and parse bypass response', () => {
       const data = new Uint8Array(64);
       data[0] = OPCODES.BYPASS_PACKET;
       data[1] = OPCODES.BYPASS_RESPONSE;
       data[3] = 0x00; // On
       data[4] = 1; // Slot
 
-      expect(MustangProtocol.isBypassResponse(data)).toBe(true);
-      const parsed = MustangProtocol.parseBypassResponse(data);
+      expect(FuseProtocol.isBypassResponse(data)).toBe(true);
+      const parsed = FuseProtocol.parseBypassResponse(data);
       expect(parsed?.slot).toBe(1);
       expect(parsed?.enabled).toBe(true);
     });
 
-    it("should decode null-terminated strings", () => {
-      const bytes = new Uint8Array([
-        72, 101, 108, 108, 111, 0, 87, 111, 114, 108, 100,
-      ]);
-      expect(MustangProtocol.decodeString(bytes)).toBe("Hello");
+    it('should decode null-terminated strings', () => {
+      const bytes = new Uint8Array([72, 101, 108, 108, 111, 0, 87, 111, 114, 108, 100]);
+      expect(FuseProtocol.decodeString(bytes)).toBe('Hello');
     });
-    it("should parse preset name from real hardware trace", () => {
+    it('should parse preset name from real hardware trace', () => {
       const rawData = [
-        0x1c, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x42, 0x72, 0x75, 0x74, 0x61, 0x6c, 0x20, 0x4d,
-        0x65, 0x74, 0x61, 0x6c, 0x20, 0x49, 0x49, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
+        0x1c, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x72,
+        0x75, 0x74, 0x61, 0x6c, 0x20, 0x4d, 0x65, 0x74, 0x61, 0x6c, 0x20, 0x49, 0x49, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       ];
       const data = new Uint8Array(rawData);
 
-      expect(MustangProtocol.isPresetNamePacket(data)).toBe(true);
-      const parsed = MustangProtocol.parsePresetName(data);
+      expect(FuseProtocol.isPresetNamePacket(data)).toBe(true);
+      const parsed = FuseProtocol.parsePresetName(data);
       expect(parsed?.slot).toBe(0);
-      expect(parsed?.name).toBe("Brutal Metal II");
+      expect(parsed?.name).toBe('Brutal Metal II');
     });
 
-    it("should parse special character preset name from real hardware trace", () => {
+    it('should parse special character preset name from real hardware trace', () => {
       const rawData = [
-        0x1c, 0x01, 0x04, 0x00, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x57, 0x68, 0x61, 0x74, 0x20, 0x74, 0x68, 0x65,
-        0x20, 0x23, 0x5e, 0x5b, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
+        0x1c, 0x01, 0x04, 0x00, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x57, 0x68,
+        0x61, 0x74, 0x20, 0x74, 0x68, 0x65, 0x20, 0x23, 0x5e, 0x5b, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       ];
       const data = new Uint8Array(rawData);
 
-      expect(MustangProtocol.isPresetNamePacket(data)).toBe(true);
-      const parsed = MustangProtocol.parsePresetName(data);
+      expect(FuseProtocol.isPresetNamePacket(data)).toBe(true);
+      const parsed = FuseProtocol.parsePresetName(data);
       expect(parsed?.slot).toBe(0x13); // 19
-      expect(parsed?.name).toBe("What the #^[!");
+      expect(parsed?.name).toBe('What the #^[!');
     });
   });
 });
