@@ -1,5 +1,5 @@
-import { DspType } from './models';
-import { debug } from './helpers';
+import { DspType } from '../models';
+import { debug } from '../helpers';
 
 /**
  * USB Vendor ID for Fender devices
@@ -39,7 +39,7 @@ export const OPCODES = {
 /**
  * Low-level protocol handler for Fender Mustang USB HID communication
  */
-export class FuseProtocol {
+export class Protocol {
   private device: any | null = null;
   private sequenceId = 0;
 

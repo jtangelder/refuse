@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FuseAPI } from './api';
-import { EFFECT_MODELS } from './models';
+import { FuseAPI } from '../index';
+import { EFFECT_MODELS } from '../models';
 
 // Mock Protocol to inject raw packets
-vi.mock('./protocol', () => {
+vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
       DATA_PACKET: 0x1c,
@@ -11,7 +11,7 @@ vi.mock('./protocol', () => {
       DATA_READ: 0x01,
       PRESET_INFO: 0x04,
     },
-    FuseProtocol: class MockProtocol {
+    Protocol: class MockProtocol {
       listeners: Function[] = [];
       connect = vi.fn().mockResolvedValue(true);
       disconnect = vi.fn();

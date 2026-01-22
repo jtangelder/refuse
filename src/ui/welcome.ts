@@ -29,20 +29,21 @@ import { CommonModule } from '@angular/common';
         <strong>Get started by connecting your amplifier to your computer via USB.</strong>
       </p>
       <div class="connect">
-        <button (click)="service.api.connect()" class="success">
+        <button (click)="service.connect()" class="success">
           <span class="icon">usb</span>
           Connect your amp
         </button>
       </div>
 
-      <p *ngIf="!service.api.isSupported" class="unsupported">
-        ⚠️ WebHID not detected. This application requires a browser with WebHID support (<a
-          href="https://caniuse.com/webhid"
-          target="_blank"
-          >like Chrome, Edge or Opera</a
-        >).
-      </p>
-
+      @if (!service.isSupported()) {
+        <p class="unsupported">
+          ⚠️ WebHID not detected. This application requires a browser with WebHID support (<a
+            href="https://caniuse.com/webhid"
+            target="_blank"
+            >like Chrome, Edge or Opera</a
+          >).
+        </p>
+      }
       <p class="disclaimer">
         <em
           >This is a hobby project, not affiliated with Fender in any way. Please

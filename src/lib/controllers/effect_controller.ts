@@ -1,12 +1,12 @@
 import { BaseController } from './base_controller';
-import { DspType, EFFECT_MODELS, type ModelDef } from './models';
-import { getModelDefault } from './defaults';
-import type { EffectState } from './state_types';
-import type { EffectSettings } from './api';
-import { debug } from './helpers';
-import { PacketBuilder } from './packet_builder';
-import type { KnobInfo } from './api';
-import type { Command } from './protocol_decoder';
+import { DspType, EFFECT_MODELS, type ModelDef } from '../models';
+import { getModelDefault } from '../defaults';
+import type { EffectState } from '../store';
+import type { EffectSettings } from '../index';
+import { debug } from '../helpers';
+import { PacketBuilder } from '../protocol/packet_builder';
+import type { KnobInfo } from '../index';
+import type { Command } from '../protocol/protocol_decoder';
 
 export class EffectController extends BaseController {
   process(command: Command): boolean {

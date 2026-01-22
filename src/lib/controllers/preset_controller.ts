@@ -1,17 +1,17 @@
 import { BaseController } from './base_controller';
-import { debug } from './helpers';
-import type { PresetMetadata } from './api';
-import { PacketBuilder } from './packet_builder';
-import { FuseProtocol } from './protocol';
-import type { Command } from './protocol_decoder';
-import { PresetImporter } from './preset_importer';
-import type { Store } from './store';
+import { debug } from '../helpers';
+import type { PresetMetadata } from '../index';
+import { PacketBuilder } from '../protocol/packet_builder';
+import { Protocol } from '../protocol/protocol';
+import type { Command } from '../protocol/protocol_decoder';
+import { PresetImporter } from '../preset_importer';
+import type { Store } from '../store';
 
 export class PresetController extends BaseController {
   public onLoad?: (payload: { slot: number; name: string }) => void;
   private importer: PresetImporter;
 
-  constructor(store: Store, protocol: FuseProtocol) {
+  constructor(store: Store, protocol: Protocol) {
     super(store, protocol);
     this.importer = new PresetImporter(protocol);
   }
@@ -19,7 +19,7 @@ export class PresetController extends BaseController {
   process(command: Command): boolean {
     if (command.type === 'PRESET_CHANGE') {
       const { slot, name } = command;
-      console.log(`[DEBUG] PresetController PRESET_CHANGE: ${slot} ${name}`);
+      debug(`[DEBUG] PresetController PRESET_CHANGE: ${slot} ${name}`);
       this.store.setPresetActive(slot, name);
       this.onLoad?.({ slot, name });
       return true;
@@ -27,7 +27,7 @@ export class PresetController extends BaseController {
 
     if (command.type === 'PRESET_INFO') {
       const { slot, name } = command;
-      console.log(`[DEBUG] PresetController PRESET_INFO: ${slot} ${name}`);
+      debug(`[DEBUG] PresetController PRESET_INFO: ${slot} ${name}`);
       this.store.setPresetMetadata(slot, name);
       return true;
     }

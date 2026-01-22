@@ -1,9 +1,9 @@
 import { OPCODES } from './protocol';
-import { DspType } from './models';
+import { DspType } from '../models';
+import { OFFSETS, VALUES } from './protocol_decoder';
 
 export class PacketBuilder {
   private buffer: Uint8Array;
-  private sequenceId: number = 0;
 
   constructor() {
     this.buffer = new Uint8Array(64);
@@ -46,8 +46,6 @@ export class PacketBuilder {
     return this;
   }
 
-
-
   // Standard DSP Write Packet (0x1c 0x03)
   public static dspWrite(type: DspType, sequenceId: number): PacketBuilder {
     return new PacketBuilder()
@@ -65,7 +63,7 @@ export class PacketBuilder {
       .setType(0x00) // Type 0 for apply
       .setSequenceId(sequenceId);
 
-    // PacketSerializer logic for Apply headers: Mod=0x01, Other=0x02
+    // Mod=0x01, Other=0x02. Reuse PRESET_SLOT offset (4) for this "Family" byte
     builder.setByte(4, dspType === DspType.MOD ? 0x01 : 0x02);
 
     return builder;
@@ -79,7 +77,7 @@ export class PacketBuilder {
       .setCommand(OPCODES.BYPASS_PACKET)
       .setSubCommand(OPCODES.BYPASS_SET)
       .setByte(2, family)
-      .setByte(3, enabled ? 0x00 : 0x01) // 0=On, 1=Off
+      .setByte(3, enabled ? VALUES.ENABLED : VALUES.BYPASSED)
       .setByte(4, slot);
   }
 
@@ -89,13 +87,13 @@ export class PacketBuilder {
       .setSubCommand(OPCODES.DATA_READ)
       .setType(0x03) // Save type?
       .setByte(3, 0x00)
-      .setByte(4, slot)
+      .setByte(OFFSETS.PRESET_SLOT, slot) // 4
       .setByte(5, 0x00)
       .setByte(6, 0x01)
       .setByte(7, 0x01);
 
     const nameBytes = new TextEncoder().encode(name.substring(0, 32));
-    builder.addBytes(16, nameBytes); // Name starts at 16
+    builder.addBytes(OFFSETS.PRESET_NAME, nameBytes); // 16
 
     return builder;
   }
@@ -106,7 +104,7 @@ export class PacketBuilder {
       .setSubCommand(OPCODES.DATA_READ)
       .setType(0x01)
       .setByte(3, 0x00)
-      .setByte(4, slot)
+      .setByte(OFFSETS.PRESET_SLOT, slot)
       .setByte(5, 0x00)
       .setByte(6, 0x01);
   }
@@ -117,11 +115,11 @@ export class PacketBuilder {
     sequenceId: number,
   ): PacketBuilder {
     const builder = PacketBuilder.dspWrite(DspType.AMP, sequenceId);
-    builder.setByte(16, (state.modelId >> 8) & 0xff);
-    builder.setByte(17, state.modelId & 0xff);
-    builder.setByte(49, state.cabinetId);
+    builder.setByte(OFFSETS.MODEL_ID_MSB, (state.modelId >> 8) & 0xff);
+    builder.setByte(OFFSETS.MODEL_ID_LSB, state.modelId & 0xff);
+    builder.setByte(OFFSETS.CABINET_ID, state.cabinetId);
 
-    builder.addBytes(32, state.knobs);
+    builder.addBytes(OFFSETS.KNOB_START, state.knobs);
     return builder;
   }
 
@@ -130,12 +128,12 @@ export class PacketBuilder {
     sequenceId: number,
   ): PacketBuilder {
     const builder = PacketBuilder.dspWrite(state.type, sequenceId);
-    builder.setByte(16, (state.modelId >> 8) & 0xff);
-    builder.setByte(17, state.modelId & 0xff);
-    builder.setByte(18, state.slot);
-    builder.setByte(22, state.enabled ? 0 : 1);
+    builder.setByte(OFFSETS.MODEL_ID_MSB, (state.modelId >> 8) & 0xff);
+    builder.setByte(OFFSETS.MODEL_ID_LSB, state.modelId & 0xff);
+    builder.setByte(OFFSETS.SLOT_INDEX, state.slot);
+    builder.setByte(OFFSETS.BYPASS, state.enabled ? VALUES.ENABLED : VALUES.BYPASSED);
 
-    builder.addBytes(32, state.knobs);
+    builder.addBytes(OFFSETS.KNOB_START, state.knobs);
     return builder;
   }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ProtocolDecoder, OFFSETS, VALUES } from './protocol_decoder';
-import { DspType } from './models';
+import { ProtocolDecoder, OFFSETS, VALUES } from '../protocol/protocol_decoder';
+import { DspType } from '../models';
 
 describe('ProtocolDecoder', () => {
   describe('decode', () => {

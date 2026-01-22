@@ -1,11 +1,11 @@
 import { BaseController } from './base_controller';
-import { DspType, AMP_MODELS, CABINET_MODELS, type ModelDef } from './models';
-import { getModelDefault } from './defaults';
-import type { KnobInfo, AmpSettings } from './api';
-import { debug } from './helpers';
-import { PacketBuilder } from './packet_builder';
-import type { AmpState } from './state_types';
-import type { Command } from './protocol_decoder';
+import { DspType, AMP_MODELS, CABINET_MODELS, type ModelDef } from '../models';
+import { getModelDefault } from '../defaults';
+import type { KnobInfo, AmpSettings } from '../index';
+import { debug } from '../helpers';
+import { PacketBuilder } from '../protocol/packet_builder';
+import type { AmpState } from '../store';
+import type { Command } from '../protocol/protocol_decoder';
 
 export class AmpController extends BaseController {
   process(command: Command): boolean {

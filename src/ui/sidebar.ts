@@ -11,8 +11,8 @@ import { PresetService } from '../services/preset.service';
     <header>
       <h1>ReFUSE</h1>
       <div class="connection">
-        <button *ngIf="!service.connected()" (click)="service.api.connect()" class="success">Connect Amp</button>
-        <button *ngIf="service.connected()" (click)="service.api.disconnect()" class="danger">Disconnect</button>
+        <button *ngIf="!service.connected()" (click)="service.connect()" class="success">Connect Amp</button>
+        <button *ngIf="service.connected()" (click)="service.disconnect()" class="danger">Disconnect</button>
       </div>
     </header>
 

@@ -1,12 +1,12 @@
-import { FuseProtocol, OPCODES } from './protocol';
+import { Protocol as Protocol, OPCODES } from './protocol/protocol';
 import type { ModelDef } from './models';
 import { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from './models';
 import { debug } from './helpers';
 import { Store, type State } from './store';
-import { AmpController } from './amp_controller';
-import { EffectController } from './effect_controller';
-import { PresetController } from './preset_controller';
-import { ProtocolDecoder } from './protocol_decoder';
+import { AmpController } from './controllers/amp_controller';
+import { EffectController } from './controllers/effect_controller';
+import { PresetController } from './controllers/preset_controller';
+import { ProtocolDecoder } from './protocol/protocol_decoder';
 
 export type { ModelDef } from './models';
 export { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from './models';
@@ -60,7 +60,7 @@ export interface Preset {
 }
 
 export class FuseAPI {
-  private protocol: FuseProtocol;
+  private protocol: Protocol;
   public store: Store;
 
   public amp: AmpController;
@@ -68,9 +68,10 @@ export class FuseAPI {
   public presets: PresetController;
 
   private isRefreshing = false;
+  private monitoringListener?: (data: Uint8Array) => void;
 
   constructor() {
-    this.protocol = new FuseProtocol();
+    this.protocol = new Protocol();
     this.store = new Store();
 
     this.amp = new AmpController(this.store, this.protocol);
@@ -124,22 +125,29 @@ export class FuseAPI {
 
   async disconnect(): Promise<void> {
     debug('[API CALL] disconnect()');
+    if (this.monitoringListener) {
+      this.protocol.removeEventListener(this.monitoringListener);
+      this.monitoringListener = undefined;
+    }
     await this.protocol.disconnect();
     this.store.setConnected(false);
   }
 
   private startMonitoring() {
-    this.protocol.addEventListener((data: Uint8Array) => {
+    if (this.monitoringListener) return;
+
+    this.monitoringListener = (data: Uint8Array) => {
       const command = ProtocolDecoder.decode(data);
       if (command.type === 'UNKNOWN') return;
       if (this.amp.process(command)) return;
       if (this.effects.process(command)) return;
       if (this.presets.process(command)) return;
-    });
+    };
+    this.protocol.addEventListener(this.monitoringListener);
 
     // Subscribe to Preset changes to trigger refresh
     this.presets.onLoad = payload => {
-      console.log('[API DEBUG] Preset loaded event received:', payload, 'isRefreshing:', this.isRefreshing);
+      debug(`[API DEBUG] Preset loaded event received: ${JSON.stringify(payload)} isRefreshing: ${this.isRefreshing}`);
       if (!this.isRefreshing) {
         debug(`[API] Preset loaded (${payload.slot}). Refreshing state...`);
         this.isRefreshing = true;

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { FuseAPI } from './api';
-import { FuseProtocol } from './protocol';
-import { DspType, AMP_MODELS, EFFECT_MODELS } from './models';
+import { FuseAPI } from '../index';
+import { Protocol } from '../protocol/protocol';
+import { DspType, AMP_MODELS, EFFECT_MODELS } from '../models';
 
 // Mock the protocol layer
-vi.mock('./protocol', () => {
+vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
       DATA_PACKET: 0x1c,
@@ -12,7 +12,7 @@ vi.mock('./protocol', () => {
       DATA_READ: 0x01,
       PRESET_INFO: 0x04,
     },
-    FuseProtocol: (() => {
+    Protocol: (() => {
       const Mock = vi.fn().mockImplementation(function (this: any) {
         this.isConnected = false;
         this.listeners = [] as Function[];

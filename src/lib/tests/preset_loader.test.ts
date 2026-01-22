@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PresetController } from './preset_controller';
+import { PresetController } from '../controllers/preset_controller';
 
 describe('PresetController Loader Integration', () => {
   let controller: PresetController;

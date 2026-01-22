@@ -1,4 +1,4 @@
-import { DspType } from './models';
+import { DspType } from '../models';
 
 export const OFFSETS = {
   // Common Packet Structure

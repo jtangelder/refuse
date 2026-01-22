@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { AMP_MODELS, CABINET_MODELS, EFFECT_MODELS } from '../lib/api';
+import { AMP_MODELS, CABINET_MODELS, EFFECT_MODELS } from '../lib';
 import { CommonModule } from '@angular/common';
 import { SignalChainComponent } from './signal_chain';
 import { AmpEditorComponent } from './amp_editor';

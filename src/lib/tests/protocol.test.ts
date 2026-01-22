@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { FuseProtocol, OPCODES } from './protocol';
-import { DspType } from './models';
-import { PacketBuilder } from './packet_builder';
+import { Protocol, OPCODES } from '../protocol/protocol';
+import { DspType } from '../models';
+import { PacketBuilder } from '../protocol/packet_builder';
 
 describe('FuseProtocol', () => {
-  const protocol = new FuseProtocol();
+  const protocol = new Protocol();
 
   describe('Packet Creation', () => {
     it('should create a correct DSP packet for Amp settings', () => {

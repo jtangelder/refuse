@@ -1,6 +1,6 @@
 import { AMP_MODELS, EFFECT_MODELS, DspType } from './models';
-import { PacketBuilder } from './packet_builder';
-import { FuseProtocol, OPCODES } from './protocol';
+import { PacketBuilder } from './protocol/packet_builder';
+import { Protocol, OPCODES } from './protocol/protocol';
 import { debug } from './helpers';
 
 // ID Mapping from Fuse XML to Firmware IDs
@@ -25,9 +25,9 @@ const ID_MAP: Record<number, number> = {
 };
 
 export class PresetImporter {
-  private protocol: FuseProtocol;
+  private protocol: Protocol;
 
-  constructor(protocol: FuseProtocol) {
+  constructor(protocol: Protocol) {
     this.protocol = protocol;
   }
 

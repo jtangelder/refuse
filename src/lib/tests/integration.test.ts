@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FuseAPI } from './api';
-import { AMP_MODELS } from './models';
+import { FuseAPI } from '../index';
+import { AMP_MODELS } from '../models';
+import { debug } from '../helpers';
 
-vi.mock('./protocol', () => {
+vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
       DATA_PACKET: 0x1c,
@@ -10,7 +11,7 @@ vi.mock('./protocol', () => {
       DATA_READ: 0x01,
       PRESET_INFO: 0x04,
     },
-    FuseProtocol: class MockProtocol {
+    Protocol: class MockProtocol {
       isConnected = false;
       listeners: Function[] = [];
       connect = vi.fn().mockImplementation(async () => {
@@ -41,7 +42,7 @@ vi.mock('./protocol', () => {
           if (data[i] === 0) break;
           name += String.fromCharCode(data[i]);
         }
-        console.log(`[MOCK] Parsed Preset Name: Slot ${slot}, Name "${name}"`);
+        debug(`[MOCK] Parsed Preset Name: Slot ${slot}, Name "${name}"`);
         return { slot, name };
       }
       static isBypassResponse(data: Uint8Array) {

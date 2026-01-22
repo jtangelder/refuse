@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DspType } from '../lib/api';
+import { DspType } from '../lib';
 
 @Component({
   selector: 'fuse-signal-chain',
