@@ -3,7 +3,7 @@ import { FuseService } from '../services/fuse.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-welcome',
+  selector: 'fuse-welcome',
   standalone: true,
   imports: [CommonModule],
   template: `

@@ -43,7 +43,7 @@ h3 {
 
 .icon {
   display: inline-block;
-  font: 0.95em "Material Symbols Outlined";
+  font: 0.95em 'Material Symbols Outlined';
   line-height: inherit;
   vertical-align: middle;
 }
@@ -83,8 +83,8 @@ button {
 }
 
 select,
-input[type="text"],
-input[type="number"] {
+input[type='text'],
+input[type='number'] {
   background: #333;
   border: 1px solid #444;
   color: white;
@@ -112,7 +112,7 @@ input[type="number"] {
   height: 100vh;
 }
 
-app-sidebar {
+fuse-sidebar {
   display: flex;
   flex-direction: column;
   background: #111;
@@ -167,7 +167,7 @@ app-sidebar {
   }
 }
 
-app-welcome {
+fuse-welcome {
   flex: 1;
   overflow: auto;
   padding: 40px 20px;
@@ -212,7 +212,7 @@ app-welcome {
   }
 }
 
-app-dashboard {
+fuse-dashboard {
   padding: 20px;
   flex: 1;
   overflow: auto;
@@ -260,7 +260,7 @@ app-dashboard {
     letter-spacing: 0.05em;
   }
 
-  input[type="range"] {
+  input[type='range'] {
     width: 100%;
     cursor: pointer;
   }

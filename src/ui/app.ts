@@ -1,21 +1,21 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SidebarComponent } from './ui/sidebar';
-import { DashboardComponent } from './ui/dashboard';
-import { WelcomeComponent } from './ui/welcome';
-import { FuseService } from './services/fuse.service';
+import { SidebarComponent } from './sidebar';
+import { DashboardComponent } from './dashboard';
+import { WelcomeComponent } from './welcome';
+import { FuseService } from '../services/fuse.service';
 
 @Component({
-  selector: 'app-root',
+  selector: 'fuse-root',
   standalone: true,
   imports: [CommonModule, SidebarComponent, DashboardComponent, WelcomeComponent],
   template: ` @if (service.connected()) {
       <div class="container">
-        <app-sidebar></app-sidebar>
-        <app-dashboard></app-dashboard>
+        <fuse-sidebar></fuse-sidebar>
+        <fuse-dashboard></fuse-dashboard>
       </div>
     } @else {
-      <app-welcome></app-welcome>
+      <fuse-welcome></fuse-welcome>
     }`,
 })
 export class App {

@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'app-knob',
+  selector: 'fuse-knob',
   standalone: true,
   template: `
     <label>

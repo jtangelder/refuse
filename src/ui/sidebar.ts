@@ -4,7 +4,7 @@ import { FuseService } from '../services/fuse.service';
 import { PresetService } from '../services/preset.service';
 
 @Component({
-  selector: 'app-sidebar',
+  selector: 'fuse-sidebar',
   standalone: true,
   imports: [CommonModule],
   template: `
