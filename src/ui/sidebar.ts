@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FuseService } from '../fuse_service';
+import { FuseService } from '../services/fuse.service';
+import { PresetService } from '../services/preset.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -35,6 +36,7 @@ import { FuseService } from '../fuse_service';
 })
 export class SidebarComponent {
   protected readonly service = inject(FuseService);
+  protected readonly presetService = inject(PresetService);
 
   private presetSaveName = computed(() => {
     const slot = this.service.currentPresetSlot();
@@ -43,7 +45,7 @@ export class SidebarComponent {
   });
 
   async changePreset(slot: number) {
-    await this.service.api.presets.loadPreset(Number(slot));
+    await this.presetService.loadPreset(slot);
   }
 
   async savePreset() {
@@ -56,14 +58,14 @@ export class SidebarComponent {
     const name = window.prompt('Enter a name for your preset', currentName);
     if (!name) return;
 
-    await this.service.api.presets.savePreset(slot, name);
+    await this.presetService.savePreset(slot, name);
   }
 
   async importFusePreset(event: any) {
     const file = event.target.files[0];
     if (!file) return;
     const text = await file.text();
-    await this.service.api.presets.loadXml(text);
+    await this.presetService.loadXml(text);
   }
 
   range(n: number) {

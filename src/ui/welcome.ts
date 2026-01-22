@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { FuseService } from '../fuse_service';
+import { FuseService } from '../services/fuse.service';
 import { CommonModule } from '@angular/common';
 
 @Component({

@@ -132,13 +132,15 @@ export class EffectController extends BaseController<EffectEvents> {
 
   getSettings(slot: number): EffectSettings | null {
     const model = this.getEffectModel(slot);
-    if (!model) return null;
+    const effect = this.store.getState().slots[slot];
+
+    if (!model || !effect) return null;
     return {
       slot,
       type: model.type,
       model: model.name,
       modelId: model.id,
-      enabled: this.store.getState().effectEnabled[slot],
+      enabled: effect.enabled,
       knobs: this.getBufferKnobs(slot),
     };
   }

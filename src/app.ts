@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SidebarComponent } from './ui/sidebar';
 import { DashboardComponent } from './ui/dashboard';
 import { WelcomeComponent } from './ui/welcome';
-import { FuseService } from './fuse_service';
+import { FuseService } from './services/fuse.service';
 
 @Component({
   selector: 'app-root',
@@ -20,8 +20,4 @@ import { FuseService } from './fuse_service';
 })
 export class App {
   protected readonly service = inject(FuseService);
-
-  constructor() {
-    (window as any)['api'] = this.service.api;
-  }
 }

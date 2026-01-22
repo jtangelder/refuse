@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { FuseAPI } from './lib/api';
+import { FuseAPI } from '../lib/api';
 
 @Injectable({ providedIn: 'root' })
 export class FuseService {

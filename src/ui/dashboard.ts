@@ -3,7 +3,10 @@ import { AMP_MODELS, CABINET_MODELS, DspType, EFFECT_MODELS } from '../lib/api';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KnobComponent } from './knob';
-import { FuseService } from '../fuse_service';
+
+import { FuseService } from '../services/fuse.service';
+import { AmpService } from '../services/amp.service';
+import { EffectService } from '../services/effect.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -172,6 +175,8 @@ import { FuseService } from '../fuse_service';
 })
 export class DashboardComponent {
   protected readonly service = inject(FuseService);
+  protected readonly ampService = inject(AmpService);
+  protected readonly effectService = inject(EffectService);
 
   protected activeSlot: number | null = null;
 
@@ -193,34 +198,34 @@ export class DashboardComponent {
   ampSettings = computed(() => {
     // We access ampState to register dependency
     this.service.amp();
-    return this.service.api.amp.getSettings() as any;
+    return this.ampService.getSettings() as any;
   });
 
   ampKnobs = computed(() => {
     this.service.amp();
-    return this.service.api.amp.getAmpKnobs();
+    return this.ampService.getAmpKnobs();
   });
 
   allEffectSettings = computed(() => {
     this.service.effects(); // Dependency
     // We map over 0..7
-    return this.range(8).map(i => this.service.api.effects.getSettings(i));
+    return this.range(8).map(i => this.effectService.getSettings(i));
   });
 
   async clearSlot(slot: number) {
-    await this.service.api.effects.clearEffect(slot);
+    await this.effectService.clearEffect(slot);
   }
 
   async changeAmp(modelId: any) {
-    await this.service.api.amp.setAmpModelById(Number(modelId));
+    await this.ampService.setAmpModelById(Number(modelId));
   }
 
   async changeCabinet(id: any) {
-    await this.service.api.amp.setCabinetById(Number(id));
+    await this.ampService.setCabinetById(Number(id));
   }
 
   async changeAmpKnob(index: number, value: number) {
-    await this.service.api.amp.setAmpKnob(index, value);
+    await this.ampService.setAmpKnob(index, value);
   }
 
   async changeAdvancedSetting(key: string, value: number) {
@@ -236,29 +241,29 @@ export class DashboardComponent {
     if (byteIndex) {
       // Map byte index to knob index (assuming offset 32)
       const knobIndex = byteIndex - 32;
-      await this.service.api.amp.setAmpKnob(knobIndex, value);
+      await this.ampService.setAmpKnob(knobIndex, value);
     }
   }
 
   async assignEffect(slot: number, modelId: any) {
     const id = Number(modelId);
     if (id === 0) {
-      await this.service.api.effects.clearEffect(slot);
+      await this.effectService.clearEffect(slot);
     } else {
-      await this.service.api.effects.setEffectById(slot, id);
+      await this.effectService.setEffectById(slot, id);
     }
   }
 
   async toggleEffect(slot: number, enabled: any) {
-    await this.service.api.effects.setEffectEnabled(slot, enabled);
+    await this.effectService.setEffectEnabled(slot, enabled);
   }
 
   async changeEffectKnob(slot: number, index: number, value: number) {
-    await this.service.api.effects.setEffectKnob(slot, index, value);
+    await this.effectService.setEffectKnob(slot, index, value);
   }
 
   async swapSlots(slotA: number, slotB: number) {
-    await this.service.api.effects.swapEffects(slotA, slotB);
+    await this.effectService.swapEffects(slotA, slotB);
     this.activeSlot = slotB; // Follow the effect
   }
 

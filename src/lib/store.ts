@@ -4,9 +4,6 @@ import type { AmpState, EffectState } from './state_types';
 export interface State {
   amp: AmpState;
   slots: (EffectState | null)[]; // 8 slots, null if empty
-  effectEnabled: boolean[]; // Redundant? EffectState has 'enabled'. But kept for quick access/compatibility if needed.
-  // Actually, EffectState.enabled is better. Let's sync them or remove this.
-  // The API exposes `effectEnabled` array getter. We can derive it.
 
   currentPresetSlot: number | null;
   presets: Map<number, PresetMetadata>;
@@ -29,7 +26,7 @@ export class Store {
         knobs: new Array(32).fill(0),
       },
       slots: new Array(8).fill(null),
-      effectEnabled: new Array(8).fill(true), // We will deprecate this or map it
+
       currentPresetSlot: null,
       presets: new Map(),
       connected: false,
@@ -108,15 +105,9 @@ export class Store {
       const newSlots = [...this.state.slots];
       newSlots[slot] = state;
 
-      const newEffectEnabled = [...this.state.effectEnabled];
-      if (state) {
-        newEffectEnabled[slot] = state.enabled;
-      }
-
       this.state = {
         ...this.state,
         slots: newSlots,
-        effectEnabled: newEffectEnabled,
       };
       this.notify();
     }
@@ -130,13 +121,9 @@ export class Store {
         newSlots[slot] = { ...effect, enabled };
       }
 
-      const newEffectEnabled = [...this.state.effectEnabled];
-      newEffectEnabled[slot] = enabled;
-
       this.state = {
         ...this.state,
         slots: newSlots,
-        effectEnabled: newEffectEnabled,
       };
       this.notify();
     }
@@ -147,13 +134,9 @@ export class Store {
       const newSlots = [...this.state.slots];
       newSlots[slot] = null;
 
-      const newEffectEnabled = [...this.state.effectEnabled];
-      newEffectEnabled[slot] = true;
-
       this.state = {
         ...this.state,
         slots: newSlots,
-        effectEnabled: newEffectEnabled,
       };
       this.notify();
     }

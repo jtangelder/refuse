@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FuseProtocol, OPCODES } from './protocol';
+import { PacketParser } from './parser';
 import { DspType } from './models';
 
 describe('FuseProtocol', () => {
@@ -58,7 +59,11 @@ describe('FuseProtocol', () => {
       expect(packet[4]).toBe(5);
 
       // Name check
-      const decodedName = FuseProtocol.decodeString(packet.slice(16, 48));
+      // Name check
+      const nameBytes = packet.slice(16, 48);
+      const nullIndex = nameBytes.indexOf(0);
+      const trimmed = nullIndex >= 0 ? nameBytes.slice(0, nullIndex) : nameBytes;
+      const decodedName = new TextDecoder().decode(trimmed);
       expect(decodedName).toBe(name);
     });
   });
@@ -74,12 +79,12 @@ describe('FuseProtocol', () => {
       data[32] = 128;
       data[33] = 64;
 
-      const parsed = FuseProtocol.parseDspData(data);
+      const parsed = PacketParser.parseEffectSettings(data, 3);
       expect(parsed).not.toBeNull();
       expect(parsed?.type).toBe(DspType.STOMP);
       expect(parsed?.modelId).toBe(0x012a);
       expect(parsed?.slot).toBe(3);
-      expect(parsed?.bypass).toBe(true);
+      expect(parsed?.enabled).toBe(false); // Bypassed=1 means Enabled=false
       expect(parsed?.knobs[0]).toBe(128);
       expect(parsed?.knobs[1]).toBe(64);
     });
@@ -91,16 +96,12 @@ describe('FuseProtocol', () => {
       data[3] = 0x00; // On
       data[4] = 1; // Slot
 
-      expect(FuseProtocol.isBypassResponse(data)).toBe(true);
-      const parsed = FuseProtocol.parseBypassResponse(data);
+      expect(PacketParser.isBypassResponse(data)).toBe(true);
+      const parsed = PacketParser.parseBypassResponse(data);
       expect(parsed?.slot).toBe(1);
       expect(parsed?.enabled).toBe(true);
     });
 
-    it('should decode null-terminated strings', () => {
-      const bytes = new Uint8Array([72, 101, 108, 108, 111, 0, 87, 111, 114, 108, 100]);
-      expect(FuseProtocol.decodeString(bytes)).toBe('Hello');
-    });
     it('should parse preset name from real hardware trace', () => {
       const rawData = [
         0x1c, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x72,
@@ -110,8 +111,8 @@ describe('FuseProtocol', () => {
       ];
       const data = new Uint8Array(rawData);
 
-      expect(FuseProtocol.isPresetNamePacket(data)).toBe(true);
-      const parsed = FuseProtocol.parsePresetName(data);
+      const parsed = PacketParser.parsePresetInfo(data);
+      expect(parsed).not.toBeNull();
       expect(parsed?.slot).toBe(0);
       expect(parsed?.name).toBe('Brutal Metal II');
     });
@@ -125,8 +126,8 @@ describe('FuseProtocol', () => {
       ];
       const data = new Uint8Array(rawData);
 
-      expect(FuseProtocol.isPresetNamePacket(data)).toBe(true);
-      const parsed = FuseProtocol.parsePresetName(data);
+      const parsed = PacketParser.parsePresetInfo(data);
+      expect(parsed).not.toBeNull();
       expect(parsed?.slot).toBe(0x13); // 19
       expect(parsed?.name).toBe('What the #^[!');
     });
