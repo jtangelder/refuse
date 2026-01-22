@@ -202,10 +202,13 @@ describe('FuseAPI', () => {
 
   describe('Connection \u0026 Synchronization', () => {
     it('should sync presets after successful connection', async () => {
-      const presetNameSpy = vi.fn();
-      api.presets.on('loaded', presetNameSpy);
-
       await api.connect();
+
+      const originalOnLoad = api.presets.onLoad;
+      const presetNameSpy = vi.fn(payload => {
+        if (originalOnLoad) originalOnLoad(payload);
+      });
+      api.presets.onLoad = presetNameSpy;
       expect(api.isConnected).toBe(true);
 
       // Access the internal mock instance to emit events
@@ -481,11 +484,14 @@ describe('FuseAPI', () => {
     it('should update state on live hardware knob turn', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
-      const ampChangedSpy = vi.fn();
-      api.amp.on('change', ampChangedSpy);
+
+      const storeSpy = vi.fn();
+      api.store.subscribe(storeSpy);
+      storeSpy.mockClear();
 
       // Pre-requisite: Set an amp model so we have a knob schema
       await api.amp.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
+      storeSpy.mockClear();
 
       // Simulate Amp 'Vol' knob change (Opcode 0x05, param index 0, value 150)
       const knobPacket = new Uint8Array(64);
@@ -497,17 +503,20 @@ describe('FuseAPI', () => {
 
       const knobs = api.amp.getAmpKnobs();
       expect(knobs.find(k => k.name === 'Vol')?.value).toBe(150);
-      expect(ampChangedSpy).toHaveBeenCalled();
+      expect(storeSpy).toHaveBeenCalled();
     });
 
     it('should update state on live hardware effect knob turn', async () => {
       await api.connect();
       const protocolMock = (api as any).protocol;
-      const effectChangedSpy = vi.fn();
-      api.effects.on('change', effectChangedSpy);
+
+      const storeSpy = vi.fn();
+      api.store.subscribe(storeSpy);
+      storeSpy.mockClear();
 
       // Pre-requisite: Set a stomp in slot 2
       await api.effects.setEffectById(2, EFFECT_MODELS.OVERDRIVE.id);
+      storeSpy.mockClear();
 
       // Simulate Stomp knob change (Opcode 0x06, slot 2 in byte 13, param index 1, value 200)
       const knobPacket = new Uint8Array(64);
@@ -520,19 +529,19 @@ describe('FuseAPI', () => {
 
       const knobs = api.effects.getEffectKnobs(2);
       expect(knobs.find(k => k.name === 'Gain')?.value).toBe(200);
-      expect(effectChangedSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ slot: 2, modelId: EFFECT_MODELS.OVERDRIVE.id }),
-      );
+      expect(storeSpy).toHaveBeenCalled();
     });
   });
 
   describe('Event System', () => {
-    it('should emit state-changed when parameters are set', async () => {
+    it('should update store when parameters are set', async () => {
       const spy = vi.fn();
-      api.on('state-changed', spy);
+      api.store.subscribe(spy);
 
       await api.amp.setAmpKnob(0, 123);
       expect(spy).toHaveBeenCalled();
+      const lastState = spy.mock.calls[spy.mock.calls.length - 1][0];
+      expect(lastState.amp.knobs[0]).toBe(123);
     });
   });
 });

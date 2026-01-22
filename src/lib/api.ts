@@ -1,16 +1,15 @@
 import { FuseProtocol, OPCODES } from './protocol';
 import type { ModelDef } from './models';
-import { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS, FENDER_VID } from './models';
+import { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from './models';
 import { debug } from './helpers';
 import { Store, type State } from './store';
-import { AmpController } from './controllers/amp_controller';
-import { EffectController } from './controllers/effect_controller';
-import { PresetController } from './controllers/preset_controller';
-import { PacketParser } from './parser';
+import { AmpController } from './amp_controller';
+import { EffectController } from './effect_controller';
+import { PresetController } from './preset_controller';
+import { ProtocolDecoder } from './protocol_decoder';
 
-// --- TYPE DEFINITIONS ---
 export type { ModelDef } from './models';
-export { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS, FENDER_VID } from './models';
+export { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from './models';
 
 export interface PresetMetadata {
   slot: number;
@@ -60,35 +59,7 @@ export interface Preset {
   effects: EffectSettings[];
 }
 
-// --- EVENT SYSTEM ---
-
-type EventCallback = (...args: any[]) => void;
-
-export type MustangEvents = {
-  connecting: () => void;
-  connected: () => void;
-  disconnected: () => void;
-  'preset-loaded': (slot: number, name: string) => void;
-  'amp-changed': (modelId: number, knobs: KnobInfo[]) => void;
-  'effect-changed': (slot: number, modelId: number, knobs: KnobInfo[]) => void;
-  'bypass-toggled': (slot: number, enabled: boolean) => void;
-  'knob-changed': (type: 'amp' | 'effect', slot: number, knobName: string, value: number) => void;
-  'cabinet-changed': (cabinetId: number) => void;
-  'state-changed': () => void;
-};
-
-import { EventEmitter } from './event_emitter';
-
-// --- MAIN API CLASS ---
-
-// --- MAIN API CLASS ---
-
-export class FuseAPI extends EventEmitter<{
-  connected: void;
-  disconnected: void;
-  'state-changed': void;
-  // Re-emit controller events for legacy support or convenience?
-}> {
+export class FuseAPI {
   private protocol: FuseProtocol;
   public store: Store;
 
@@ -99,27 +70,15 @@ export class FuseAPI extends EventEmitter<{
   private isRefreshing = false;
 
   constructor() {
-    super();
     this.protocol = new FuseProtocol();
     this.store = new Store();
 
     this.amp = new AmpController(this.store, this.protocol);
     this.effects = new EffectController(this.store, this.protocol);
     this.presets = new PresetController(this.store, this.protocol);
-
-    this.setupControllerEvents();
   }
 
-  private setupControllerEvents() {
-    this.amp.on('change', () => this.emit('state-changed'));
-    this.effects.on('change', () => this.emit('state-changed'));
-    this.presets.on('loaded', () => this.emit('state-changed'));
-    // Cabinet doesn't have events yet but probably should?
-  }
-
-  /**
-   * Facade for State
-   */
+  // Facade for State
   public get state() {
     return this.store.getState();
   }
@@ -135,10 +94,6 @@ export class FuseAPI extends EventEmitter<{
   public get device(): any {
     return (this.protocol as any).device;
   }
-
-  // ==========================================
-  // CONNECTION & SYNC
-  // ==========================================
 
   async connect(): Promise<boolean> {
     debug('[API CALL] connect()');
@@ -162,10 +117,8 @@ export class FuseAPI extends EventEmitter<{
     } finally {
       this.isRefreshing = false;
       this.store.setRefreshing(false);
-      this.emit('state-changed');
     }
 
-    this.emit('connected');
     return true;
   }
 
@@ -173,35 +126,19 @@ export class FuseAPI extends EventEmitter<{
     debug('[API CALL] disconnect()');
     await this.protocol.disconnect();
     this.store.setConnected(false);
-    this.emit('disconnected');
   }
 
   private startMonitoring() {
     this.protocol.addEventListener((data: Uint8Array) => {
-      // Delegate to controllers
-      // We try each controller. If one handles it, good.
-      // Order matters? Not really for distinct types.
-
-      if (this.amp.process(data)) {
-        this.emit('state-changed');
-        return;
-      }
-
-      if (this.effects.process(data)) {
-        this.emit('state-changed');
-        return;
-      }
-
-      if (this.presets.process(data)) {
-        this.emit('state-changed');
-        return;
-      }
-
-      // 4. Cabinet? (Not explicitly handled, but could be)
+      const command = ProtocolDecoder.decode(data);
+      if (command.type === 'UNKNOWN') return;
+      if (this.amp.process(command)) return;
+      if (this.effects.process(command)) return;
+      if (this.presets.process(command)) return;
     });
 
     // Subscribe to Preset changes to trigger refresh
-    this.presets.on('loaded', payload => {
+    this.presets.onLoad = payload => {
       console.log('[API DEBUG] Preset loaded event received:', payload, 'isRefreshing:', this.isRefreshing);
       if (!this.isRefreshing) {
         debug(`[API] Preset loaded (${payload.slot}). Refreshing state...`);
@@ -212,10 +149,9 @@ export class FuseAPI extends EventEmitter<{
           .finally(() => {
             this.isRefreshing = false;
             this.store.setRefreshing(false);
-            this.emit('state-changed');
           });
       }
-    });
+    };
   }
 
   private async refreshState() {
@@ -226,14 +162,13 @@ export class FuseAPI extends EventEmitter<{
     return new Promise<void>(async resolve => {
       const pending = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
       const listener = (data: Uint8Array) => {
-        if (PacketParser.isBypassResponse(data)) {
-          const bypassInfo = PacketParser.parseBypassResponse(data);
-          if (bypassInfo) {
-            pending.delete(bypassInfo.slot);
-            if (pending.size === 0) {
-              this.protocol.removeEventListener(listener);
-              resolve();
-            }
+        const command = ProtocolDecoder.decode(data);
+        if (command.type === 'BYPASS_STATE') {
+          const { slot, enabled } = command;
+          pending.delete(slot);
+          if (pending.size === 0) {
+            this.protocol.removeEventListener(listener);
+            resolve();
           }
         }
       };

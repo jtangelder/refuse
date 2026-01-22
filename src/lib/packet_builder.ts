@@ -46,7 +46,7 @@ export class PacketBuilder {
     return this;
   }
 
-  // --- Specific Packet Types ---
+
 
   // Standard DSP Write Packet (0x1c 0x03)
   public static dspWrite(type: DspType, sequenceId: number): PacketBuilder {

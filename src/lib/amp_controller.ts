@@ -1,48 +1,40 @@
 import { BaseController } from './base_controller';
-import { DspType, AMP_MODELS, CABINET_MODELS, type ModelDef } from '../models';
-import { getModelDefault } from '../defaults';
-import type { KnobInfo, AmpSettings } from '../api';
-import { debug } from '../helpers';
-import { PacketBuilder } from '../packet_builder';
-import type { AmpState } from '../state_types';
-import { PacketParser } from '../parser';
+import { DspType, AMP_MODELS, CABINET_MODELS, type ModelDef } from './models';
+import { getModelDefault } from './defaults';
+import type { KnobInfo, AmpSettings } from './api';
+import { debug } from './helpers';
+import { PacketBuilder } from './packet_builder';
+import type { AmpState } from './state_types';
+import type { Command } from './protocol_decoder';
 
-export type AmpEvents = {
-  change: AmpState;
-};
+export class AmpController extends BaseController {
+  process(command: Command): boolean {
+    // Live Knob Change
+    if (command.type === 'KNOB_CHANGE') {
+      const { dspType, knobIndex, value } = command;
 
-export class AmpController extends BaseController<AmpEvents> {
-  process(data: Uint8Array): boolean {
-    const b0 = data[0];
-    const b1 = data[1];
-
-    // 1. Live Knob Change (type 0x05)
-    if (b0 === DspType.AMP && b1 === 0x00) {
-      const paramIndex = data[5];
-      const paramValue = data[10];
-
-      // Update Store
-      const ampState = this.store.getState().amp;
-      const newState = { ...ampState, knobs: [...ampState.knobs] };
-      newState.knobs[paramIndex] = paramValue;
-      this.store.updateAmpState(newState);
-
-      this.emit('change', newState);
-      return true;
-    }
-
-    // 2. Data Packet (0x1c) - State Update
-    if (b0 === 0x1c && data[1] === 0x01) {
-      const type = data[2];
-      const instance = data[3];
-      if (type === DspType.AMP && instance === 0x00) {
-        const newState = PacketParser.parseAmpSettings(data);
+      if (dspType === DspType.AMP) {
+        // Update Store
+        const ampState = this.store.getState().amp;
+        const newState = { ...ampState, knobs: [...ampState.knobs] };
+        newState.knobs[knobIndex] = value;
         this.store.updateAmpState(newState);
-        this.emit('change', this.store.getState().amp);
         return true;
       }
     }
 
+    // State Update
+    if (command.type === 'AMP_UPDATE') {
+      const { modelId, cabinetId, knobs } = command;
+      const newState: AmpState = {
+        modelId,
+        enabled: true,
+        cabinetId,
+        knobs,
+      };
+      this.store.updateAmpState(newState);
+      return true;
+    }
     return false;
   }
 
@@ -64,7 +56,6 @@ export class AmpController extends BaseController<AmpEvents> {
 
     // Update Store
     this.store.updateAmpState(newState);
-    this.emit('change', newState); // Local Change
 
     // Send to hardware
     await this.sendAmpState(newState);
@@ -82,7 +73,6 @@ export class AmpController extends BaseController<AmpEvents> {
     newState.knobs[index] = value;
 
     this.store.updateAmpState(newState);
-    this.emit('change', newState); // Local Change
 
     await this.sendAmpState(newState);
   }

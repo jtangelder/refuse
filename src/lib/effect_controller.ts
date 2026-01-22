@@ -1,99 +1,70 @@
 import { BaseController } from './base_controller';
-import { DspType, EFFECT_MODELS, type ModelDef } from '../models';
-import { getModelDefault } from '../defaults';
-import type { EffectState } from '../state_types';
-import type { EffectSettings } from '../api';
-import { debug } from '../helpers';
-import { PacketBuilder } from '../packet_builder';
-import type { KnobInfo } from '../api';
-import { PacketParser } from '../parser';
+import { DspType, EFFECT_MODELS, type ModelDef } from './models';
+import { getModelDefault } from './defaults';
+import type { EffectState } from './state_types';
+import type { EffectSettings } from './api';
+import { debug } from './helpers';
+import { PacketBuilder } from './packet_builder';
+import type { KnobInfo } from './api';
+import type { Command } from './protocol_decoder';
 
-export type EffectChangePayload = {
-  slot: number;
-  modelId: number;
-  knobs: KnobInfo[];
-};
+export class EffectController extends BaseController {
+  process(command: Command): boolean {
+    // 1. Live Knob Change
+    if (command.type === 'KNOB_CHANGE') {
+      const { slot, knobIndex, value } = command;
 
-export type EffectEvents = {
-  change: EffectChangePayload;
-};
-
-export class EffectController extends BaseController<EffectEvents> {
-  // Methods to expose helper logic for API if needed, or API calls methods directly?
-  // We need to implement process(data)
-
-  process(data: Uint8Array): boolean {
-    const b0 = data[0];
-
-    // 1. Live Knob Change (Direct Type 0x06..0x09)
-    if (b0 >= DspType.STOMP && b0 <= DspType.REVERB) {
-      if (data[1] === 0x00) {
-        const slot = data[13] || 0;
-        const paramIndex = data[5];
-        const paramValue = data[10];
-
-        if (slot >= 0 && slot < 8) {
-          const effect = this.store.getState().slots[slot];
-          if (effect) {
-            const newState = { ...effect, knobs: [...effect.knobs] };
-            newState.knobs[paramIndex] = paramValue;
-            this.store.updateSlotState(slot, newState);
-
-            this.emit('change', { slot, modelId: this.getEffectModelId(slot), knobs: this.getEffectKnobs(slot) });
-            return true;
-          }
-        }
-      }
-    }
-
-    // 2. Data Packet (0x1c) - State Update (e.g. from refreshState or preset load)
-    if (b0 === 0x1c && data[1] === 0x01) {
-      const type = data[2];
-      const instance = data[3];
-      const isValidEffectType = type >= DspType.STOMP && type <= DspType.REVERB;
-
-      // We ONLY process Active state (Instance 0x00)
-      // Instance 0x01+ is for Library/Component discovery and should be ignored here
-      if (isValidEffectType && instance === 0x00) {
-        const slot = data[18];
-        if (slot >= 0 && slot < 8) {
-          // Singleton Migration Logic
-          // If hardware sends an effect to a new slot, ensure it's removed from old slot
-          const currentType = type as DspType;
-          for (let i = 0; i < 8; i++) {
-            if (i === slot) continue;
-            const otherEffect = this.store.getState().slots[i];
-            if (otherEffect && otherEffect.type === currentType) {
-              debug(
-                `[EffectController] Singleton migration: Clearing slot ${i} because ${DspType[currentType]} moved to ${slot}`,
-              );
-              this.store.clearSlot(i);
-              this.emit('change', { slot: i, modelId: 0, knobs: [] });
-            }
-          }
-
-          const newState = PacketParser.parseEffectSettings(data, slot);
+      if (slot >= 0 && slot < 8) {
+        const effect = this.store.getState().slots[slot];
+        if (effect) {
+          const newState = { ...effect, knobs: [...effect.knobs] };
+          newState.knobs[knobIndex] = value;
           this.store.updateSlotState(slot, newState);
-          this.emit('change', { slot, modelId: this.getEffectModelId(slot), knobs: this.getEffectKnobs(slot) });
+
           return true;
         }
       }
     }
 
-    // 3. Bypass Response (0x19)
-    if (PacketParser.isBypassResponse(data)) {
-      const bypassInfo = PacketParser.parseBypassResponse(data);
-      if (bypassInfo) {
-        const { slot, enabled } = bypassInfo;
-        if (slot >= 0 && slot < 8) {
-          this.store.setEffectBypass(slot, enabled);
-          this.emit('change', {
-            slot,
-            modelId: this.getEffectModelId(slot),
-            knobs: this.getEffectKnobs(slot),
-          });
-          return true;
+    // 2. State Update
+    if (command.type === 'EFFECT_UPDATE') {
+      const { slot, dspType, modelId, enabled, knobs } = command;
+
+      if (slot >= 0 && slot < 8) {
+        // Singleton Migration Logic
+        // If hardware sends an effect to a new slot, ensure it's removed from old slot
+        for (let i = 0; i < 8; i++) {
+          if (i === slot) continue;
+          const otherEffect = this.store.getState().slots[i];
+          if (otherEffect && otherEffect.type === dspType) {
+            debug(
+              `[EffectController] Singleton migration: Clearing slot ${i} because ${DspType[dspType]} moved to ${slot}`,
+            );
+            this.store.clearSlot(i);
+          }
         }
+
+        const newState: EffectState = {
+          slot,
+          type: dspType,
+          modelId,
+          enabled,
+          knobs,
+        };
+
+        this.store.updateSlotState(slot, newState);
+
+        return true;
+      }
+    }
+
+    // 3. Bypass Response
+    if (command.type === 'BYPASS_STATE') {
+      const { slot, enabled } = command;
+      if (slot >= 0 && slot < 8) {
+        this.store.setEffectBypass(slot, enabled);
+
+        return true;
       }
     }
 
@@ -160,8 +131,6 @@ export class EffectController extends BaseController<EffectEvents> {
       if (i === slot) continue;
       const otherEffect = this.store.getState().slots[i];
       if (otherEffect && otherEffect.type === model.type) {
-        // Auto-clear logic handled by UI or throw?
-        // Throws error per original implementation
         throw new Error(`Effect of type ${DspType[model.type]} already exists in slot ${i}`);
       }
     }
@@ -178,7 +147,6 @@ export class EffectController extends BaseController<EffectEvents> {
     };
 
     this.store.updateSlotState(slot, newState);
-    this.emit('change', { slot, modelId, knobs: this.getEffectKnobs(slot) }); // Local
 
     await this.sendEffectState(newState);
   }
@@ -214,20 +182,16 @@ export class EffectController extends BaseController<EffectEvents> {
       const newB: EffectState = { ...effectA, slot: slotB };
       this.store.updateSlotState(slotB, newB);
       await this.sendEffectState(newB);
-      this.emit('change', { slot: slotB, modelId: newB.modelId, knobs: this.getBufferKnobs(slotB) });
     } else {
       await this.clearEffectOnHardware(slotB);
-      this.emit('change', { slot: slotB, modelId: 0, knobs: [] });
     }
 
     if (effectB) {
       const newA: EffectState = { ...effectB, slot: slotA };
       this.store.updateSlotState(slotA, newA);
       await this.sendEffectState(newA);
-      this.emit('change', { slot: slotA, modelId: newA.modelId, knobs: this.getBufferKnobs(slotA) });
     } else {
       await this.clearEffectOnHardware(slotA);
-      this.emit('change', { slot: slotA, modelId: 0, knobs: [] });
     }
   }
 
@@ -238,7 +202,6 @@ export class EffectController extends BaseController<EffectEvents> {
     const type = effect ? effect.type : DspType.STOMP;
 
     this.store.clearSlot(slot); // Updates store to null
-    this.emit('change', { slot, modelId: 0, knobs: [] });
 
     await this.sendClearPacket(slot, type);
   }
@@ -272,7 +235,6 @@ export class EffectController extends BaseController<EffectEvents> {
     newState.knobs[index] = value;
 
     this.store.updateSlotState(slot, newState);
-    this.emit('change', { slot, modelId: newState.modelId, knobs: this.getBufferKnobs(slot) }); // Local
 
     await this.sendEffectState(newState);
   }

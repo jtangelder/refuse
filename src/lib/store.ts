@@ -49,8 +49,6 @@ export class Store {
     this.listeners.forEach(l => l(this.state));
   }
 
-  // --- State Setters ---
-
   public setConnected(connected: boolean) {
     if (this.state.connected !== connected) {
       this.state = { ...this.state, connected };
