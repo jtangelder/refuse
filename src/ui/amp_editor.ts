@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KnobComponent } from './knob';
+import type { KnobInfo, CabinetDef, ModelDef, AmpSettings } from '../lib';
 
 @Component({
   selector: 'fuse-amp-editor',
@@ -112,10 +113,10 @@ import { KnobComponent } from './knob';
   ],
 })
 export class AmpEditorComponent {
-  @Input() settings: any;
-  @Input() knobs: any[] = [];
-  @Input() ampModels: any[] = [];
-  @Input() cabModels: any[] = [];
+  @Input() settings!: AmpSettings;
+  @Input() knobs!: KnobInfo[];
+  @Input() ampModels!: ModelDef[];
+  @Input() cabModels!: CabinetDef[];
 
   @Output() ampChange = new EventEmitter<number>();
   @Output() cabinetChange = new EventEmitter<number>();
@@ -131,12 +132,12 @@ export class AmpEditorComponent {
     { key: 'depth', label: 'Depth' },
   ];
 
-  onAmpChange(value: any) {
-    this.ampChange.emit(Number(value));
+  onAmpChange(value: number) {
+    this.ampChange.emit(value);
   }
 
-  onCabinetChange(value: any) {
-    this.cabinetChange.emit(Number(value));
+  onCabinetChange(value: number) {
+    this.cabinetChange.emit(value);
   }
 
   onKnobChange(index: number, value: number) {
@@ -147,7 +148,7 @@ export class AmpEditorComponent {
     this.advancedSettingChange.emit({ key, value });
   }
 
-  getAmpSetting(key: string): any {
+  getAmpSetting(key: string): number {
     return this.settings ? this.settings[key] : 0;
   }
 }

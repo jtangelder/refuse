@@ -1,4 +1,3 @@
-import { DspType } from '../models';
 import { debug } from '../helpers';
 
 /**
@@ -66,8 +65,9 @@ export class Protocol {
       });
       if (devices.length === 0) return false;
 
-      this.device = devices[0];
-      await this.device.open();
+      const device = devices[0];
+      await device.open();
+      this.device = device;
 
       debug(`Connected: ${this.device.productName}`);
 
@@ -78,6 +78,7 @@ export class Protocol {
       return true;
     } catch (err) {
       console.error('Connection failed', err);
+      this.device = null;
       return false;
     }
   }

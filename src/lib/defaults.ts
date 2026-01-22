@@ -1,4 +1,4 @@
-import { AMP_MODELS, EFFECT_MODELS } from "./models";
+import { AMP_MODELS, EFFECT_MODELS } from './models';
 
 /**
  * Model Default Buffers

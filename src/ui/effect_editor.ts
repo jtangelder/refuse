@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KnobComponent } from './knob';
-import { DspType } from '../lib';
+import { DspType, type EffectSettings, type ModelDef } from '../lib';
 
 @Component({
   selector: 'fuse-effect-editor',
@@ -154,8 +154,8 @@ import { DspType } from '../lib';
 })
 export class EffectEditorComponent {
   @Input() activeSlot: number | null = null;
-  @Input() effect: any | null = null;
-  @Input() effectModels: any[] = [];
+  @Input() effect: EffectSettings | null = null;
+  @Input() effectModels: ModelDef[] = [];
 
   @Output() assignChange = new EventEmitter<number>();
   @Output() toggleChange = new EventEmitter<boolean>();
@@ -165,12 +165,12 @@ export class EffectEditorComponent {
 
   protected DspType = DspType;
 
-  onAssignEffect(modelId: any) {
-    this.assignChange.emit(Number(modelId));
+  onAssignEffect(modelId: number) {
+    this.assignChange.emit(modelId);
   }
 
-  onToggleEffect(enabled: any) {
-    this.toggleChange.emit(Boolean(enabled));
+  onToggleEffect(enabled: boolean) {
+    this.toggleChange.emit(enabled);
   }
 
   onKnobChange(index: number, value: number) {

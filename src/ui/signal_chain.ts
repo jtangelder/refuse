@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DspType } from '../lib';
+import { DspType, type EffectSettings } from '../lib';
 
 @Component({
   selector: 'fuse-signal-chain',
@@ -94,7 +94,7 @@ import { DspType } from '../lib';
 })
 export class SignalChainComponent {
   @Input() activeSlot: number | null = null;
-  @Input() effects: any[] = [];
+  @Input() effects: EffectSettings[] = [];
   @Output() activeSlotChange = new EventEmitter<number>();
 
   selectSlot(index: number) {

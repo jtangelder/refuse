@@ -18,6 +18,6 @@ import { FuseService } from '../services/fuse.service';
       <fuse-welcome></fuse-welcome>
     }`,
 })
-export class App {
+export class RootComponent {
   protected readonly service = inject(FuseService);
 }

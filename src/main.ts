@@ -1,7 +1,7 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { App } from './ui/app';
+import { RootComponent } from './ui/root';
 
-bootstrapApplication(App, {
+bootstrapApplication(RootComponent, {
   providers: [provideAnimations()],
 }).catch(err => console.error(err));

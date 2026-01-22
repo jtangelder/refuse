@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FuseService } from '../services/fuse.service';
 import { PresetService } from '../services/preset.service';
@@ -61,8 +61,8 @@ export class SidebarComponent {
     await this.presetService.savePreset(slot, name);
   }
 
-  async importFusePreset(event: any) {
-    const file = event.target.files[0];
+  async importFusePreset(event: InputEvent) {
+    const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const text = await file.text();
     await this.presetService.loadXml(text);

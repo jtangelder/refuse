@@ -1,15 +1,13 @@
-import { Protocol as Protocol, OPCODES } from './protocol/protocol';
-import type { ModelDef } from './models';
-import { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from './models';
+import { Protocol } from './protocol/protocol';
+import { DspType } from './models';
 import { debug } from './helpers';
-import { Store, type State } from './store';
+import { Store } from './store';
 import { AmpController } from './controllers/amp_controller';
 import { EffectController } from './controllers/effect_controller';
 import { PresetController } from './controllers/preset_controller';
 import { ProtocolDecoder } from './protocol/protocol_decoder';
 
-export type { ModelDef } from './models';
-export { DspType, AMP_MODELS, EFFECT_MODELS, CABINET_MODELS } from './models';
+export { DspType, type CabinetDef, type ModelDef, AMP_MODELS, CABINET_MODELS, EFFECT_MODELS } from './models';
 
 export interface PresetMetadata {
   slot: number;
@@ -92,10 +90,6 @@ export class FuseAPI {
     return this.protocol.isConnected;
   }
 
-  public get device(): any {
-    return (this.protocol as any).device;
-  }
-
   async connect(): Promise<boolean> {
     debug('[API CALL] connect()');
     const connected = await this.protocol.connect();
@@ -152,8 +146,8 @@ export class FuseAPI {
         debug(`[API] Preset loaded (${payload.slot}). Refreshing state...`);
         this.isRefreshing = true;
         this.store.setRefreshing(true);
-        this.refreshState()
-          .then(() => this.refreshBypassStates())
+        void this.refreshState()
+          .then(() => void this.refreshBypassStates())
           .finally(() => {
             this.isRefreshing = false;
             this.store.setRefreshing(false);
@@ -167,13 +161,12 @@ export class FuseAPI {
   }
 
   private async refreshBypassStates(): Promise<void> {
-    return new Promise<void>(async resolve => {
+    return new Promise<void>(resolve => {
       const pending = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
       const listener = (data: Uint8Array) => {
         const command = ProtocolDecoder.decode(data);
         if (command.type === 'BYPASS_STATE') {
-          const { slot, enabled } = command;
-          pending.delete(slot);
+          pending.delete(command.slot);
           if (pending.size === 0) {
             this.protocol.removeEventListener(listener);
             resolve();
@@ -181,7 +174,7 @@ export class FuseAPI {
         }
       };
       this.protocol.addEventListener(listener);
-      await this.protocol.requestBypassStates();
+      void this.protocol.requestBypassStates();
       setTimeout(() => {
         this.protocol.removeEventListener(listener);
         resolve();

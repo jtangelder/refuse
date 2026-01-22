@@ -4,11 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "npm run lint && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "deploy": "vitest run && ng deploy --dir=dist/refuse",
+    "deploy": "npm run lint && vitest run && ng deploy --dir=dist/refuse",
     "lint": "eslint src/**/*.ts"
   },
   "private": true,

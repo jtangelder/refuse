@@ -29,7 +29,7 @@ export class KnobComponent {
   }
 }
 
-function throttle<T extends (...args: any[]) => any>(func: T, ms: number) {
+function throttle<T extends (...args: unknown[]) => unknown>(func: T, ms: number) {
   let inThrottle: boolean;
   return function (...args: Parameters<T>) {
     if (!inThrottle) {

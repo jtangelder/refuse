@@ -75,7 +75,7 @@ export class DashboardComponent {
   ampSettings = computed(() => {
     // We access ampState to register dependency
     this.service.amp();
-    return this.ampService.getSettings() as any;
+    return this.ampService.getSettings();
   });
 
   ampKnobs = computed(() => {
