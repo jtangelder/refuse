@@ -21,7 +21,7 @@ export class KnobComponent {
   }
 
   // Don't flood the API with knob changes
-  onInput = throttle(this.emitValueChange.bind(this), 50);
+  onInput = throttle<Event>(this.emitValueChange.bind(this), 50);
 
   private emitValueChange(event: Event) {
     const value = (event.target as HTMLInputElement).value;
@@ -29,11 +29,11 @@ export class KnobComponent {
   }
 }
 
-function throttle<T extends (...args: unknown[]) => unknown>(func: T, ms: number) {
+function throttle<T>(func: (arg: T) => void, ms: number) {
   let inThrottle: boolean;
-  return function (...args: Parameters<T>) {
+  return function (this: unknown, arg: T) {
     if (!inThrottle) {
-      func(...args);
+      func(arg);
       inThrottle = true;
       setTimeout(() => {
         inThrottle = false;

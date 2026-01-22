@@ -47,7 +47,7 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings } from '../lib';
             <div class="knob-control">
               <fuse-knob
                 [name]="setting.label"
-                [value]="getAmpSetting(setting.key)"
+                [value]="getAmpSettingNumberValue(setting.key)"
                 (valueChange)="onAdvancedSettingChange(setting.key, $event)"
               ></fuse-knob>
             </div>
@@ -113,17 +113,17 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings } from '../lib';
   ],
 })
 export class AmpEditorComponent {
-  @Input() settings!: AmpSettings;
-  @Input() knobs!: KnobInfo[];
-  @Input() ampModels!: ModelDef[];
-  @Input() cabModels!: CabinetDef[];
+  @Input() settings: AmpSettings | null = null;
+  @Input() knobs: KnobInfo[] = [];
+  @Input() ampModels: ModelDef[] = [];
+  @Input() cabModels: CabinetDef[] = [];
 
   @Output() ampChange = new EventEmitter<number>();
   @Output() cabinetChange = new EventEmitter<number>();
   @Output() knobChange = new EventEmitter<{ index: number; value: number }>();
   @Output() advancedSettingChange = new EventEmitter<{ key: string; value: number }>();
 
-  protected advancedSettingsDefinition: { key: string; label: string }[] = [
+  protected advancedSettingsDefinition: { key: keyof AmpSettings; label: string }[] = [
     { key: 'bias', label: 'Bias' },
     { key: 'noiseGate', label: 'Noise Gate' },
     { key: 'threshold', label: 'Gate Thresh' },
@@ -144,11 +144,15 @@ export class AmpEditorComponent {
     this.knobChange.emit({ index, value });
   }
 
-  onAdvancedSettingChange(key: string, value: number) {
+  onAdvancedSettingChange(key: keyof AmpSettings, value: number) {
     this.advancedSettingChange.emit({ key, value });
   }
 
-  getAmpSetting(key: string): number {
+  getAmpSetting(key: keyof AmpSettings) {
     return this.settings ? this.settings[key] : 0;
+  }
+
+  getAmpSettingNumberValue(key: keyof AmpSettings): number {
+    return Number(this.getAmpSetting(key));
   }
 }

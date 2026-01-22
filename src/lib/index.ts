@@ -35,7 +35,7 @@ export interface AmpSettings {
   bias: number;
   noiseGate: number;
   threshold: number;
-  cabinet: number;
+  cabinetId: number;
   sag: number;
   brightness: number;
   knobs: KnobInfo[];

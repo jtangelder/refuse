@@ -94,7 +94,7 @@ import { DspType, type EffectSettings } from '../lib';
 })
 export class SignalChainComponent {
   @Input() activeSlot: number | null = null;
-  @Input() effects: EffectSettings[] = [];
+  @Input() effects: (EffectSettings | null)[] = [];
   @Output() activeSlotChange = new EventEmitter<number>();
 
   selectSlot(index: number) {

@@ -61,7 +61,7 @@ export class SidebarComponent {
     await this.presetService.savePreset(slot, name);
   }
 
-  async importFusePreset(event: InputEvent) {
+  async importFusePreset(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const text = await file.text();

@@ -123,7 +123,7 @@ export class AmpController extends BaseController {
       bias: k[10], // 42 -> 10
       noiseGate: k[15], // 47 -> 15
       threshold: k[16], // 48 -> 16
-      cabinet: state.cabinetId, // 49
+      cabinetId: state.cabinetId, // 49
       sag: k[19], // 51 -> 19
       brightness: k[20], // 52 -> 20
       knobs: this.getAmpKnobs(),
