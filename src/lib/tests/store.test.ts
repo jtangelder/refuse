@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Store, AmpState, EffectState } from '../store';
+import { DspType } from '../models';
 
 describe('Store', () => {
   let store: Store;
@@ -67,7 +68,7 @@ describe('Store', () => {
   describe('Slot State', () => {
     it('should update slot state', () => {
       const effect: EffectState = {
-        type: 0,
+        type: DspType.STOMP,
         slot: 2,
         modelId: 55,
         enabled: true,
@@ -89,7 +90,7 @@ describe('Store', () => {
 
     it('should clear slot', () => {
       const effect: EffectState = {
-        type: 0,
+        type: DspType.STOMP,
         slot: 2,
         modelId: 55,
         enabled: true,
@@ -104,7 +105,7 @@ describe('Store', () => {
 
     it('should toggle effect bypass', () => {
       const effect: EffectState = {
-        type: 0,
+        type: DspType.STOMP,
         slot: 1,
         modelId: 55,
         enabled: true,
