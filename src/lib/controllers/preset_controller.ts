@@ -3,7 +3,7 @@ import { debug } from '../helpers';
 import type { PresetMetadata } from '../index';
 import { PacketBuilder } from '../protocol/packet_builder';
 import { Protocol } from '../protocol/protocol';
-import type { Command } from '../protocol/protocol_decoder';
+import type { PresetChangeCommand, PresetInfoCommand } from '../protocol/protocol_decoder';
 import { PresetImporter } from '../preset_importer';
 import type { Store } from '../store';
 
@@ -16,23 +16,19 @@ export class PresetController extends BaseController {
     this.importer = new PresetImporter(protocol);
   }
 
-  process(command: Command): boolean {
-    if (command.type === 'PRESET_CHANGE') {
-      const { slot, name } = command;
-      debug(`[DEBUG] PresetController PRESET_CHANGE: ${slot} ${name}`);
-      this.store.setPresetActive(slot, name);
-      this.onLoad?.({ slot, name });
-      return true;
-    }
+  handlePresetChange(command: PresetChangeCommand): boolean {
+    const { slot, name } = command;
+    debug(`[DEBUG] PresetController PRESET_CHANGE: ${slot} ${name}`);
+    this.store.setPresetActive(slot, name);
+    this.onLoad?.({ slot, name });
+    return true;
+  }
 
-    if (command.type === 'PRESET_INFO') {
-      const { slot, name } = command;
-      debug(`[DEBUG] PresetController PRESET_INFO: ${slot} ${name}`);
-      this.store.setPresetMetadata(slot, name);
-      return true;
-    }
-
-    return false;
+  handlePresetInfo(command: PresetInfoCommand): boolean {
+    const { slot, name } = command;
+    debug(`[DEBUG] PresetController PRESET_INFO: ${slot} ${name}`);
+    this.store.setPresetMetadata(slot, name);
+    return true;
   }
 
   async loadPreset(slot: number): Promise<void> {

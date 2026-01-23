@@ -137,6 +137,22 @@ export class PacketBuilder {
     return builder;
   }
 
+  public static handshake1(): Uint8Array {
+    return new Uint8Array([OPCODES.INIT_1]);
+  }
+
+  public static handshake2(): Uint8Array {
+    return new Uint8Array([OPCODES.INIT_2_BYTE1, OPCODES.INIT_2_BYTE2]);
+  }
+
+  public static requestState(): Uint8Array {
+    return new Uint8Array([OPCODES.REQUEST_STATE, OPCODES.REQUEST_STATE_BYTE2]);
+  }
+
+  public static requestBypassStates(): Uint8Array {
+    return new Uint8Array([OPCODES.REQUEST_BYPASS, OPCODES.REQUEST_BYPASS_BYTE2]);
+  }
+
   public build(): Uint8Array {
     return this.buffer;
   }

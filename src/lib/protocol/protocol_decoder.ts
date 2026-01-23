@@ -1,8 +1,11 @@
 import { DspType } from '../models';
 
 export const OFFSETS = {
+  // Parsing Keys
+  COMMAND: 0,
+  SUB_COMMAND: 1,
+
   // Common Packet Structure
-  COMMAND: 1, // Read/Write
   TYPE: 2, // Amp/Effect Type (DspType)
 
   // Settings / Presets
@@ -22,6 +25,11 @@ export const OFFSETS = {
 
   // Specific
   CABINET_ID: 49,
+
+  // Live Knob Changes
+  LIVE_KNOB_INDEX: 5,
+  LIVE_KNOB_VALUE: 10,
+  LIVE_SLOT_INDEX: 13,
 } as const;
 
 export const VALUES = {
@@ -104,12 +112,13 @@ export class ProtocolDecoder {
     const b1 = data[1];
 
     // 1. Live Knob Change (Direct Type 0x05..0x09)
+    // The "sniffing" logic from legacy: data[0] is DspType, data[1] is 0x00
     if (b0 >= DspType.AMP && b0 <= DspType.REVERB) {
       if (b1 === 0x00) {
-        // Logic from EffectController
-        const slot = data[13] || 0;
-        const paramIndex = data[5];
-        const paramValue = data[10];
+        // Logic from EffectController/AmpController
+        const slot = data[OFFSETS.LIVE_SLOT_INDEX] || 0;
+        const paramIndex = data[OFFSETS.LIVE_KNOB_INDEX];
+        const paramValue = data[OFFSETS.LIVE_KNOB_VALUE];
 
         return {
           type: 'KNOB_CHANGE',
@@ -123,9 +132,11 @@ export class ProtocolDecoder {
 
     // 2. Data Packet (0x1c)
     if (b0 === 0x1c && b1 === 0x01) {
-      const type = data[2];
+      const type = data[OFFSETS.TYPE];
 
       // Preset Info / Change
+      // Type 0x04 = Preset Info (when requesting list)
+      // Type 0x00 = Preset Change (when selecting preset, also sent by amp)
       if (type === 0x04 || type === 0x00) {
         // PresetController checks data[3] === 0x00.
         // If data[3] !== 0x00, we ignore/treat as unknown to match legacy behavior
@@ -167,8 +178,8 @@ export class ProtocolDecoder {
       // Effect Update
       if (type >= DspType.STOMP && type <= DspType.REVERB) {
         const instance = data[3];
+        // data[3] seems to be 0x00 for active effects
         if (instance === 0x00) {
-          // Active only
           const slot = data[OFFSETS.SLOT_INDEX];
           const modelId = (data[OFFSETS.MODEL_ID_MSB] << 8) | data[OFFSETS.MODEL_ID_LSB];
           const bypass = data[OFFSETS.BYPASS] === VALUES.BYPASSED;

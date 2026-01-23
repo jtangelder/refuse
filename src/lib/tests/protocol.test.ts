@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Protocol, FENDER_VID, OPCODES } from '../protocol/protocol';
+import { PacketBuilder } from '../protocol/packet_builder';
 
 // Mock objects
 const mockDevice = {
@@ -111,7 +112,7 @@ describe('Protocol', () => {
     });
 
     it('should request state', async () => {
-      await protocol.requestState();
+      await protocol.sendPacket(PacketBuilder.requestState());
 
       expect(mockDevice.sendReport).toHaveBeenCalled();
       const sent = mockDevice.sendReport.mock.calls[0][1];
@@ -120,7 +121,7 @@ describe('Protocol', () => {
     });
 
     it('should request bypass states', async () => {
-      await protocol.requestBypassStates();
+      await protocol.sendPacket(PacketBuilder.requestBypassStates());
 
       expect(mockDevice.sendReport).toHaveBeenCalled();
       const sent = mockDevice.sendReport.mock.calls[0][1];

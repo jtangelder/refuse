@@ -36,7 +36,7 @@ describe('AmpController', () => {
         value: 255,
       } as any;
 
-      const handled = controller.process(command);
+      const handled = controller.handleKnobChange(command);
       expect(handled).toBe(true);
       expect(store.getState().amp.knobs[5]).toBe(255);
     });
@@ -49,7 +49,7 @@ describe('AmpController', () => {
         value: 255,
       } as any;
 
-      const handled = controller.process(command);
+      const handled = controller.handleKnobChange(command);
       expect(handled).toBe(false);
     });
 
@@ -61,7 +61,7 @@ describe('AmpController', () => {
         knobs: new Array(32).fill(100),
       } as any;
 
-      const handled = controller.process(command);
+      const handled = controller.handleAmpUpdate(command);
       expect(handled).toBe(true);
       expect(store.getState().amp.modelId).toBe(0x1234);
       expect(store.getState().amp.cabinetId).toBe(0x05);

@@ -1,8 +1,6 @@
 import { Store } from '../store';
 import { Protocol } from '../protocol/protocol';
 
-import type { Command } from '../protocol/protocol_decoder';
-
 // Define generic events or leave it loose for now
 export abstract class BaseController {
   protected store: Store;
@@ -12,6 +10,4 @@ export abstract class BaseController {
     this.store = store;
     this.protocol = protocol;
   }
-
-  abstract process(command: Command): boolean;
 }

@@ -36,7 +36,7 @@ describe('EffectController', () => {
         value: 200,
       } as any;
 
-      expect(controller.process(command)).toBe(true);
+      expect(controller.handleKnobChange(command)).toBe(true);
       expect(store.getState().slots[1]?.knobs[2]).toBe(200);
     });
 
@@ -50,7 +50,7 @@ describe('EffectController', () => {
         knobs: new Array(32).fill(50),
       } as any;
 
-      expect(controller.process(command)).toBe(true);
+      expect(controller.handleEffectUpdate(command)).toBe(true);
 
       const effect = store.getState().slots[3];
       expect(effect).not.toBeNull();
@@ -79,7 +79,7 @@ describe('EffectController', () => {
         knobs: [],
       } as any;
 
-      controller.process(command);
+      controller.handleEffectUpdate(command);
 
       // Slot 4 should be populated
       expect(store.getState().slots[4]?.type).toBe(DspType.DELAY);
@@ -102,7 +102,7 @@ describe('EffectController', () => {
         enabled: false,
       } as any;
 
-      expect(controller.process(command)).toBe(true);
+      expect(controller.handleBypassState(command)).toBe(true);
       expect(store.getState().slots[1]?.enabled).toBe(false);
     });
   });

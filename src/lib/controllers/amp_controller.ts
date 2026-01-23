@@ -5,37 +5,33 @@ import type { KnobInfo, AmpSettings } from '../index';
 import { debug } from '../helpers';
 import { PacketBuilder } from '../protocol/packet_builder';
 import type { AmpState } from '../store';
-import type { Command } from '../protocol/protocol_decoder';
+import type { AmpUpdateCommand, KnobChangeCommand } from '../protocol/protocol_decoder';
 
 export class AmpController extends BaseController {
-  process(command: Command): boolean {
-    // Live Knob Change
-    if (command.type === 'KNOB_CHANGE') {
-      const { dspType, knobIndex, value } = command;
+  handleKnobChange(command: KnobChangeCommand): boolean {
+    const { dspType, knobIndex, value } = command;
 
-      if (dspType === DspType.AMP) {
-        // Update Store
-        const ampState = this.store.getState().amp;
-        const newState = { ...ampState, knobs: [...ampState.knobs] };
-        newState.knobs[knobIndex] = value;
-        this.store.updateAmpState(newState);
-        return true;
-      }
-    }
-
-    // State Update
-    if (command.type === 'AMP_UPDATE') {
-      const { modelId, cabinetId, knobs } = command;
-      const newState: AmpState = {
-        modelId,
-        enabled: true,
-        cabinetId,
-        knobs,
-      };
+    if (dspType === DspType.AMP) {
+      // Update Store
+      const ampState = this.store.getState().amp;
+      const newState = { ...ampState, knobs: [...ampState.knobs] };
+      newState.knobs[knobIndex] = value;
       this.store.updateAmpState(newState);
       return true;
     }
     return false;
+  }
+
+  handleAmpUpdate(command: AmpUpdateCommand): boolean {
+    const { modelId, cabinetId, knobs } = command;
+    const newState: AmpState = {
+      modelId,
+      enabled: true,
+      cabinetId,
+      knobs,
+    };
+    this.store.updateAmpState(newState);
+    return true;
   }
 
   async setAmpModelById(modelId: number): Promise<void> {

@@ -6,68 +6,64 @@ import type { EffectSettings } from '../index';
 import { debug } from '../helpers';
 import { PacketBuilder } from '../protocol/packet_builder';
 import type { KnobInfo } from '../index';
-import type { Command } from '../protocol/protocol_decoder';
+import type { BypassStateCommand, EffectUpdateCommand, KnobChangeCommand } from '../protocol/protocol_decoder';
 
 export class EffectController extends BaseController {
-  process(command: Command): boolean {
-    // 1. Live Knob Change
-    if (command.type === 'KNOB_CHANGE') {
-      const { slot, knobIndex, value } = command;
+  handleKnobChange(command: KnobChangeCommand): boolean {
+    const { slot, knobIndex, value } = command;
 
-      if (slot >= 0 && slot < 8) {
-        const effect = this.store.getState().slots[slot];
-        if (effect) {
-          const newState = { ...effect, knobs: [...effect.knobs] };
-          newState.knobs[knobIndex] = value;
-          this.store.updateSlotState(slot, newState);
-
-          return true;
-        }
-      }
-    }
-
-    // 2. State Update
-    if (command.type === 'EFFECT_UPDATE') {
-      const { slot, dspType, modelId, enabled, knobs } = command;
-
-      if (slot >= 0 && slot < 8) {
-        // Singleton Migration Logic
-        // If hardware sends an effect to a new slot, ensure it's removed from old slot
-        for (let i = 0; i < 8; i++) {
-          if (i === slot) continue;
-          const otherEffect = this.store.getState().slots[i];
-          if (otherEffect && otherEffect.type === dspType) {
-            debug(
-              `[EffectController] Singleton migration: Clearing slot ${i} because ${DspType[dspType]} moved to ${slot}`,
-            );
-            this.store.clearSlot(i);
-          }
-        }
-
-        const newState: EffectState = {
-          slot,
-          type: dspType,
-          modelId,
-          enabled,
-          knobs,
-        };
-
+    if (slot >= 0 && slot < 8) {
+      const effect = this.store.getState().slots[slot];
+      if (effect) {
+        const newState = { ...effect, knobs: [...effect.knobs] };
+        newState.knobs[knobIndex] = value;
         this.store.updateSlotState(slot, newState);
 
         return true;
       }
     }
+    return false;
+  }
 
-    // 3. Bypass Response
-    if (command.type === 'BYPASS_STATE') {
-      const { slot, enabled } = command;
-      if (slot >= 0 && slot < 8) {
-        this.store.setEffectBypass(slot, enabled);
+  handleEffectUpdate(command: EffectUpdateCommand): boolean {
+    const { slot, dspType, modelId, enabled, knobs } = command;
 
-        return true;
+    if (slot >= 0 && slot < 8) {
+      // Singleton Migration Logic
+      // If hardware sends an effect to a new slot, ensure it's removed from old slot
+      for (let i = 0; i < 8; i++) {
+        if (i === slot) continue;
+        const otherEffect = this.store.getState().slots[i];
+        if (otherEffect && otherEffect.type === dspType) {
+          debug(
+            `[EffectController] Singleton migration: Clearing slot ${i} because ${DspType[dspType]} moved to ${slot}`,
+          );
+          this.store.clearSlot(i);
+        }
       }
-    }
 
+      const newState: EffectState = {
+        slot,
+        type: dspType,
+        modelId,
+        enabled,
+        knobs,
+      };
+
+      this.store.updateSlotState(slot, newState);
+
+      return true;
+    }
+    return false;
+  }
+
+  handleBypassState(command: BypassStateCommand): boolean {
+    const { slot, enabled } = command;
+    if (slot >= 0 && slot < 8) {
+      this.store.setEffectBypass(slot, enabled);
+
+      return true;
+    }
     return false;
   }
 

@@ -6,6 +6,7 @@ import { AmpController } from './controllers/amp_controller';
 import { EffectController } from './controllers/effect_controller';
 import { PresetController } from './controllers/preset_controller';
 import { ProtocolDecoder } from './protocol/protocol_decoder';
+import { PacketBuilder } from './protocol/packet_builder';
 
 export { DspType, type CabinetDef, type ModelDef, AMP_MODELS, CABINET_MODELS, EFFECT_MODELS } from './models';
 
@@ -132,10 +133,33 @@ export class FuseAPI {
 
     this.monitoringListener = (data: Uint8Array) => {
       const command = ProtocolDecoder.decode(data);
-      if (command.type === 'UNKNOWN') return;
-      if (this.amp.process(command)) return;
-      if (this.effects.process(command)) return;
-      if (this.presets.process(command)) return;
+
+      switch (command.type) {
+        case 'KNOB_CHANGE':
+          if (!this.amp.handleKnobChange(command)) {
+            this.effects.handleKnobChange(command);
+          }
+          break;
+        case 'AMP_UPDATE':
+          this.amp.handleAmpUpdate(command);
+          break;
+        case 'EFFECT_UPDATE':
+          this.effects.handleEffectUpdate(command);
+          break;
+        case 'BYPASS_STATE':
+          this.effects.handleBypassState(command);
+          break;
+        case 'PRESET_CHANGE':
+          this.presets.handlePresetChange(command);
+          break;
+        case 'PRESET_INFO':
+          this.presets.handlePresetInfo(command);
+          break;
+        case 'UNKNOWN':
+        default:
+          // Ignore
+          break;
+      }
     };
     this.protocol.addEventListener(this.monitoringListener);
 
@@ -151,7 +175,7 @@ export class FuseAPI {
   }
 
   private async refreshState() {
-    await this.protocol.requestState();
+    await this.protocol.sendPacket(PacketBuilder.requestState());
   }
 
   private async refreshBypassStates(): Promise<void> {
@@ -168,7 +192,7 @@ export class FuseAPI {
         }
       };
       this.protocol.addEventListener(listener);
-      void this.protocol.requestBypassStates();
+      void this.protocol.sendPacket(PacketBuilder.requestBypassStates());
       setTimeout(() => {
         this.protocol.removeEventListener(listener);
         resolve();

@@ -1,6 +1,6 @@
 import { AMP_MODELS, EFFECT_MODELS, DspType } from './models';
 import { PacketBuilder } from './protocol/packet_builder';
-import { Protocol, OPCODES } from './protocol/protocol';
+import { Protocol } from './protocol/protocol';
 import { debug } from './helpers';
 
 // ID Mapping from Fuse XML to Firmware IDs
@@ -82,17 +82,10 @@ export class PresetImporter {
       }
 
       // Send Buffer via Protocol
-      const fullPacket = new Uint8Array(64);
-      fullPacket[0] = OPCODES.DATA_PACKET;
-      fullPacket[1] = OPCODES.DATA_WRITE;
-      fullPacket[2] = type;
-      fullPacket[6] = this.protocol.getNextSequenceId();
-      fullPacket[7] = 0x01;
+      const builder = PacketBuilder.dspWrite(type, this.protocol.getNextSequenceId());
+      builder.addBytes(16, buffer.slice(16, 64));
 
-      // Copy our data payload (bytes 16..63)
-      for (let k = 16; k < 64; k++) fullPacket[k] = buffer[k];
-
-      await this.protocol.sendPacket(fullPacket);
+      await this.protocol.sendPacket(builder.build());
 
       // Apply
       const applyPacket = PacketBuilder.applyChange(type, this.protocol.getNextSequenceId()).build();

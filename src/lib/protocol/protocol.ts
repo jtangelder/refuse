@@ -36,12 +36,31 @@ export const OPCODES = {
 } as const;
 
 /**
+ * WebHID Interfaces
+ */
+interface HIDInputReportEvent extends Event {
+  device: HIDDevice;
+  reportId: number;
+  data: DataView;
+}
+
+interface HIDDevice extends EventTarget {
+  opened: boolean;
+  vendorId: number;
+  productId: number;
+  productName: string;
+  open(): Promise<void>;
+  close(): Promise<void>;
+  sendReport(reportId: number, data: Uint8Array): Promise<void>;
+}
+
+/**
  * Low-level protocol handler for Fender Mustang USB HID communication
  */
 export class Protocol {
-  private device: any | null = null;
+  private device: HIDDevice | null = null;
   private sequenceId = 0;
-  private listeners = new Map<Function, (e: any) => void>();
+  private listeners = new Map<Function, EventListener>();
 
   public get isConnected(): boolean {
     return !!this.device;
@@ -70,7 +89,7 @@ export class Protocol {
       await device.open();
       this.device = device;
 
-      debug(`Connected: ${this.device.productName}`);
+      debug(`Connected: ${this.device?.productName}`);
 
       // Handshake
       await this.sendRaw(new Uint8Array([OPCODES.INIT_1]));
@@ -89,7 +108,7 @@ export class Protocol {
    */
   async disconnect(): Promise<void> {
     if (this.device) {
-      await this.device.close();
+      await this.device!.close();
       this.device = null;
     }
   }
@@ -102,8 +121,9 @@ export class Protocol {
 
     if (this.listeners.has(callback)) return; // Prevent duplicate registration
 
-    const listener = (e: any) => {
-      const data = new Uint8Array(e.data.buffer);
+    const listener = (ev: Event) => {
+      const event = ev as HIDInputReportEvent;
+      const data = new Uint8Array(event.data.buffer);
       debug(
         `HID RECV [raw]: [${Array.from(data)
           .map(b => '0x' + b.toString(16).padStart(2, '0'))
@@ -127,20 +147,6 @@ export class Protocol {
       this.device.removeEventListener('inputreport', listener);
       this.listeners.delete(callback);
     }
-  }
-
-  /**
-   * Request full state dump from amplifier
-   */
-  async requestState(): Promise<void> {
-    await this.sendRaw(new Uint8Array([OPCODES.REQUEST_STATE, OPCODES.REQUEST_STATE_BYTE2]));
-  }
-
-  /**
-   * Request bypass states for all effect slots
-   */
-  async requestBypassStates(): Promise<void> {
-    await this.sendRaw(new Uint8Array([OPCODES.REQUEST_BYPASS, OPCODES.REQUEST_BYPASS_BYTE2]));
   }
 
   /**
