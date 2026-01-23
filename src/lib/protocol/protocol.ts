@@ -36,25 +36,6 @@ export const OPCODES = {
 } as const;
 
 /**
- * WebHID Interfaces
- */
-interface HIDInputReportEvent extends Event {
-  device: HIDDevice;
-  reportId: number;
-  data: DataView;
-}
-
-interface HIDDevice extends EventTarget {
-  opened: boolean;
-  vendorId: number;
-  productId: number;
-  productName: string;
-  open(): Promise<void>;
-  close(): Promise<void>;
-  sendReport(reportId: number, data: Uint8Array): Promise<void>;
-}
-
-/**
  * Low-level protocol handler for Fender Mustang USB HID communication
  */
 export class Protocol {
@@ -67,7 +48,7 @@ export class Protocol {
   }
 
   public get isSupported(): boolean {
-    return !!(navigator as any).hid;
+    return !!navigator.hid;
   }
 
   /**
@@ -80,7 +61,7 @@ export class Protocol {
     }
 
     try {
-      const devices = await (navigator as any).hid.requestDevice({
+      const devices = await navigator.hid.requestDevice({
         filters: [{ vendorId: FENDER_VID }],
       });
       if (devices.length === 0) return false;
@@ -176,7 +157,7 @@ export class Protocol {
           .map(b => '0x' + b.toString(16).padStart(2, '0'))
           .join(', ')}]`,
       );
-      await this.device.sendReport(0, data);
+      await this.device.sendReport(0, data as unknown as BufferSource);
     } catch (e) {
       console.error('HID Send Error:', e);
       throw e;

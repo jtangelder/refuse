@@ -102,6 +102,26 @@ describe('ProtocolDecoder', () => {
       data[3] = 0x00;
       data[OFFSETS.PRESET_SLOT] = 10;
 
+      const name = 'Müstang!';
+      const nameBytes = new TextEncoder().encode(name);
+      data.set(nameBytes, OFFSETS.PRESET_NAME);
+
+      const command = ProtocolDecoder.decode(data);
+      expect(command.type).toBe('PRESET_INFO');
+      if (command.type === 'PRESET_INFO') {
+        expect(command.slot).toBe(10);
+        expect(command.name).toBe(name);
+      }
+    });
+
+    it('should decode Preset Info (Simple ASCII)', () => {
+      const data = new Uint8Array(64);
+      data[0] = 0x1c;
+      data[1] = 0x01;
+      data[2] = 0x04; // Preset Info
+      data[3] = 0x00;
+      data[OFFSETS.PRESET_SLOT] = 10;
+
       const name = 'Test Preset';
       const nameBytes = new TextEncoder().encode(name);
       data.set(nameBytes, OFFSETS.PRESET_NAME);

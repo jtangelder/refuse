@@ -145,11 +145,10 @@ export class ProtocolDecoder {
         const slot = data[OFFSETS.PRESET_SLOT];
         // Parse name
         const nameBytes = data.slice(OFFSETS.PRESET_NAME, OFFSETS.PRESET_NAME + 32);
-        let name = '';
-        for (const b of nameBytes) {
-          if (b === 0) break;
-          name += String.fromCharCode(b);
-        }
+        // Find the first null byte to correctly slice the buffer
+        const nullIndex = nameBytes.indexOf(0);
+        const slicedNameBytes = nullIndex !== -1 ? nameBytes.slice(0, nullIndex) : nameBytes;
+        const name = new TextDecoder('utf-8').decode(slicedNameBytes);
 
         if (type === 0x00) {
           return { type: 'PRESET_CHANGE', slot, name };
