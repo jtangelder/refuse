@@ -36,12 +36,17 @@ export const OPCODES = {
 } as const;
 
 /**
+ * Protocol event listener callback function.
+ */
+export type ProtocolEventListenerFn = (data: Uint8Array) => void;
+
+/**
  * Low-level protocol handler for Fender Mustang USB HID communication
  */
 export class Protocol {
   private device: HIDDevice | null = null;
   private sequenceId = 0;
-  private listeners = new Map<Function, EventListener>();
+  private listeners = new Map<ProtocolEventListenerFn, EventListener>();
 
   public get isConnected(): boolean {
     return !!this.device;
@@ -97,7 +102,7 @@ export class Protocol {
   /**
    * Add event listener for incoming HID reports
    */
-  addEventListener(callback: (data: Uint8Array) => void): void {
+  addEventListener(callback: ProtocolEventListenerFn): void {
     if (!this.device) return;
 
     if (this.listeners.has(callback)) return; // Prevent duplicate registration
@@ -120,7 +125,7 @@ export class Protocol {
   /**
    * Remove event listener
    */
-  removeEventListener(callback: (data: Uint8Array) => void): void {
+  removeEventListener(callback: ProtocolEventListenerFn): void {
     if (!this.device) return;
 
     const listener = this.listeners.get(callback);
