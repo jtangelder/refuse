@@ -168,9 +168,14 @@ describe('Protocol', () => {
 
     it('should remove event listener', () => {
       const cb = vi.fn();
+      protocol.addEventListener(cb);
+
+      // Capture the actual listener added to the device
+      const addedListener = mockDevice.addEventListener.mock.calls[0][1];
+
       protocol.removeEventListener(cb);
 
-      expect(mockDevice.removeEventListener).toHaveBeenCalledWith('inputreport', cb);
+      expect(mockDevice.removeEventListener).toHaveBeenCalledWith('inputreport', addedListener);
     });
   });
 });

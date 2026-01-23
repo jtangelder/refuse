@@ -141,18 +141,12 @@ export class FuseAPI {
 
     // Subscribe to Preset changes to trigger refresh
     this.presets.onLoad = payload => {
-      debug(`[API DEBUG] Preset loaded event received: ${JSON.stringify(payload)} isRefreshing: ${this.isRefreshing}`);
-      if (!this.isRefreshing) {
-        debug(`[API] Preset loaded (${payload.slot}). Refreshing state...`);
-        this.isRefreshing = true;
-        this.store.setRefreshing(true);
-        void this.refreshState()
-          .then(() => void this.refreshBypassStates())
-          .finally(() => {
-            this.isRefreshing = false;
-            this.store.setRefreshing(false);
-          });
-      }
+      debug(`[API DEBUG] Preset loaded event received: ${JSON.stringify(payload)}`);
+      // We do NOT trigger a full refresh here anymore.
+      // The amp automatically sends PRESET_INFO, AMP_UPDATE, and EFFECT_UPDATE packets
+      // when the preset changes. Requesting state explicitly (0xff 0xc1) causes it
+      // to re-send PRESET_CHANGE or other packets that trigger this handler again,
+      // leading to an infinite loop.
     };
   }
 

@@ -314,7 +314,7 @@ describe('FuseAPI', () => {
       newMainPacket[4] = 0x06;
       protocolMock.emitReport(newMainPacket);
 
-      expect(refreshSpy).toHaveBeenCalled();
+      expect(refreshSpy).not.toHaveBeenCalled();
     });
 
     it('should sync full signal chain with multiple effects from real trace', async () => {

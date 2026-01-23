@@ -41,6 +41,7 @@ export const OPCODES = {
 export class Protocol {
   private device: any | null = null;
   private sequenceId = 0;
+  private listeners = new Map<Function, (e: any) => void>();
 
   public get isConnected(): boolean {
     return !!this.device;
@@ -99,7 +100,9 @@ export class Protocol {
   addEventListener(callback: (data: Uint8Array) => void): void {
     if (!this.device) return;
 
-    this.device.addEventListener('inputreport', (e: any) => {
+    if (this.listeners.has(callback)) return; // Prevent duplicate registration
+
+    const listener = (e: any) => {
       const data = new Uint8Array(e.data.buffer);
       debug(
         `HID RECV [raw]: [${Array.from(data)
@@ -107,7 +110,10 @@ export class Protocol {
           .join(', ')}]`,
       );
       callback(data);
-    });
+    };
+
+    this.listeners.set(callback, listener);
+    this.device.addEventListener('inputreport', listener);
   }
 
   /**
@@ -115,7 +121,12 @@ export class Protocol {
    */
   removeEventListener(callback: (data: Uint8Array) => void): void {
     if (!this.device) return;
-    this.device.removeEventListener('inputreport', callback);
+
+    const listener = this.listeners.get(callback);
+    if (listener) {
+      this.device.removeEventListener('inputreport', listener);
+      this.listeners.delete(callback);
+    }
   }
 
   /**

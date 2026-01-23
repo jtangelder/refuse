@@ -285,11 +285,6 @@ fuse-dashboard {
   overflow-x: auto;
   padding: 10px 0 20px;
 
-  .amplifier {
-    // Put after the 3rd effect slot.
-    order: 35;
-  }
-
   .amplifier,
   .slot {
     background: #222;

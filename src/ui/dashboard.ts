@@ -19,11 +19,13 @@ import { EffectService } from '../services/effect.service';
       [activeSlot]="activeSlot"
       [effects]="allEffectSettings()"
       (activeSlotChange)="activeSlot = $event"
+      (swap)="swapSlots($event.slotA, $event.slotB)"
     ></fuse-signal-chain>
 
-    <div class="grid">
+    <div class="editor-container">
       <!-- Amp Control -->
       <fuse-amp-editor
+        *ngIf="activeSlot === 'amp'"
         [settings]="ampSettings()"
         [knobs]="ampKnobs()"
         [ampModels]="ampModels"
@@ -36,26 +38,34 @@ import { EffectService } from '../services/effect.service';
 
       <!-- Slot Control -->
       <fuse-effect-editor
-        [activeSlot]="activeSlot"
-        [effect]="activeSlot !== null ? allEffectSettings()[activeSlot] : null"
+        *ngIf="isEffectSlot(activeSlot)"
+        [activeSlot]="asNumber(activeSlot)"
+        [effect]="asNumber(activeSlot) !== null ? allEffectSettings()[asNumber(activeSlot)!] : null"
         [effectModels]="effectModels"
-        (assignChange)="assignEffect(activeSlot!, $event)"
-        (toggleChange)="toggleEffect(activeSlot!, $event)"
-        (knobChange)="changeEffectKnob(activeSlot!, $event.index, $event.value)"
+        (assignChange)="assignEffect(asNumber(activeSlot)!, $event)"
+        (toggleChange)="toggleEffect(asNumber(activeSlot)!, $event)"
+        (knobChange)="changeEffectKnob(asNumber(activeSlot)!, $event.index, $event.value)"
         (swapRequests)="swapSlots($event.slotA, $event.slotB)"
-        (clearRequest)="clearSlot(activeSlot!)"
+        (clearRequest)="clearSlot(asNumber(activeSlot)!)"
       ></fuse-effect-editor>
+
+      <div *ngIf="activeSlot === null" class="empty-state">
+        <p>Select an item in the signal chain to edit its settings.</p>
+      </div>
     </div>
   `,
   styles: [
     `
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
+      .editor-container {
         padding: 20px;
-        max-width: 1200px;
+        max-width: 800px;
         margin: 0 auto;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 50px;
+        color: #666;
+        font-style: italic;
       }
     `,
   ],
@@ -65,7 +75,7 @@ export class DashboardComponent {
   protected readonly ampService = inject(AmpService);
   protected readonly effectService = inject(EffectService);
 
-  protected activeSlot: number | null = null;
+  protected activeSlot: number | 'amp' | null = null;
 
   protected ampModels = Object.values(AMP_MODELS);
   protected cabModels = CABINET_MODELS;
@@ -141,5 +151,13 @@ export class DashboardComponent {
   async swapSlots(slotA: number, slotB: number) {
     await this.effectService.swapEffects(slotA, slotB);
     this.activeSlot = slotB; // Follow the effect
+  }
+
+  protected isEffectSlot(slot: number | 'amp' | null): boolean {
+    return typeof slot === 'number';
+  }
+
+  protected asNumber(slot: number | 'amp' | null): number | null {
+    return typeof slot === 'number' ? slot : null;
   }
 }
