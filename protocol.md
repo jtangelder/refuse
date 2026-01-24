@@ -1,196 +1,292 @@
 # Fender Mustang USB HID Protocol
 
-*Based on original reverse engineering by snhirsch/mustang-midi-bridge and updated with findings from the TypeScript API implementation.*
+This document serves as the canonical reference for the Fender Mustang USB HID protocol (`Fuse`). It is derived from the TypeScript implementation and reverse-engineering efforts.
 
-## Overview
+Special thanks to the projects https://github.com/offa/plug and https://github.com/snhirsch/mustang-midi-bridge for their reverse-engineering efforts and documentation!
 
-The Fender Mustang amplifier communicates via USB HID. The protocol relies on 64-byte packets sent and received over specific endpoints. It allows for real-time control of amplifier settings, effect parameters, and preset management.
+## 1. Device Identification & Transport
 
-**Vendor ID:** `0x1ed8`  
-**Packet Size:** 64 bytes  
+The communication happens via USB HID (Human Interface Device).
 
-## 1. Connection & Initialization
+- **Vendor ID (VID):** `0x1ed8` (Fender)
+- **Product ID (PID):** Varies by specific Mustang model (e.g., Mustang I, II, III, IV, V).
+- **Packet Size:** 64 bytes (Fixed)
+- **Report ID:** `0` (Used in `sendReport`)
 
-To establish a valid session with the amp, a specific handshake sequence is required immediately after opening the device.
-
-### Handshake Sequence
-1. **Send Init 1:** `0xC3` (followed by zeros)
-2. **Send Init 2:** `0x1A 0x03` (followed by zeros)
-
-### State Request
-To read the current state of the amp (knobs, active effects, etc.), send:
-* **Request State:** `0xFF 0xC1` (followed by zeros)
-
-The amp will respond with a series of reports containing the current preset name, amplifier settings, and effect settings.
+All multi-byte integer values are **Little Endian** unless specified otherwise (Note: Model IDs are typically handled as Big Endian in the codebase for display/lookup, e.g., `0x6700`).
 
 ---
 
-## 2. DSP Architecture
+## 2. Connection Lifecycle
 
-The Mustang internal signal processing is divided into "Families" (DSP Types). Each family handles specific types of models.
+To establish a valid control session, the host must perform a handshake immediately after connecting.
 
-| DSP Type | Value | Description |
-| :--- | :--- | :--- |
-| **AMP** | `0x05` | Amplifier Modeling |
-| **STOMP** | `0x06` | Stompbox Effects (distortion, comp, wah) |
-| **MOD** | `0x07` | Modulation (chorus, flanger, tremolo) |
-| **DELAY** | `0x08` | Delay Effects |
-| **REVERB** | `0x09` | Reverb Effects |
+### 2.1 Handshake Sequence
 
----
+The host sends two specific packets to initialize communication.
 
-## 3. Packet Structures
+**Handshake 1:**
 
-### A. Set DSP Parameter (Amp/Effect Settings)
-This is the primary packet used to change models, knobs, and active status for amps and effects.
+```
+[0xc3, 0x00, ...zeros...]
+```
 
-**Header:** `0x1C 0x03 [DSP_TYPE]`  
-**Length:** 64 bytes
+**Handshake 2:**
 
-| Byte(s) | Function | Description |
-| :--- | :--- | :--- |
-| 0 | Command | `0x1C` (Data Packet) |
-| 1 | Sub-Cmd | `0x03` (Write) |
-| 2 | DSP Type | `0x05`-`0x09` (See DSP Architecture) |
-| 6 | Sequence | Rolling sequence ID (increments per packet) |
-| 7 | Marker | `0x01` |
-| 16-17 | Model ID | 16-bit Model Identifier (Big Endian) |
-| 18 | Slot | Effect Slot Index (0-7) |
-| 22 | Bypass | `0x01` = Bypassed (Off), `0x00` = Active (On) |
-| 32-63 | Knobs | Parameter values for the model (see Knob Mappings) |
+```
+[0x1a, 0x03, ...zeros...]
+```
 
-### B. Apply Changes (Commit)
-After sending a DSP Parameter packet, an "Apply" packet is often required to commit the changes to the DSP.
+_(OpCodes derived from `HANDSHAKE_1`, `HANDSHAKE_2_BYTE1`, `HANDSHAKE_2_BYTE2`)_
 
-**Header:** `0x1C 0x03 0x00`
+### 2.2 Initial State Request
 
-| Byte(s) | Function | Description |
-| :--- | :--- | :--- |
-| 0-2 | Header | `0x1C 0x03 0x00` |
-| 4 | Context | `0x01` if DSP was MOD (`0x07`), otherwise `0x02` |
-| 6 | Sequence | Rolling sequence ID |
-| 7 | Marker | `0x01` |
+After the handshake, the host requests the current amplifier state (presets, knobs, etc.).
 
-### C. Bypass Toggle (Fast Method)
-To quickly toggle an effect on/off without resending all parameters.
+**Request State:**
 
-**Header:** `0x19 0xC3`
+```
+[0xff, 0xc1, ...zeros...]
+```
 
-| Byte(s) | Function | Description |
-| :--- | :--- | :--- |
-| 0 | Command | `0x19` (Bypass Packet) |
-| 1 | Sub-Cmd | `0xC3` (Set) |
-| 2 | Family ID | DSP Type - 3 (e.g., Stomp `0x06` becomes `0x03`) |
-| 3 | State | `0x00` = On, `0x01` = Off |
-| 4 | Slot | Effect Slot Index |
+_(OpCodes: `REQUEST_STATE`, `REQUEST_STATE_BYTE2`)_
+
+**Request Bypass States:**
+
+```
+[0x19, 0x00, ...zeros...]
+```
+
+_(OpCodes: `REQUEST_BYPASS`, `REQUEST_BYPASS_BYTE2`)_
 
 ---
 
-## 4. Preset Management
+## 3. Protocol Architecture
 
-### Load Preset
-Loads a saved preset from the amp's internal memory.
+The protocol distinguishes between different "DSP Types" (Families) which determine how parameters are mapped.
 
-**Header:** `0x1C 0x01 0x01`
+### 3.1 DSP Types
 
-| Byte(s) | Description |
-| :--- | :--- |
-| 0-3 | `0x1C 0x01 0x01 0x00` |
-| 4 | Slot Number (0-23) |
-| 6 | `0x01` |
+| Type Name  | Value  | Description                              |
+| :--------- | :----- | :--------------------------------------- |
+| **AMP**    | `0x05` | Amplifier Models                         |
+| **STOMP**  | `0x06` | Stompboxes (Distortion, Compressor, Wah) |
+| **MOD**    | `0x07` | Modulation (Chorus, Flanger, Phaser)     |
+| **DELAY**  | `0x08` | Delay Effects                            |
+| **REVERB** | `0x09` | Reverb Effects                           |
 
-### Save Preset
-Saves the current state to a specific memory slot.
+### 3.2 Packet Structure (Common)
 
-**Header:** `0x1C 0x01 0x03`
+Most command packets follow a standard 64-byte layout.
 
-| Byte(s) | Description |
-| :--- | :--- |
-| 0-3 | `0x1C 0x01 0x03 0x00` |
-| 4 | Target Slot Number (0-23) |
-| 6-7 | `0x01 0x01` |
-| 16+ | Preset Name (ASCII encoded) |
-
----
-
-## 5. Model Reference (Hex Codes)
-
-### Amplifier Models (`0x05`)
-| Name | Model ID |
-| :--- | :--- |
-| '57 Deluxe | `0x6700` |
-| '59 Bassman | `0x6400` |
-| '57 Champ | `0x7C00` |
-| '65 Deluxe Reverb | `0x5300` |
-| '65 Princeton | `0x6A00` |
-| '65 Twin Reverb | `0x7500` |
-| Super-Sonic | `0x7200` |
-| British '60s | `0x6100` |
-| British '70s | `0x7900` |
-| British '80s | `0x5E00` |
-| American '90s | `0x5D00` |
-| Metal 2000 | `0x6D00` |
-
-### Stompbox Effects (`0x06`)
-| Name | Model ID |
-| :--- | :--- |
-| Overdrive | `0x3C00` |
-| Fixed Wah | `0x4900` |
-| Touch Wah | `0x4A00` |
-| Fuzz | `0x1A00` |
-| Compressor | `0x0700` |
-| Simple Comp | `0x8800` |
-| Ranger Boost (V2) | `0x0301` |
-| Green Box (V2) | `0xBA00` |
-
-### Modulation Effects (`0x07`)
-| Name | Model ID |
-| :--- | :--- |
-| Sine Chorus | `0x1200` |
-| Triangle Chorus | `0x1300` |
-| Sine Flanger | `0x1800` |
-| Vibratone | `0x2D00` |
-| Vintage Tremolo | `0x4000` |
-| Phaser | `0x4F00` |
-| Pitch Shifter | `0x1F00` |
-
-### Delay Effects (`0x08`)
-| Name | Model ID |
-| :--- | :--- |
-| Mono Delay | `0x1600` |
-| Tape Delay | `0x2B00` |
-| Ducking Delay | `0x1500` |
-| Reverse Delay | `0x4600` |
-| Stereo Echo Filter | `0x4800` |
-
-### Reverb Effects (`0x09`)
-| Name | Model ID |
-| :--- | :--- |
-| Small Hall | `0x2400` |
-| Large Hall | `0x3A00` |
-| Small Room | `0x2600` |
-| Large Plate | `0x4B00` |
-| '63 Spring | `0x2100` |
-| '65 Spring | `0x0B00` |
+| Offset | Field           | Description                                                  |
+| :----- | :-------------- | :----------------------------------------------------------- |
+| `0`    | **Command**     | Primary OpCode (e.g., `0x1c` for Data, `0x19` for Bypass)    |
+| `1`    | **SubCommand**  | Secondary OpCode (e.g., `0x03` for Write, `0x01` for Read)   |
+| `2`    | **Type**        | DSP Type associated with the command (or `0x00` for generic) |
+| `3`    | **Context/Var** | Often used for specific flags or context variables           |
+| `6`    | **Sequence ID** | Rolling counter (0-255) to track packet order                |
+| `7`    | **Marker**      | Always `0x01` in valid command packets                       |
 
 ---
 
-## 6. Knob Mapping
+## 4. Commands Reference
 
-Knob values are 8-bit integers located at **byte 32** onwards in the DSP packet. The mapping varies by model but generally follows a standard order.
+### 4.1 Data Packets (`0x1c`)
 
-**Standard Amp Mapping:**
-1. Volume (Gain)
-2. Gain (Gain 2/Drive)
-3. High (Treble)
-4. Mid
-5. Low (Bass)
-6. Presence/Reverb Level
+Used for sending parameter updates, changing presets, or querying specific data.
 
-**Standard Stomp Mapping:**
-1. Level
-2. Gain/Parameter 1
-3. Parameter 2
-4. Parameter 3
+#### A. DSP Parameter Write (`0x1c 0x03`)
 
-*Note: Some complex models (like Pitch Shifter or Fuzz Touch Wah) use up to 6 parameters.*
+Updates the parameters (knobs, model, active state) for a specific effect or amp slot.
+
+| Byte  | Field      | Value / Note                            |
+| :---- | :--------- | :-------------------------------------- |
+| 0     | Command    | `0x1c` (`DATA_PACKET`)                  |
+| 1     | Sub-Cmd    | `0x03` (`DATA_WRITE`)                   |
+| 2     | DSP Type   | `0x05` - `0x09`                         |
+| 6     | Seq ID     | Rolling ID                              |
+| 16-17 | Model ID   | 16-bit Model Identifier (Split MSB/LSB) |
+| 18    | Slot Index | Position in chain (0-7 for effects)     |
+| 22    | Bypass     | `0x01` (Bypassed) or `0x00` (Enabled)   |
+| 32-63 | Knobs      | Array of 8-bit knob values (0-255)      |
+| 49    | Cabinet ID | (Amp Only) Cabinet Model ID             |
+
+_Note: For Amp models (`0x05`), byte `49` specifies the Cabinet ID._
+
+#### B. Apply Change (`0x1c 0x03 0x00`)
+
+Commits changes to the DSP. Sent after parameter updates.
+
+| Byte | Field   | Value / Note                                |
+| :--- | :------ | :------------------------------------------ |
+| 0    | Command | `0x1c`                                      |
+| 1    | Sub-Cmd | `0x03`                                      |
+| 2    | Type    | `0x00`                                      |
+| 4    | Family  | `0x01` if DSP was MOD (`0x07`), else `0x02` |
+
+#### C. Preset Operations (`0x1c 0x01`)
+
+**Load Preset:**
+
+```
+CMD: 0x1c | SUB: 0x01 | TYPE: 0x01 | SLOT: [0-99]
+```
+
+**Save Preset:**
+
+```
+CMD: 0x1c | SUB: 0x01 | TYPE: 0x03 | SLOT: [0-99]
+...
+Bytes 16-47: Preset Name (ASCII)
+```
+
+### 4.2 Bypass Control (`0x19`)
+
+Fast toggling of effect states without sending full parameter sets.
+
+**Set Bypass:**
+
+```
+CMD: 0x19 | SUB: 0xc3 | FAMILY: [Type-3] | STATE: [0/1] | SLOT: [Index]
+```
+
+- **Family**: Calculated as `DSP_TYPE - 3` (e.g., Stomp `0x06` -> `0x03`).
+- **State**: `0x01` = Off (Bypassed), `0x00` = On.
+- **Slot**: The effect slot index.
+
+---
+
+## 5. Live Updates & Decoding
+
+When the amp knobs are turned physically, or state changes internally, the amp sends reports to the host.
+
+### 5.1 Live Knob Change
+
+Packets starting directly with a DSP Type (`0x05`-`0x09`) indicate a real-time parameter change.
+
+| Offset | Field       | Value                             |
+| :----- | :---------- | :-------------------------------- |
+| 0      | DSP Type    | `0x05` - `0x09`                   |
+| 1      | Sub-Cmd     | `0x00`                            |
+| 5      | Param Index | Which knob changed (index)        |
+| 10     | Value       | New value (0-255)                 |
+| 13     | Slot        | Effect slot index (if applicable) |
+
+### 5.2 Preset Change Notification
+
+Received when the user selects a preset on the amp.
+
+```
+0x1c 0x01 0x00 ... [Slot Index at byte 4]
+```
+
+---
+
+## 6. Model Reference
+
+### 6.1 Amplifiers (`0x05`)
+
+| ID (Hex) | Name              |
+| :------- | :---------------- |
+| `0x6700` | '57 Deluxe        |
+| `0x6400` | '59 Bassman       |
+| `0x7C00` | '57 Champ         |
+| `0x5300` | '65 Deluxe Reverb |
+| `0x6A00` | '65 Princeton     |
+| `0x7500` | '65 Twin Reverb   |
+| `0x7200` | Super-Sonic       |
+| `0x6100` | British '60s      |
+| `0x7900` | British '70s      |
+| `0x5E00` | British '80s      |
+| `0x5D00` | American '90s     |
+| `0x6D00` | Metal 2000        |
+| `0xF100` | Studio Preamp     |
+| `0xF600` | '57 Twin          |
+| `0xF900` | '60s Thrift       |
+| `0xFF00` | British Watts     |
+| `0xFC00` | British Colour    |
+
+### 6.2 Cabinets
+
+| ID     | Name                |
+| :----- | :------------------ |
+| `0x00` | Off                 |
+| `0x01` | 1x12 '57 Deluxe     |
+| `0x02` | 4x10 '59 Bassman    |
+| `0x03` | 1x8 '57 Champ       |
+| `0x04` | 1x12 '65 Deluxe     |
+| `0x05` | 1x10 '65 Princeton  |
+| `0x06` | 4x12 Metal 2000     |
+| `0x07` | 2x12 British '60s   |
+| `0x08` | 4x12 British '70s   |
+| `0x09` | 2x12 '65 Twin       |
+| `0x0a` | 4x12 British '80s   |
+| `0x0b` | 2x12 Super-Sonic    |
+| `0x0c` | 1x12 Super-Sonic    |
+| `0x0d` | 2x12 '57 Twin       |
+| `0x0e` | 2x12 '60s Thrift    |
+| `0x0f` | 4x12 British Watts  |
+| `0x10` | 4x12 British Colour |
+
+### 6.3 Stomp Effects (`0x06`)
+
+| ID (Hex) | Name           |
+| :------- | :------------- |
+| `0x3C00` | Overdrive      |
+| `0x4900` | Fixed Wah      |
+| `0x4A00` | Touch Wah      |
+| `0x1A00` | Fuzz           |
+| `0x1C00` | Fuzz Touch Wah |
+| `0x0700` | Compressor     |
+| `0x8800` | Simple Comp    |
+| `0x0301` | Ranger Boost   |
+| `0xBA00` | Green Box      |
+| `0x0101` | Orange Box     |
+| `0x1101` | Black Box      |
+| `0x0F01` | Big Fuzz       |
+
+### 6.4 Modulation (`0x07`)
+
+| ID (Hex) | Name             |
+| :------- | :--------------- |
+| `0x1200` | Sine Chorus      |
+| `0x1300` | Triangle Chorus  |
+| `0x1800` | Sine Flanger     |
+| `0x1900` | Triangle Flanger |
+| `0x2D00` | Vibratone        |
+| `0x4000` | Vintage Tremolo  |
+| `0x4100` | Sine Tremolo     |
+| `0x2200` | Ring Modulator   |
+| `0x2900` | Step Filter      |
+| `0x4F00` | Phaser           |
+| `0x1F00` | Pitch Shifter    |
+
+### 6.5 Delay (`0x08`)
+
+| ID (Hex) | Name               |
+| :------- | :----------------- |
+| `0x1600` | Mono Delay         |
+| `0x4300` | Mono Echo Filter   |
+| `0x4800` | Stereo Echo Filter |
+| `0x2B00` | Tape Delay         |
+| `0x2A00` | Stereo Tape Delay  |
+| `0x1500` | Ducking Delay      |
+| `0x4600` | Reverse Delay      |
+| `0x4400` | Multitap Delay     |
+| `0x4500` | Ping Pong Delay    |
+
+### 6.6 Reverb (`0x09`)
+
+| ID (Hex) | Name        |
+| :------- | :---------- |
+| `0x2400` | Small Hall  |
+| `0x3A00` | Large Hall  |
+| `0x2600` | Small Room  |
+| `0x3B00` | Large Room  |
+| `0x4E00` | Small Plate |
+| `0x4B00` | Large Plate |
+| `0x4C00` | Ambient     |
+| `0x4D00` | Arena       |
+| `0x2100` | '63 Spring  |
+| `0x0B00` | '65 Spring  |
