@@ -42,6 +42,12 @@ export class EffectController extends BaseController {
         }
       }
 
+      // If the hardware reports modelId 0, it means the slot is empty.
+      if (modelId === 0) {
+        this.store.clearSlot(slot);
+        return true;
+      }
+
       const newState: EffectState = {
         slot,
         type: dspType,
@@ -101,12 +107,20 @@ export class EffectController extends BaseController {
     const model = this.getEffectModel(slot);
     const effect = this.store.getState().slots[slot];
 
-    if (!model || !effect) return null;
+    if (!effect) return null;
+
+    const modelDef = model || {
+      id: effect.modelId,
+      name: `Unknown (0x${effect.modelId.toString(16)})`,
+      type: effect.type,
+      knobs: [],
+    };
+
     return {
       slot,
-      type: model.type,
-      model: model.name,
-      modelId: model.id,
+      type: effect.type,
+      model: modelDef.name,
+      modelId: modelDef.id,
       enabled: effect.enabled,
       knobs: this.getBufferKnobs(slot),
     };
@@ -127,7 +141,8 @@ export class EffectController extends BaseController {
       if (i === slot) continue;
       const otherEffect = this.store.getState().slots[i];
       if (otherEffect && otherEffect.type === model.type) {
-        throw new Error(`Effect of type ${DspType[model.type]} already exists in slot ${i}`);
+        debug(`[EffectController] Auto-removing existing ${DspType[model.type]} effect from slot ${i}`);
+        await this.clearEffect(i);
       }
     }
 

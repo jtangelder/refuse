@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, type CdkDragDrop } from '@angular/cdk/drag-drop';
-import { DspType, type EffectSettings } from '../lib';
+import { DspType, type EffectSettings, type AmpSettings, type CabinetDef } from '../lib';
 
 @Component({
   selector: 'fuse-signal-chain',
@@ -10,74 +10,97 @@ import { DspType, type EffectSettings } from '../lib';
   template: `
     <div class="signal-chain-strip" cdkDropListGroup>
       <!-- Pre-Amp Slots (0-3) -->
-      <div
-        class="slot-group"
-        cdkDropList
-        cdkDropListOrientation="horizontal"
-        [cdkDropListData]="preAmpSlots"
-        (cdkDropListDropped)="drop($event)"
-      >
-        <div
-          *ngFor="let i of preAmpSlots"
-          class="slot"
-          cdkDrag
-          [cdkDragData]="i"
-          [class.active]="activeSlot === i"
-          [class.empty]="!effects[i]"
-          (click)="selectSlot(i)"
-        >
-          <span class="slot-num">{{ i + 1 }}</span>
-          <div *ngIf="effects[i] as effect; else emptySlot">
-            <div class="badge" [style.background]="getFamilyColor(effect.type)">
-              {{ getFamilyLabel(effect.type) }}
-            </div>
-            <div class="model-name">{{ effect.model }}</div>
-            <div class="status">{{ effect.enabled ? '●' : '○' }}</div>
-          </div>
-          <ng-template #emptySlot>
+      <div class="group-container">
+        <div class="background-layer">
+          <div class="slot empty placeholder" *ngFor="let _ of [0, 1, 2, 3]">
             <div class="empty-label">Empty</div>
-          </ng-template>
-          <!-- Placeholder for drag preview -->
-          <div *cdkDragPlaceholder class="slot-placeholder"></div>
+          </div>
+        </div>
+        <div
+          class="slot-group"
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          cdkDropListLockAxis="x"
+          [cdkDropListData]="preAmpSlots"
+          (cdkDropListDropped)="drop($event)"
+        >
+          <div
+            *ngFor="let i of preAmpSlots; trackBy: trackByFn"
+            class="slot"
+            cdkDrag
+            [cdkDragData]="i"
+            [class.active]="activeSlot === i"
+            [class.empty]="!effects[i]"
+            (click)="selectSlot(i)"
+          >
+            <span class="slot-num">{{ i + 1 }}</span>
+            <div *ngIf="effects[i] as effect; else emptySlot">
+              <div class="badge" [style.background]="getFamilyColor(effect.type)">
+                {{ getFamilyLabel(effect.type) }}
+              </div>
+              <div class="model-name">{{ effect.model }}</div>
+              <div class="status">{{ effect.enabled ? '●' : '○' }}</div>
+            </div>
+            <ng-template #emptySlot>
+              <div class="empty-label">Empty</div>
+            </ng-template>
+            <!-- Placeholder for drag preview -->
+            <div *cdkDragPlaceholder class="slot-placeholder"></div>
+          </div>
         </div>
       </div>
 
       <!-- Amplifier -->
       <div class="slot amplifier" [class.active]="activeSlot === 'amp'" (click)="selectAmp()">
-        <span class="slot-label">AMP</span>
-        <div class="amp-icon">⚡</div>
+        <ng-container *ngIf="ampSettings; else emptyAmp">
+          <div class="badge" style="background: #e67e22; color: #fff; margin-bottom: 4px;">AMP</div>
+          <div class="model-name">{{ ampSettings.model }}</div>
+          <div class="cabinet-name">{{ getCabinetName(ampSettings.cabinetId) }}</div>
+        </ng-container>
+        <ng-template #emptyAmp>
+          <span class="slot-label">AMP</span>
+          <div class="amp-icon">⚡</div>
+        </ng-template>
       </div>
 
       <!-- Post-Amp Slots (4-7) -->
-      <div
-        class="slot-group"
-        cdkDropList
-        cdkDropListOrientation="horizontal"
-        [cdkDropListData]="postAmpSlots"
-        (cdkDropListDropped)="drop($event)"
-      >
-        <div
-          *ngFor="let i of postAmpSlots"
-          class="slot"
-          cdkDrag
-          [cdkDragData]="i"
-          [class.active]="activeSlot === i"
-          [class.empty]="!effects[i]"
-          (click)="selectSlot(i)"
-        >
-          <span class="slot-num">{{ i + 1 }}</span>
-          <div *ngIf="effects[i] as effect; else emptySlot">
-            <div class="badge" [style.background]="getFamilyColor(effect.type)">
-              {{ getFamilyLabel(effect.type) }}
-            </div>
-            <div class="model-name">{{ effect.model }}</div>
-            <div class="status">{{ effect.enabled ? '●' : '○' }}</div>
-          </div>
-          <ng-template #emptySlot>
+      <div class="group-container">
+        <div class="background-layer">
+          <div class="slot empty placeholder" *ngFor="let _ of [0, 1, 2, 3]">
             <div class="empty-label">Empty</div>
-          </ng-template>
-          <!-- Placeholder for drag preview -->
-          <div *cdkDragPlaceholder class="slot-placeholder"></div>
+          </div>
+        </div>
+        <div
+          class="slot-group"
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          cdkDropListLockAxis="x"
+          [cdkDropListData]="postAmpSlots"
+          (cdkDropListDropped)="drop($event)"
+        >
+          <div
+            *ngFor="let i of postAmpSlots; trackBy: trackByFn"
+            class="slot"
+            cdkDrag
+            [cdkDragData]="i"
+            [class.active]="activeSlot === i"
+            [class.empty]="!effects[i]"
+            (click)="selectSlot(i)"
+          >
+            <span class="slot-num">{{ i + 1 }}</span>
+            <div *ngIf="effects[i] as effect; else emptySlot">
+              <div class="badge" [style.background]="getFamilyColor(effect.type)">
+                {{ getFamilyLabel(effect.type) }}
+              </div>
+              <div class="model-name">{{ effect.model }}</div>
+              <div class="status">{{ effect.enabled ? '●' : '○' }}</div>
+            </div>
+            <ng-template #emptySlot>
+              <div class="empty-label">Empty</div>
+            </ng-template>
+            <!-- Placeholder for drag preview -->
+            <div *cdkDragPlaceholder class="slot-placeholder"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -95,10 +118,33 @@ import { DspType, type EffectSettings } from '../lib';
         justify-content: center;
         min-height: 110px;
       }
-      .slot-group {
+      .group-container {
+        position: relative;
+        min-width: 424px; /* 4 * 100 + 3 * 8 */
+        height: 100px;
+      }
+      .background-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         display: flex;
         gap: 8px;
+        z-index: 0;
       }
+      .slot-group {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 8px;
+        min-height: 100px; /* Ensure drop zone area */
+      }
+      /* Visual fix: Hide the 5th item if dragged in (list growth) */
+      .slot-group .slot:nth-child(n + 5) {
+        display: none !important;
+      }
+      .slot-placeholder,
       .slot {
         background: #2a2a2a;
         border: 2px solid #333;
@@ -139,6 +185,8 @@ import { DspType, type EffectSettings } from '../lib';
         height: 110px;
         z-index: 10;
         cursor: pointer;
+        display: flex;
+        flex-direction: column;
       }
       .amplifier.active {
         border-color: #e67e22;
@@ -184,6 +232,15 @@ import { DspType, type EffectSettings } from '../lib';
         margin-top: 2px;
         flex-grow: 1;
       }
+      .cabinet-name {
+        font-size: 0.65rem;
+        color: #aaa;
+        margin-top: auto;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
       .status {
         font-size: 0.7rem;
         color: #aaa;
@@ -226,6 +283,8 @@ import { DspType, type EffectSettings } from '../lib';
 export class SignalChainComponent {
   @Input() activeSlot: number | 'amp' | null = null;
   @Input() effects: (EffectSettings | null)[] = [];
+  @Input() ampSettings: AmpSettings | null = null;
+  @Input() cabinetModels: CabinetDef[] = [];
   @Output() activeSlotChange = new EventEmitter<number | 'amp'>();
   @Output() move = new EventEmitter<{ fromSlot: number; toSlot: number }>();
 
@@ -245,15 +304,24 @@ export class SignalChainComponent {
       // Same container move
       if (event.previousIndex !== event.currentIndex) {
         const fromSlot = event.item.data;
-        const toSlot = event.container.data[event.currentIndex];
+        // Clamp index to array bounds to avoid undefined
+        const targetIndex = Math.min(event.currentIndex, event.container.data.length - 1);
+        const toSlot = event.container.data[targetIndex];
 
-        this.move.emit({ fromSlot, toSlot });
+        if (fromSlot !== undefined && toSlot !== undefined) {
+          this.move.emit({ fromSlot, toSlot });
+        }
       }
     } else {
       // Different container (Pre <-> Post)
       const fromSlot = event.item.data;
-      const toSlot = event.container.data[event.currentIndex];
-      this.move.emit({ fromSlot, toSlot });
+      // Clamp index
+      const targetIndex = Math.min(event.currentIndex, event.container.data.length - 1);
+      const toSlot = event.container.data[targetIndex];
+
+      if (fromSlot !== undefined && toSlot !== undefined) {
+        this.move.emit({ fromSlot, toSlot });
+      }
     }
   }
 
@@ -264,6 +332,15 @@ export class SignalChainComponent {
       result.push(i);
     }
     return result;
+  }
+
+  trackByFn(index: number, item: number) {
+    return item;
+  }
+
+  getCabinetName(id: number) {
+    const cab = this.cabinetModels.find(c => c.id === id);
+    return cab ? cab.name : `Cab ${id}`;
   }
 
   getFamilyLabel(type: DspType) {

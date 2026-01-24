@@ -18,6 +18,8 @@ import { EffectService } from '../services/effect.service';
     <fuse-signal-chain
       [activeSlot]="activeSlot"
       [effects]="allEffectSettings()"
+      [ampSettings]="ampSettings()"
+      [cabinetModels]="cabModels"
       (activeSlotChange)="activeSlot = $event"
       (move)="moveEffect($event.fromSlot, $event.toSlot)"
     ></fuse-signal-chain>
@@ -154,8 +156,9 @@ export class DashboardComponent {
   }
 
   async moveEffect(fromSlot: number, toSlot: number) {
-    await this.effectService.moveEffect(fromSlot, toSlot);
+    // Optimistic update to avoid NG0100 and improve responsiveness
     this.activeSlot = toSlot;
+    await this.effectService.moveEffect(fromSlot, toSlot);
   }
 
   protected isEffectSlot(slot: number | 'amp' | null): boolean {

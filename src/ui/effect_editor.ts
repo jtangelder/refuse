@@ -60,25 +60,6 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
               </div>
             }
           </div>
-
-          <div>
-            <label>Slot</label>
-            <div>
-              @for (i of range(8); track i) {
-                <button
-                  (click)="onSwapSlots(activeSlot!, i)"
-                  [disabled]="i === activeSlot"
-                  class="secondary"
-                  style="padding: 4px 8px; font-size: 0.8rem; margin-right: 5px;"
-                >
-                  {{ i }}
-                </button>
-              }
-              <button (click)="onClearSlot()" class="secondary" style="padding: 4px 8px; font-size: 0.8rem;">
-                Clear
-              </button>
-            </div>
-          </div>
         </div>
 
         <ng-template #emptySlot>
@@ -165,8 +146,8 @@ export class EffectEditorComponent {
 
   protected DspType = DspType;
 
-  onAssignEffect(modelId: number) {
-    this.assignChange.emit(modelId);
+  onAssignEffect(modelId: number | string) {
+    this.assignChange.emit(Number(modelId));
   }
 
   onToggleEffect(enabled: boolean) {

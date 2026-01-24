@@ -187,106 +187,106 @@ Received when the user selects a preset on the amp.
 
 ### 6.1 Amplifiers (`0x05`)
 
-| ID (Hex) | Name              |
-| :------- | :---------------- |
-| `0x6700` | '57 Deluxe        |
-| `0x6400` | '59 Bassman       |
-| `0x7C00` | '57 Champ         |
-| `0x5300` | '65 Deluxe Reverb |
-| `0x6A00` | '65 Princeton     |
-| `0x7500` | '65 Twin Reverb   |
-| `0x7200` | Super-Sonic       |
-| `0x6100` | British '60s      |
-| `0x7900` | British '70s      |
-| `0x5E00` | British '80s      |
-| `0x5D00` | American '90s     |
-| `0x6D00` | Metal 2000        |
-| `0xF100` | Studio Preamp     |
-| `0xF600` | '57 Twin          |
-| `0xF900` | '60s Thrift       |
-| `0xFF00` | British Watts     |
-| `0xFC00` | British Colour    |
+| ID (Hex) | Name              | Based On                     |
+| :------- | :---------------- | :--------------------------- |
+| `0x6700` | '57 Deluxe        | 1957 Fender Deluxe           |
+| `0x6400` | '59 Bassman       | 1959 Fender Bassman          |
+| `0x7C00` | '57 Champ         | 1957 Fender Champ            |
+| `0x5300` | '65 Deluxe Reverb | 1965 Fender Deluxe Reverb    |
+| `0x6A00` | '65 Princeton     | 1965 Fender Princeton Reverb |
+| `0x7500` | '65 Twin Reverb   | 1965 Fender Twin Reverb      |
+| `0x7200` | Super-Sonic       | Fender Super-Sonic 22        |
+| `0x6100` | British '60s      | VOX AC30                     |
+| `0x7900` | British '70s      | Marshall 1959SLP             |
+| `0x5E00` | British '80s      | Marshall JCM 800             |
+| `0x5D00` | American '90s     | Mesa/Boogie Dual Rectifier   |
+| `0x6D00` | Metal 2000        | Peavey 5150                  |
+| `0xF100` | Studio Preamp     | Direct Signal (No Modeling)  |
+| `0xF600` | '57 Twin          | 1957 Fender Twin             |
+| `0xF900` | '60s Thrift       | Sears 1964 Silvertone        |
+| `0xFF00` | British Watts     | HiWatt 100 DR103             |
+| `0xFC00` | British Colour    | Orange Custom Shop           |
 
 ### 6.2 Cabinets
 
-| ID     | Name                |
-| :----- | :------------------ |
-| `0x00` | Off                 |
-| `0x01` | 1x12 '57 Deluxe     |
-| `0x02` | 4x10 '59 Bassman    |
-| `0x03` | 1x8 '57 Champ       |
-| `0x04` | 1x12 '65 Deluxe     |
-| `0x05` | 1x10 '65 Princeton  |
-| `0x06` | 4x12 Metal 2000     |
-| `0x07` | 2x12 British '60s   |
-| `0x08` | 4x12 British '70s   |
-| `0x09` | 2x12 '65 Twin       |
-| `0x0a` | 4x12 British '80s   |
-| `0x0b` | 2x12 Super-Sonic    |
-| `0x0c` | 1x12 Super-Sonic    |
-| `0x0d` | 2x12 '57 Twin       |
-| `0x0e` | 2x12 '60s Thrift    |
-| `0x0f` | 4x12 British Watts  |
-| `0x10` | 4x12 British Colour |
+| ID     | Name                | Based On                     |
+| :----- | :------------------ | :--------------------------- |
+| `0x00` | Off                 | -                            |
+| `0x01` | 1x12 '57 Deluxe     | Fender '57 Deluxe            |
+| `0x02` | 4x10 '59 Bassman    | Fender '59 Bassman           |
+| `0x03` | 1x8 '57 Champ       | Fender '57 Champion          |
+| `0x04` | 1x12 '65 Deluxe     | Fender '65 Deluxe            |
+| `0x05` | 1x10 '65 Princeton  | Fender '65 Princeton         |
+| `0x06` | 4x12 Metal 2000     | Peavey 5150 4x12 (Sheffield) |
+| `0x07` | 2x12 British '60s   | VOX AC30                     |
+| `0x08` | 4x12 British '70s   | Marshall 1960TV              |
+| `0x09` | 2x12 '65 Twin       | Fender '65 Twin              |
+| `0x0a` | 4x12 British '80s   | Marshall 1960A               |
+| `0x0b` | 2x12 Super-Sonic    | Fender Super-Sonic 60        |
+| `0x0c` | 1x12 Super-Sonic    | Fender Super-Sonic 22        |
+| `0x0d` | 2x12 '57 Twin       | Fender '57 Twin              |
+| `0x0e` | 2x12 '60s Thrift    | Sears Silvertone Twin        |
+| `0x0f` | 4x12 British Watts  | HiWatt 4x12                  |
+| `0x10` | 4x12 British Colour | Orange 4x12                  |
 
 ### 6.3 Stomp Effects (`0x06`)
 
-| ID (Hex) | Name           |
-| :------- | :------------- |
-| `0x3C00` | Overdrive      |
-| `0x4900` | Fixed Wah      |
-| `0x4A00` | Touch Wah      |
-| `0x1A00` | Fuzz           |
-| `0x1C00` | Fuzz Touch Wah |
-| `0x0700` | Compressor     |
-| `0x8800` | Simple Comp    |
-| `0x0301` | Ranger Boost   |
-| `0xBA00` | Green Box      |
-| `0x0101` | Orange Box     |
-| `0x1101` | Black Box      |
-| `0x0F01` | Big Fuzz       |
+| ID (Hex) | Name           | Based On                                |
+| :------- | :------------- | :-------------------------------------- |
+| `0x3C00` | Overdrive      | Ibanez Tube Screamer                    |
+| `0x4900` | Fixed Wah      | VOX V847A Wah-Wah                       |
+| `0x4A00` | Touch Wah      | VOX V847A Wah-Wah (Envelope Controlled) |
+| `0x1A00` | Fuzz           | Vox Tone Bender                         |
+| `0x1C00` | Fuzz Touch Wah | Fuzz Face + Envelope Filter             |
+| `0x0700` | Compressor     | Boss CS-3 Compressor Sustainer          |
+| `0x8800` | Simple Comp    | MXR Dyna Comp                           |
+| `0x0301` | Ranger Boost   | Dallas RangeMaster Treble Booster       |
+| `0xBA00` | Green Box      | Ibanez Tube Screamer TS808              |
+| `0x0101` | Orange Box     | Boss DS-1 Distortion                    |
+| `0x1101` | Black Box      | ProCo RAT                               |
+| `0x0F01` | Big Fuzz       | Electro-Harmonix Big Muff Pi            |
 
 ### 6.4 Modulation (`0x07`)
 
-| ID (Hex) | Name             |
-| :------- | :--------------- |
-| `0x1200` | Sine Chorus      |
-| `0x1300` | Triangle Chorus  |
-| `0x1800` | Sine Flanger     |
-| `0x1900` | Triangle Flanger |
-| `0x2D00` | Vibratone        |
-| `0x4000` | Vintage Tremolo  |
-| `0x4100` | Sine Tremolo     |
-| `0x2200` | Ring Modulator   |
-| `0x2900` | Step Filter      |
-| `0x4F00` | Phaser           |
-| `0x1F00` | Pitch Shifter    |
+| ID (Hex) | Name             | Based On                   |
+| :------- | :--------------- | :------------------------- |
+| `0x1200` | Sine Chorus      | Boss CE-2 Chorus           |
+| `0x1300` | Triangle Chorus  | MXR Stereo Chorus          |
+| `0x1800` | Sine Flanger     | MXR M117 Flanger           |
+| `0x1900` | Triangle Flanger | Boss BF-2 Flanger          |
+| `0x2D00` | Vibratone        | Fender Vibratone           |
+| `0x4000` | Vintage Tremolo  | Fender Tube Amp Tremolo    |
+| `0x4100` | Sine Tremolo     | Fender Bias Tremolo        |
+| `0x2200` | Ring Modulator   | Moog MF-102 Ring Modulator |
+| `0x2900` | Step Filter      | ZVex Seek Wah              |
+| `0x4F00` | Phaser           | MXR Phase 90               |
+| `0x1F00` | Pitch Shifter    | Boss PS-6 Harmonist        |
 
 ### 6.5 Delay (`0x08`)
 
-| ID (Hex) | Name               |
-| :------- | :----------------- |
-| `0x1600` | Mono Delay         |
-| `0x4300` | Mono Echo Filter   |
-| `0x4800` | Stereo Echo Filter |
-| `0x2B00` | Tape Delay         |
-| `0x2A00` | Stereo Tape Delay  |
-| `0x1500` | Ducking Delay      |
-| `0x4600` | Reverse Delay      |
-| `0x4400` | Multitap Delay     |
-| `0x4500` | Ping Pong Delay    |
+| ID (Hex) | Name               | Based On                             |
+| :------- | :----------------- | :----------------------------------- |
+| `0x1600` | Mono Delay         | Boss DD-3 Digital Delay              |
+| `0x4300` | Mono Echo Filter   | Generic Delay with Filter            |
+| `0x4800` | Stereo Echo Filter | Generic Stereo Delay with Filter     |
+| `0x2B00` | Tape Delay         | Maestro Echoplex / Roland Space Echo |
+| `0x2A00` | Stereo Tape Delay  | Maestro Echoplex / Roland Space Echo |
+| `0x1500` | Ducking Delay      | TC Electronic 2290 (Dynamic)         |
+| `0x4600` | Reverse Delay      | Boss DD-7 Reverse Mode               |
+| `0x4400` | Multitap Delay     | Korg SDD-3000 / Generic Multitap     |
+| `0x4500` | Ping Pong Delay    | Generic Ping Pong                    |
 
 ### 6.6 Reverb (`0x09`)
 
-| ID (Hex) | Name        |
-| :------- | :---------- |
-| `0x2400` | Small Hall  |
-| `0x3A00` | Large Hall  |
-| `0x2600` | Small Room  |
-| `0x3B00` | Large Room  |
-| `0x4E00` | Small Plate |
-| `0x4B00` | Large Plate |
-| `0x4C00` | Ambient     |
-| `0x4D00` | Arena       |
-| `0x2100` | '63 Spring  |
-| `0x0B00` | '65 Spring  |
+| ID (Hex) | Name        | Based On                           |
+| :------- | :---------- | :--------------------------------- |
+| `0x2400` | Small Hall  | Standard Hall Algorithm            |
+| `0x3A00` | Large Hall  | Standard Hall Algorithm            |
+| `0x2600` | Small Room  | Standard Room Algorithm            |
+| `0x3B00` | Large Room  | Standard Room Algorithm            |
+| `0x4E00` | Small Plate | EMT 140 Plate (Short Decay)        |
+| `0x4B00` | Large Plate | EMT 140 Plate (Long Decay)         |
+| `0x4C00` | Ambient     | Generic Ambient / Shimmer          |
+| `0x4D00` | Arena       | Generic Arena / Stadium            |
+| `0x2100` | '63 Spring  | 1963 Fender Spring Reverb Unit     |
+| `0x0B00` | '65 Spring  | 1965 Fender Spring Reverb (In-Amp) |

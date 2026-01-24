@@ -132,12 +132,12 @@ export class AmpEditorComponent {
     { key: 'depth', label: 'Depth' },
   ];
 
-  onAmpChange(value: number) {
-    this.ampChange.emit(value);
+  onAmpChange(value: number | string) {
+    this.ampChange.emit(Number(value));
   }
 
-  onCabinetChange(value: number) {
-    this.cabinetChange.emit(value);
+  onCabinetChange(value: number | string) {
+    this.cabinetChange.emit(Number(value));
   }
 
   onKnobChange(index: number, value: number) {
