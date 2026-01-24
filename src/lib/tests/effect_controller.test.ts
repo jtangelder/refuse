@@ -116,12 +116,18 @@ describe('EffectController', () => {
       expect(mockProtocol.sendPacket).toHaveBeenCalled();
     });
 
-    it('should throw error if effect type already exists', async () => {
+    it('should clear existing effect if type already exists', async () => {
       const model = EFFECT_MODELS.OVERDRIVE; // Stomp
       await controller.setEffectById(0, model.id);
 
       // Try adding another Stomp to slot 1
-      await expect(controller.setEffectById(1, model.id)).rejects.toThrow(/already exists/);
+      await controller.setEffectById(1, model.id);
+
+      // Slot 1 should have the effect
+      expect(store.getState().slots[1]?.modelId).toBe(model.id);
+
+      // Slot 0 should be CLEARED (auto-removed)
+      expect(store.getState().slots[0]).toBeNull();
     });
 
     it('should clear effect', async () => {

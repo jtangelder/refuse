@@ -3,6 +3,15 @@ import { FuseAPI } from '../index';
 import { EFFECT_MODELS } from '../models';
 
 // Mock Protocol to inject raw packets
+async function fastConnect(api: FuseAPI) {
+  vi.useFakeTimers();
+  const connectPromise = api.connect();
+  // Advance enough to cover refreshBypassStates (1000ms) and padding (500ms)
+  await vi.advanceTimersByTimeAsync(2000);
+  await connectPromise;
+  vi.useRealTimers();
+}
+
 vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
@@ -55,7 +64,7 @@ describe('Data-Driven Verification', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     api = new FuseAPI();
-    await api.connect();
+    await fastConnect(api);
     protocol = (api as any).protocol;
   });
 

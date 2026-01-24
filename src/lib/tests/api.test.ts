@@ -4,6 +4,15 @@ import { Protocol } from '../protocol/protocol';
 import { DspType, AMP_MODELS, EFFECT_MODELS } from '../models';
 
 // Mock the protocol layer
+async function fastConnect(api: FuseAPI) {
+  vi.useFakeTimers();
+  const connectPromise = api.connect();
+  // Advance enough to cover refreshBypassStates (1000ms) and padding (500ms)
+  await vi.advanceTimersByTimeAsync(2000);
+  await connectPromise;
+  vi.useRealTimers();
+}
+
 vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
@@ -144,12 +153,18 @@ describe('FuseAPI', () => {
       expect(api.effects.getSettings(2)?.enabled).toBe(true);
     });
 
-    it('should throw error when setting duplicate effect types', async () => {
+    it('should clear existing effect when setting duplicate effect types', async () => {
       const model = Object.values(EFFECT_MODELS).find(m => m.name === 'Overdrive');
       await api.effects.setEffectById(0, model!.id);
 
       // Try to set another stomp at slot 1
-      await expect(api.effects.setEffectById(1, model!.id)).rejects.toThrow(/already exists/);
+      await api.effects.setEffectById(1, model!.id);
+
+      // Slot 1 should have the effect
+      expect(api.effects.getEffectModel(1)?.name).toBe('Overdrive');
+
+      // Slot 0 should be CLEARED
+      expect(api.effects.getEffectModel(0)).toBeNull();
     });
 
     it('should clear effects', async () => {
@@ -202,7 +217,7 @@ describe('FuseAPI', () => {
 
   describe('Connection \u0026 Synchronization', () => {
     it('should sync presets after successful connection', async () => {
-      await api.connect();
+      await fastConnect(api);
 
       const originalOnLoad = api.presets.onLoad;
       const presetNameSpy = vi.fn(payload => {
@@ -245,7 +260,7 @@ describe('FuseAPI', () => {
     });
 
     it('should NOT update currentPresetSlot for effect preset packets', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       // 1. Initial state: Slot 5
@@ -272,7 +287,7 @@ describe('FuseAPI', () => {
     });
 
     it('should NOT trigger refresh for effect preset packets', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
       const refreshSpy = vi.spyOn(api as any, 'refreshState');
 
@@ -318,7 +333,7 @@ describe('FuseAPI', () => {
     });
 
     it('should sync full signal chain with multiple effects from real trace', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       // Real Data from "Ducking Delay/Sm Hall" (Preset 10)
@@ -363,7 +378,7 @@ describe('FuseAPI', () => {
     });
 
     it('should handle singleton migration (hardware moves an effect)', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       // 1. Setup: STOMP in Slot 0
@@ -393,7 +408,7 @@ describe('FuseAPI', () => {
     });
 
     it('should ignore apply packet echoes to prevent infinite loops', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
       const refreshSpy = vi.spyOn(api as any, 'refreshState');
 
@@ -408,7 +423,7 @@ describe('FuseAPI', () => {
     });
 
     it('should sync bypass state from 0x19 reports', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       // Setup effect in slot 2
@@ -435,7 +450,7 @@ describe('FuseAPI', () => {
     });
 
     it('should test savePreset and getPresetList', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       await api.presets.savePreset(1, 'New Name');
@@ -450,7 +465,7 @@ describe('FuseAPI', () => {
     });
 
     it('should test loadPreset', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       await api.presets.loadPreset(5);
@@ -461,7 +476,7 @@ describe('FuseAPI', () => {
     });
 
     it('should handle disconnect', async () => {
-      await api.connect();
+      await fastConnect(api);
       expect(api.isConnected).toBe(true);
 
       await api.disconnect();
@@ -482,7 +497,7 @@ describe('FuseAPI', () => {
     });
 
     it('should update state on live hardware knob turn', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       const storeSpy = vi.fn();
@@ -507,7 +522,7 @@ describe('FuseAPI', () => {
     });
 
     it('should update state on live hardware effect knob turn', async () => {
-      await api.connect();
+      await fastConnect(api);
       const protocolMock = (api as any).protocol;
 
       const storeSpy = vi.fn();

@@ -3,6 +3,15 @@ import { FuseAPI } from '../index';
 import { AMP_MODELS } from '../models';
 import { debug } from '../helpers';
 
+async function fastConnect(api: FuseAPI) {
+  vi.useFakeTimers();
+  const connectPromise = api.connect();
+  // Advance enough to cover refreshBypassStates (1000ms) and padding (500ms)
+  await vi.advanceTimersByTimeAsync(2000);
+  await connectPromise;
+  vi.useRealTimers();
+}
+
 vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
@@ -67,7 +76,7 @@ describe('FuseAPI basic functionality', () => {
   });
 
   it('should handle disconnect event', async () => {
-    await api.connect();
+    await fastConnect(api);
     expect(api.isConnected).toBe(true);
 
     await api.disconnect();
@@ -97,7 +106,7 @@ describe('FuseAPI basic functionality', () => {
   });
 
   it('should preserve preset name when receiving generic updates (Reproduction of Missing Name Bug)', async () => {
-    await api.connect();
+    await fastConnect(api);
     const protocol = (api as any).protocol;
 
     // 1. Send Preset Name (Type 0x04)
@@ -133,7 +142,7 @@ describe('FuseAPI basic functionality', () => {
   });
 
   it('should ignore Effect Info packets (Byte 3 != 0x00) for main preset list', async () => {
-    await api.connect();
+    await fastConnect(api);
     const protocol = (api as any).protocol;
 
     // Simulate an "Effect Preset" name packet.
@@ -167,7 +176,7 @@ describe('Integration: Real World Log Simulation', () => {
   });
 
   it('should handle full preset sync sequence from logs', async () => {
-    await api.connect();
+    await fastConnect(api);
     const protocol = (api as any).protocol;
 
     const presetNames = [

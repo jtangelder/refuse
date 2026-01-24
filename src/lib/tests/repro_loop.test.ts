@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FuseAPI } from '../index';
 
 // Minimal mock of the protocol layer
+async function fastConnect(api: FuseAPI) {
+  vi.useFakeTimers();
+  const connectPromise = api.connect();
+  // Advance enough to cover refreshBypassStates (1000ms) and padding (500ms)
+  await vi.advanceTimersByTimeAsync(2000);
+  await connectPromise;
+  vi.useRealTimers();
+}
+
 vi.mock('../protocol/protocol', () => {
   return {
     OPCODES: {
@@ -61,7 +70,7 @@ describe('Infinite Loop Reproduction', () => {
   });
 
   it('should NOT request state refresh when a preset changes', async () => {
-    await api.connect();
+    await fastConnect(api);
     const protocolMock = (api as any).protocol;
     const requestStateSpy = protocolMock.requestState; // This is a spy because we mocked it in the factory
 
