@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PacketBuilder } from '../protocol/packet_builder';
-import { OPCODES } from '../protocol/protocol';
+import { OPCODES } from '../protocol/constants';
 import { DspType, AMP_MODELS, EFFECT_MODELS } from '../models';
 
 describe('PacketBuilder', () => {

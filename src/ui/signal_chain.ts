@@ -227,7 +227,7 @@ export class SignalChainComponent {
   @Input() activeSlot: number | 'amp' | null = null;
   @Input() effects: (EffectSettings | null)[] = [];
   @Output() activeSlotChange = new EventEmitter<number | 'amp'>();
-  @Output() swap = new EventEmitter<{ slotA: number; slotB: number }>();
+  @Output() move = new EventEmitter<{ fromSlot: number; toSlot: number }>();
 
   preAmpSlots = this.range(0, 4);
   postAmpSlots = this.range(4, 8);
@@ -241,18 +241,19 @@ export class SignalChainComponent {
   }
 
   drop(event: CdkDragDrop<number[]>) {
-    // If dropped in the same container
     if (event.previousContainer === event.container) {
+      // Same container move
       if (event.previousIndex !== event.currentIndex) {
-        const slotA = event.container.data[event.previousIndex];
-        const slotB = event.container.data[event.currentIndex];
-        this.swap.emit({ slotA, slotB });
+        const fromSlot = event.item.data;
+        const toSlot = event.container.data[event.currentIndex];
+
+        this.move.emit({ fromSlot, toSlot });
       }
     } else {
-      // If dropped in a different container (Pre <-> Post)
-      const slotA = event.previousContainer.data[event.previousIndex];
-      const slotB = event.container.data[event.currentIndex];
-      this.swap.emit({ slotA, slotB });
+      // Different container (Pre <-> Post)
+      const fromSlot = event.item.data;
+      const toSlot = event.container.data[event.currentIndex];
+      this.move.emit({ fromSlot, toSlot });
     }
   }
 

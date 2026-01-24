@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Protocol, FENDER_VID, OPCODES } from '../protocol/protocol';
+import { Protocol } from '../protocol/protocol';
+import { FENDER_VID, OPCODES } from '../protocol/constants';
 import { PacketBuilder } from '../protocol/packet_builder';
 
 // Mock objects
@@ -67,7 +67,7 @@ describe('Protocol', () => {
       expect(mockDevice.sendReport).toHaveBeenCalledWith(0, expect.any(Uint8Array));
 
       const handshake1 = mockDevice.sendReport.mock.calls[0][1];
-      expect(handshake1[0]).toBe(OPCODES.INIT_1);
+      expect(handshake1[0]).toBe(OPCODES.HANDSHAKE_1);
     });
 
     it('should fail connection if user cancels selection', async () => {

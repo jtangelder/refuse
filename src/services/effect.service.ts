@@ -17,6 +17,10 @@ export class EffectService {
     return this.controller.setEffectEnabled(slot, enabled);
   }
 
+  moveEffect(fromSlot: number, toSlot: number) {
+    return this.controller.moveEffect(fromSlot, toSlot);
+  }
+
   swapEffects(slotA: number, slotB: number) {
     return this.controller.swapEffects(slotA, slotB);
   }

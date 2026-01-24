@@ -1,5 +1,5 @@
 import { debug } from '../helpers';
-import { FENDER_VID, OPCODES } from './constants';
+import { FENDER_VID } from './constants';
 import { PacketBuilder } from './packet_builder';
 
 /**

@@ -19,7 +19,7 @@ import { EffectService } from '../services/effect.service';
       [activeSlot]="activeSlot"
       [effects]="allEffectSettings()"
       (activeSlotChange)="activeSlot = $event"
-      (swap)="swapSlots($event.slotA, $event.slotB)"
+      (move)="moveEffect($event.fromSlot, $event.toSlot)"
     ></fuse-signal-chain>
 
     <div class="editor-container">
@@ -151,6 +151,11 @@ export class DashboardComponent {
   async swapSlots(slotA: number, slotB: number) {
     await this.effectService.swapEffects(slotA, slotB);
     this.activeSlot = slotB; // Follow the effect
+  }
+
+  async moveEffect(fromSlot: number, toSlot: number) {
+    await this.effectService.moveEffect(fromSlot, toSlot);
+    this.activeSlot = toSlot;
   }
 
   protected isEffectSlot(slot: number | 'amp' | null): boolean {

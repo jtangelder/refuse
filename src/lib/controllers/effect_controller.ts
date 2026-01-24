@@ -162,6 +162,100 @@ export class EffectController extends BaseController {
     await this.protocol.sendPacket(packet);
   }
 
+  async moveEffect(fromSlot: number, toSlot: number): Promise<void> {
+    if (fromSlot < 0 || fromSlot > 7 || toSlot < 0 || toSlot > 7) {
+      throw new Error(`Invalid slot indices: ${fromSlot}, ${toSlot}`);
+    }
+    if (fromSlot === toSlot) return;
+
+    const state = this.store.getState();
+    const slots = [...state.slots];
+
+    const fromGroup = fromSlot < 4 ? 'pre' : 'post';
+    const toGroup = toSlot < 4 ? 'pre' : 'post';
+
+    if (fromGroup === toGroup) {
+      // Intra-group Move
+      // Perform standard array move but only involving the indices of the group
+      // Actually we can just splice the whole array since indices outside don't shift?
+      // No, if we splice at 0 and insert at 1, indexes 2,3,4... shift down?
+      // Wait, 4-7 should NOT shift if we move 0->1.
+
+      const groupStart = fromGroup === 'pre' ? 0 : 4;
+      const groupEnd = fromGroup === 'pre' ? 4 : 8; // exclusive
+
+      const groupSlots = slots.slice(groupStart, groupEnd);
+      const relativeFrom = fromSlot - groupStart;
+      const relativeTo = toSlot - groupStart;
+
+      const [movedEffect] = groupSlots.splice(relativeFrom, 1);
+      groupSlots.splice(relativeTo, 0, movedEffect);
+
+      // Write back
+      for (let i = 0; i < 4; i++) {
+        slots[groupStart + i] = groupSlots[i];
+      }
+    } else {
+      // Inter-group Move
+      // 1. Remove from Source Group
+      const sourceStart = fromGroup === 'pre' ? 0 : 4;
+      const sourceSlots = slots.slice(sourceStart, sourceStart + 4);
+      const relativeFrom = fromSlot - sourceStart;
+
+      const [movedEffect] = sourceSlots.splice(relativeFrom, 1);
+      sourceSlots.push(null); // Fill with empty at the end
+
+      // 2. Insert into Target Group
+      const targetStart = toGroup === 'pre' ? 0 : 4;
+      const targetSlots = slots.slice(targetStart, targetStart + 4);
+      const relativeTo = toSlot - targetStart;
+
+      targetSlots.splice(relativeTo, 0, movedEffect);
+      targetSlots.pop(); // Evict the last one to keep size 4
+
+      // Write back both
+      for (let i = 0; i < 4; i++) {
+        slots[sourceStart + i] = sourceSlots[i];
+        slots[targetStart + i] = targetSlots[i];
+      }
+    }
+
+    // Sync slots
+    // We update all slots just to be safe, or optimize range?
+    // Let's optimize: update only changed slots.
+    // Simpler to just iterate 0-7 and check diff against store,
+    // or just update all 8 slots?
+    // The previous implementation optimized range.
+    // Here we changed potentially two disjoint ranges.
+
+    for (let i = 0; i < 8; i++) {
+      const oldEffect = state.slots[i];
+      const newEffect = slots[i];
+
+      // Check for reference equality or content
+      // Since we shallow copied slots, strict equality check might fail if we replaced objects?
+      // But we spliced existing objects.
+      // So moved object is same ref.
+
+      // However, we need to update the 'slot' property on the effect state object!
+
+      if (newEffect !== oldEffect || (newEffect && newEffect.slot !== i)) {
+        if (newEffect) {
+          const updatedEffect: EffectState = { ...newEffect, slot: i };
+          this.store.updateSlotState(i, updatedEffect);
+          await this.sendEffectState(updatedEffect);
+        } else {
+          if (oldEffect) {
+            this.store.updateSlotState(i, null);
+            await this.clearEffectOnHardware(i);
+          }
+          // If both null, nothing to do (was empty, stays empty)
+        }
+      }
+    }
+  }
+
+  /** @deprecated Use moveEffect instead */
   async swapEffects(slotA: number, slotB: number): Promise<void> {
     if (slotA < 0 || slotA > 7 || slotB < 0 || slotB > 7) throw new Error(`Invalid slot indices: ${slotA}, ${slotB}`);
     if (slotA === slotB) return;

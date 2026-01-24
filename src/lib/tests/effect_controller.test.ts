@@ -152,5 +152,77 @@ describe('EffectController', () => {
       expect(store.getState().slots[0]).toBeNull();
       expect(store.getState().slots[5]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
     });
+    it('should move effect within Pre-Amp group (intra-group)', async () => {
+      // Setup using store directly to bypass "One per type" limit for logic testing
+      // Pre: [A(0), B(1), C(2), D(3)]
+      // Post: [E(4)]
+
+      const createEffect = (slot: number, id: number, type: DspType) => ({
+        slot,
+        modelId: id,
+        type,
+        enabled: true,
+        knobs: [],
+      });
+
+      store.updateSlotState(0, createEffect(0, EFFECT_MODELS.OVERDRIVE.id, DspType.STOMP));
+      store.updateSlotState(1, createEffect(1, EFFECT_MODELS.SINE_FLANGER.id, DspType.MOD));
+      store.updateSlotState(2, createEffect(2, EFFECT_MODELS.MONO_DELAY.id, DspType.DELAY));
+      store.updateSlotState(3, createEffect(3, EFFECT_MODELS.SMALL_HALL.id, DspType.REVERB));
+      // Reuse Types for test isolation
+      store.updateSlotState(4, createEffect(4, EFFECT_MODELS.LARGE_HALL.id, DspType.REVERB));
+
+      // Move A (0) to 2 -> [B, C, A, D]
+      // Post (E) should NOT shift
+      await controller.moveEffect(0, 2);
+
+      const slots = store.getState().slots;
+      expect(slots[0]?.modelId).toBe(EFFECT_MODELS.SINE_FLANGER.id);
+      expect(slots[1]?.modelId).toBe(EFFECT_MODELS.MONO_DELAY.id);
+      expect(slots[2]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+      expect(slots[3]?.modelId).toBe(EFFECT_MODELS.SMALL_HALL.id);
+
+      // Ensure Slot 4 is UNTOUCHED
+      expect(slots[4]?.modelId).toBe(EFFECT_MODELS.LARGE_HALL.id);
+    });
+
+    it('should move effect from Pre to Post (inter-group)', async () => {
+      const createEffect = (slot: number, id: number, type: DspType) => ({
+        slot,
+        modelId: id,
+        type,
+        enabled: true,
+        knobs: [],
+      });
+
+      // Setup Pre: [A], Post: [C, D, E, F]
+      store.updateSlotState(0, createEffect(0, EFFECT_MODELS.OVERDRIVE.id, DspType.STOMP));
+
+      // Pre 1,2,3 empty
+
+      store.updateSlotState(4, createEffect(4, EFFECT_MODELS.SINE_FLANGER.id, DspType.MOD));
+      store.updateSlotState(5, createEffect(5, EFFECT_MODELS.MONO_DELAY.id, DspType.DELAY));
+      store.updateSlotState(6, createEffect(6, EFFECT_MODELS.SMALL_HALL.id, DspType.REVERB));
+      store.updateSlotState(7, createEffect(7, EFFECT_MODELS.LARGE_HALL.id, DspType.REVERB)); // Verify eviction logic even with duplicates
+
+      // Move A (0) to Post 4
+      // Pre: Removes A -> [Empty, Empty, Empty, Empty]
+      // Post: Insert A at 4 -> [A, C, D, E]. F evicted.
+
+      await controller.moveEffect(0, 4);
+
+      const slots = store.getState().slots;
+
+      // Pre Check
+      expect(slots[0]).toBeNull();
+
+      // Post Check
+      expect(slots[4]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id); // A moved here
+      expect(slots[5]?.modelId).toBe(EFFECT_MODELS.SINE_FLANGER.id); // C shifted
+      expect(slots[6]?.modelId).toBe(EFFECT_MODELS.MONO_DELAY.id); // D shifted
+      expect(slots[7]?.modelId).toBe(EFFECT_MODELS.SMALL_HALL.id); // E shifted
+
+      // F (Large Hall) should be gone
+    });
   });
 });
