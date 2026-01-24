@@ -1,6 +1,5 @@
-import { OPCODES } from './protocol';
 import { DspType } from '../models';
-import { OFFSETS, VALUES } from './protocol_decoder';
+import { OFFSETS, VALUES, OPCODES } from './constants';
 
 export class PacketBuilder {
   private buffer: Uint8Array;
@@ -138,11 +137,11 @@ export class PacketBuilder {
   }
 
   public static handshake1(): Uint8Array {
-    return new Uint8Array([OPCODES.INIT_1]);
+    return new Uint8Array([OPCODES.HANDSHAKE_1]);
   }
 
   public static handshake2(): Uint8Array {
-    return new Uint8Array([OPCODES.INIT_2_BYTE1, OPCODES.INIT_2_BYTE2]);
+    return new Uint8Array([OPCODES.HANDSHAKE_2_BYTE1, OPCODES.HANDSHAKE_2_BYTE2]);
   }
 
   public static requestState(): Uint8Array {

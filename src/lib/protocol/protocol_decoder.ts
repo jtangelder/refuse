@@ -1,41 +1,5 @@
 import { DspType } from '../models';
-
-export const OFFSETS = {
-  // Parsing Keys
-  COMMAND: 0,
-  SUB_COMMAND: 1,
-
-  // Common Packet Structure
-  TYPE: 2, // Amp/Effect Type (DspType)
-
-  // Settings / Presets
-  PRESET_SLOT: 4,
-  PRESET_NAME: 16,
-
-  // Device State / Models
-  MODEL_ID_MSB: 16,
-  MODEL_ID_LSB: 17,
-  SLOT_INDEX: 18, // Which slot the effect is in
-  BYPASS: 22,
-
-  // Controls
-  KNOB_START: 32,
-  KNOB_END: 64,
-  KNOB_COUNT: 32, // 64 - 32
-
-  // Specific
-  CABINET_ID: 49,
-
-  // Live Knob Changes
-  LIVE_KNOB_INDEX: 5,
-  LIVE_KNOB_VALUE: 10,
-  LIVE_SLOT_INDEX: 13,
-} as const;
-
-export const VALUES = {
-  BYPASSED: 1,
-  ENABLED: 0,
-} as const;
+import { OFFSETS, VALUES } from './constants';
 
 export type CommandType =
   | 'KNOB_CHANGE'
@@ -108,13 +72,13 @@ export type Command =
 
 export class ProtocolDecoder {
   static decode(data: Uint8Array): Command {
-    const b0 = data[0];
-    const b1 = data[1];
+    const command = data[OFFSETS.COMMAND];
+    const subCommand = data[OFFSETS.SUB_COMMAND];
 
     // 1. Live Knob Change (Direct Type 0x05..0x09)
     // The "sniffing" logic from legacy: data[0] is DspType, data[1] is 0x00
-    if (b0 >= DspType.AMP && b0 <= DspType.REVERB) {
-      if (b1 === 0x00) {
+    if (command >= DspType.AMP && command <= DspType.REVERB) {
+      if (subCommand === 0x00) {
         // Logic from EffectController/AmpController
         const slot = data[OFFSETS.LIVE_SLOT_INDEX] || 0;
         const paramIndex = data[OFFSETS.LIVE_KNOB_INDEX];
@@ -122,7 +86,7 @@ export class ProtocolDecoder {
 
         return {
           type: 'KNOB_CHANGE',
-          dspType: b0,
+          dspType: command,
           slot,
           knobIndex: paramIndex,
           value: paramValue,
@@ -131,7 +95,7 @@ export class ProtocolDecoder {
     }
 
     // 2. Data Packet (0x1c)
-    if (b0 === 0x1c && b1 === 0x01) {
+    if (command === 0x1c && subCommand === 0x01) {
       const type = data[OFFSETS.TYPE];
 
       // Preset Info / Change
@@ -196,7 +160,7 @@ export class ProtocolDecoder {
     }
 
     // 3. Bypass Response (0x19 0xc3)
-    if (b0 === 0x19 && b1 === 0xc3) {
+    if (command === 0x19 && subCommand === 0xc3) {
       return {
         type: 'BYPASS_STATE',
         slot: data[4],

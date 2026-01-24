@@ -1,39 +1,6 @@
 import { debug } from '../helpers';
-
-/**
- * USB Vendor ID for Fender devices
- */
-export const FENDER_VID = 0x1ed8;
-
-/**
- * Protocol opcodes used in USB HID communication
- */
-export const OPCODES = {
-  // Connection
-  INIT_1: 0xc3,
-  INIT_2_BYTE1: 0x1a,
-  INIT_2_BYTE2: 0x03,
-
-  // State requests
-  REQUEST_STATE: 0xff,
-  REQUEST_STATE_BYTE2: 0xc1,
-  REQUEST_BYPASS: 0x19,
-  REQUEST_BYPASS_BYTE2: 0x00,
-
-  // Data operations
-  DATA_PACKET: 0x1c,
-  DATA_WRITE: 0x03,
-  DATA_READ: 0x01,
-  PRESET_INFO: 0x04,
-
-  // Bypass control
-  BYPASS_PACKET: 0x19,
-  BYPASS_SET: 0xc3,
-  BYPASS_RESPONSE: 0xc3,
-
-  // Live hardware changes
-  LIVE_CHANGE: 0x05,
-} as const;
+import { FENDER_VID, OPCODES } from './constants';
+import { PacketBuilder } from './packet_builder';
 
 /**
  * Protocol event listener callback function.
@@ -78,8 +45,8 @@ export class Protocol {
       debug(`Connected: ${this.device?.productName}`);
 
       // Handshake
-      await this.sendRaw(new Uint8Array([OPCODES.INIT_1]));
-      await this.sendRaw(new Uint8Array([OPCODES.INIT_2_BYTE1, OPCODES.INIT_2_BYTE2]));
+      await this.sendPacket(PacketBuilder.handshake1());
+      await this.sendPacket(PacketBuilder.handshake2());
 
       return true;
     } catch (err) {
@@ -146,14 +113,7 @@ export class Protocol {
   /**
    * Send a packet to the amplifier
    */
-  async sendPacket(packet: Uint8Array): Promise<void> {
-    await this.sendRaw(packet);
-  }
-
-  /**
-   * Send raw data to the amplifier
-   */
-  private async sendRaw(data: Uint8Array): Promise<void> {
+  async sendPacket(data: Uint8Array): Promise<void> {
     if (!this.device) throw new Error('Not connected');
 
     try {
