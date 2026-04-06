@@ -2,6 +2,8 @@
 
 This project is an unofficial web-based replacement for the discontinued Fender FUSE application. It allows you to control your Fender Mustang amplifier directly from your browser via USB.
 
+**Available at https://jorik.dev/refuse**
+
 ## Features
 
 - **Restore Lost Functionality**: Since Fender [discontinued](https://support.fender.com/en-us/knowledgebase/article/KA-01924) FUSE, this tool provides a way to manage your presets and settings again.
