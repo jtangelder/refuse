@@ -75,3 +75,60 @@ export const VALUES = {
   BYPASSED: 1,
   ENABLED: 0,
 } as const;
+
+/**
+ * Hardware limits of the Mustang DSP chain.
+ */
+export const LIMITS = {
+  /** Total number of effect slots (0-3 pre-amp, 4-7 post-amp / FX loop). */
+  SLOT_COUNT: 8,
+  /** Number of slots on each side of the amp. */
+  GROUP_SIZE: 4,
+  /** Number of parameter bytes per DSP block (packet bytes 32-63). */
+  KNOB_COUNT: 32,
+  /** Maximum value of a single parameter byte. */
+  MAX_VALUE: 0xff,
+  /** Highest preset slot addressable by the protocol. */
+  MAX_PRESET_SLOT: 99,
+  /** Maximum number of bytes in a preset name. */
+  PRESET_NAME_BYTES: 32,
+} as const;
+
+/**
+ * Index into the 32-byte amp parameter block (packet byte = 32 + index).
+ * Single source of truth shared by settings readers and writers.
+ */
+export const AMP_KNOB_INDEX = {
+  volume: 0,
+  gain: 1,
+  gain2: 2,
+  master: 3,
+  treble: 4,
+  mid: 5,
+  bass: 6,
+  presence: 7,
+  depth: 9,
+  bias: 10,
+  noiseGate: 15,
+  threshold: 16,
+  cabinet: 17, // byte 49 (OFFSETS.CABINET_ID)
+  sag: 19,
+  brightness: 20,
+} as const;
+
+/** Amp parameters exposed as "advanced" settings in the UI. */
+export type AdvancedAmpParam = 'depth' | 'bias' | 'noiseGate' | 'threshold' | 'sag' | 'brightness';
+
+/** Clamp an arbitrary number to a valid unsigned byte (NaN -> 0). */
+export function toByte(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(LIMITS.MAX_VALUE, Math.round(value)));
+}
+
+export function isValidSlot(slot: number): boolean {
+  return Number.isInteger(slot) && slot >= 0 && slot < LIMITS.SLOT_COUNT;
+}
+
+export function isValidKnobIndex(index: number): boolean {
+  return Number.isInteger(index) && index >= 0 && index < LIMITS.KNOB_COUNT;
+}

@@ -1,355 +1,334 @@
 import { BaseController } from './base_controller';
-import { DspType, EFFECT_MODELS, type ModelDef } from '../models';
+import { DspType, findEffectModel, getDelayTimeKnobIndex, type ModelDef } from '../models';
 import { getModelDefault } from '../defaults';
 import type { EffectState } from '../store';
-import type { EffectSettings } from '../index';
+import type { EffectSettings, KnobInfo } from '../index';
 import { debug } from '../helpers';
 import { PacketBuilder } from '../protocol/packet_builder';
-import type { KnobInfo } from '../index';
 import type { BypassStateCommand, EffectUpdateCommand, KnobChangeCommand } from '../protocol/protocol_decoder';
+import { LIMITS, OFFSETS, VALUES, isValidKnobIndex, isValidSlot, toByte } from '../protocol/constants';
+import type { PacketFactory } from '../protocol/write_queue';
+
+/** Maximum delay time (ms) corresponding to parameter byte 255 on Mustang delay models. */
+const MAX_DELAY_TIME_MS = 1500;
+
+export interface SetEffectOptions {
+  /** Knob overrides applied on top of the model defaults. */
+  knobs?: ReadonlyArray<{ index: number; value: number }>;
+  /** Bypass state. Defaults to enabled. */
+  enabled?: boolean;
+}
 
 export class EffectController extends BaseController {
+  // ---------------------------------------------------------------------------
+  // Inbound (hardware -> store). These never transmit, which prevents echo loops.
+  // ---------------------------------------------------------------------------
+
   handleKnobChange(command: KnobChangeCommand): boolean {
     const { slot, knobIndex, value } = command;
+    if (!isValidSlot(slot) || !isValidKnobIndex(knobIndex)) return false;
 
-    if (slot >= 0 && slot < 8) {
-      const effect = this.store.getState().slots[slot];
-      if (effect) {
-        const newState = { ...effect, knobs: [...effect.knobs] };
-        newState.knobs[knobIndex] = value;
-        this.store.updateSlotState(slot, newState);
+    const effect = this.store.getState().slots[slot];
+    if (!effect) return false;
 
-        return true;
-      }
-    }
-    return false;
+    const knobs = [...effect.knobs];
+    knobs[knobIndex] = toByte(value);
+    this.store.updateSlotState(slot, { ...effect, knobs });
+    return true;
   }
 
   handleEffectUpdate(command: EffectUpdateCommand): boolean {
     const { slot, dspType, modelId, enabled, knobs } = command;
+    if (!isValidSlot(slot)) return false;
 
-    if (slot >= 0 && slot < 8) {
-      // Singleton Migration Logic
-      // If hardware sends an effect to a new slot, ensure it's removed from old slot
-      for (let i = 0; i < 8; i++) {
-        if (i === slot) continue;
-        const otherEffect = this.store.getState().slots[i];
-        if (otherEffect && otherEffect.type === dspType) {
-          debug(
-            `[EffectController] Singleton migration: Clearing slot ${i} because ${DspType[dspType]} moved to ${slot}`,
-          );
-          this.store.clearSlot(i);
-        }
-      }
+    this.store.batch(() => {
+      // Hardware allows one effect per DSP type; if it moved, drop the stale copy.
+      this.forEachOtherSlotOfType(slot, dspType, i => {
+        debug(`[EffectController] ${DspType[dspType]} moved ${i} -> ${slot}`);
+        this.store.clearSlot(i);
+      });
 
-      // If the hardware reports modelId 0, it means the slot is empty.
       if (modelId === 0) {
         this.store.clearSlot(slot);
-        return true;
+        return;
       }
 
-      const newState: EffectState = {
-        slot,
-        type: dspType,
-        modelId,
-        enabled,
-        knobs,
-      };
-
-      this.store.updateSlotState(slot, newState);
-
-      return true;
-    }
-    return false;
+      this.store.updateSlotState(slot, { slot, type: dspType, modelId, enabled, knobs: normalizeKnobs(knobs) });
+    });
+    return true;
   }
 
   handleBypassState(command: BypassStateCommand): boolean {
-    const { slot, enabled } = command;
-    if (slot >= 0 && slot < 8) {
-      this.store.setEffectBypass(slot, enabled);
+    if (!isValidSlot(command.slot)) return false;
+    this.store.setEffectBypass(command.slot, command.enabled);
+    return true;
+  }
 
-      return true;
+  // ---------------------------------------------------------------------------
+  // Queries
+  // ---------------------------------------------------------------------------
+
+  getEffectModel(slot: number): ModelDef | null {
+    const effect = this.store.getState().slots[slot];
+    return effect ? findEffectModel(effect.modelId) : null;
+  }
+
+  getEffectModelId(slot: number): number {
+    return this.getEffectModel(slot)?.id ?? 0;
+  }
+
+  getEffectKnobs(slot: number): KnobInfo[] {
+    const model = this.getEffectModel(slot);
+    const effect = this.store.getState().slots[slot];
+    if (!model || !effect) return [];
+    return model.knobs.flatMap((name, index) => (name ? [{ name, value: effect.knobs[index] ?? 0, index }] : []));
+  }
+
+  getSettings(slot: number): EffectSettings | null {
+    const effect = this.store.getState().slots[slot];
+    if (!effect) return null;
+
+    const model = findEffectModel(effect.modelId);
+    return {
+      slot,
+      type: effect.type,
+      model: model?.name ?? `Unknown (0x${effect.modelId.toString(16)})`,
+      modelId: effect.modelId,
+      enabled: effect.enabled,
+      knobs: this.getEffectKnobs(slot),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Outbound (UI -> store -> hardware)
+  // ---------------------------------------------------------------------------
+
+  /** Assign a model with its factory defaults. */
+  setEffectById(slot: number, modelId: number): Promise<void> {
+    return this.setEffect(slot, modelId);
+  }
+
+  /**
+   * Place a model in a slot. Any other slot holding the same DSP type is cleared
+   * first (hardware limit: one effect per type) in a single atomic store batch
+   * and USB transaction.
+   */
+  async setEffect(slot: number, modelId: number, options: SetEffectOptions = {}): Promise<void> {
+    this.assertSlot(slot);
+    const model = findEffectModel(modelId);
+    if (!model) throw new Error(`Unknown effect model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
+    debug(`[EffectController] setEffect(slot ${slot}, 0x${modelId.toString(16)})`);
+
+    const duplicateSlots = this.otherSlotsOfType(slot, model.type);
+    const defaults = getModelDefault(modelId) ?? new Uint8Array(64);
+    const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)));
+    for (const k of options.knobs ?? []) {
+      if (isValidKnobIndex(k.index)) knobs[k.index] = toByte(k.value);
+    }
+
+    const newState: EffectState = { slot, type: model.type, modelId, enabled: options.enabled ?? true, knobs };
+    const packets: PacketFactory[] = [];
+
+    this.store.batch(() => {
+      for (const i of duplicateSlots) {
+        debug(`[EffectController] Auto-removing ${DspType[model.type]} from slot ${i}`);
+        this.cancelCoalesced(knobKey(i));
+        this.store.clearSlot(i);
+        packets.push(...this.buildClearPackets(i, model.type));
+      }
+      this.cancelCoalesced(knobKey(slot));
+      this.store.updateSlotState(slot, newState);
+    });
+
+    packets.push(...this.buildEffectStatePackets(newState));
+    await this.transmit(...packets);
+  }
+
+  async setEffectEnabled(slot: number, enabled: boolean): Promise<void> {
+    this.assertSlot(slot);
+    const effect = this.store.getState().slots[slot];
+    if (!effect) return;
+
+    this.store.setEffectBypass(slot, enabled);
+    await this.transmit(() => PacketBuilder.bypass(slot, enabled, effect.type).build());
+  }
+
+  setEffectKnob(slot: number, index: number, value: number): Promise<void> {
+    this.assertSlot(slot);
+    if (!isValidKnobIndex(index)) return Promise.reject(new Error(`Invalid knob index: ${index}`));
+    const effect = this.store.getState().slots[slot];
+    if (!effect) return Promise.reject(new Error(`No effect in slot ${slot}`));
+
+    const knobs = [...effect.knobs];
+    knobs[index] = toByte(value);
+    this.store.updateSlotState(slot, { ...effect, knobs });
+
+    return this.transmitCoalesced(
+      knobKey(slot),
+      () => {
+        const current = this.store.getState().slots[slot] ?? { ...effect, knobs };
+        return PacketBuilder.fromEffectState(current, this.protocol.getNextSequenceId()).build();
+      },
+      this.applyPacket(effect.type),
+    );
+  }
+
+  /**
+   * Synchronize active Delay effect's Time knob to a BPM tempo (quarter-note interval).
+   * Returns true if an active Delay effect was updated.
+   */
+  async setDelayTempoBpm(bpm: number): Promise<boolean> {
+    if (!Number.isFinite(bpm) || bpm <= 0) return false;
+    const delayMs = 60000 / bpm;
+    const knobValue = toByte((delayMs / MAX_DELAY_TIME_MS) * LIMITS.MAX_VALUE);
+
+    const slots = this.store.getState().slots;
+    for (let s = 0; s < LIMITS.SLOT_COUNT; s++) {
+      const eff = slots[s];
+      if (eff && eff.type === DspType.DELAY) {
+        const timeIdx = getDelayTimeKnobIndex(eff.modelId);
+        if (timeIdx !== null) {
+          await this.setEffectKnob(s, timeIdx, knobValue);
+          return true;
+        }
+      }
     }
     return false;
   }
 
-  // Need helper to extract knobs for event emission
-  private getBufferKnobs(slot: number): KnobInfo[] {
-    const model = this.getEffectModel(slot);
-    if (!model) return [];
-
-    const effect = this.store.getState().slots[slot];
-    if (!effect) return [];
-
-    const knobs: KnobInfo[] = [];
-    model.knobs.forEach((name, index) => {
-      if (name) {
-        knobs.push({
-          name,
-          value: effect.knobs[index],
-          index,
-        });
-      }
-    });
-    return knobs;
-  }
-
-  // Public for API convenience
-  getEffectKnobs(slot: number) {
-    return this.getBufferKnobs(slot);
-  }
-
-  getEffectModelId(slot: number) {
-    return this.getEffectModel(slot)?.id || 0;
-  }
-
-  getSettings(slot: number): EffectSettings | null {
-    const model = this.getEffectModel(slot);
-    const effect = this.store.getState().slots[slot];
-
-    if (!effect) return null;
-
-    const modelDef = model || {
-      id: effect.modelId,
-      name: `Unknown (0x${effect.modelId.toString(16)})`,
-      type: effect.type,
-      knobs: [],
-    };
-
-    return {
-      slot,
-      type: effect.type,
-      model: modelDef.name,
-      modelId: modelDef.id,
-      enabled: effect.enabled,
-      knobs: this.getBufferKnobs(slot),
-    };
-  }
-
-  async setEffectById(slot: number, modelId: number): Promise<void> {
-    debug(`[EffectController] setEffectById(slot: ${slot}, modelId: 0x${modelId.toString(16)})`);
-    const model = Object.values(EFFECT_MODELS).find(m => m.id === modelId);
-    if (!model) {
-      throw new Error(`Unknown effect model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
-    }
-
-    if (slot < 0 || slot > 7) throw new Error(`Invalid slot: ${slot}`);
-
-    // HARDWARE LIMIT: Only one effect of each type allowed in the chain
-    // We check the store state
-    for (let i = 0; i < 8; i++) {
-      if (i === slot) continue;
-      const otherEffect = this.store.getState().slots[i];
-      if (otherEffect && otherEffect.type === model.type) {
-        debug(`[EffectController] Auto-removing existing ${DspType[model.type]} effect from slot ${i}`);
-        await this.clearEffect(i);
-      }
-    }
-
-    const buffer = getModelDefault(modelId) || new Uint8Array(64);
-
-    // Construct EffectState
-    const newState: EffectState = {
-      type: model.type,
-      modelId: modelId,
-      slot: slot,
-      enabled: true, // Default enabled?
-      knobs: Array.from(buffer.slice(32, 64)),
-    };
-
-    this.store.updateSlotState(slot, newState);
-
-    await this.sendEffectState(newState);
-  }
-
-  async setEffectEnabled(slot: number, enabled: boolean) {
-    debug(`[EffectController] setEffectEnabled(slot: ${slot}, enabled: ${enabled})`);
-    const effect = this.store.getState().slots[slot];
-    if (!effect) return;
-
-    // Update Store
-    this.store.setEffectBypass(slot, enabled);
-    // Emit change? Enabled state isn't in 'change' payload (just knobs), but maybe expected.
-    // We'll emit general state change in API.
-
-    // Send Packet
-    const packet = PacketBuilder.bypass(slot, enabled, effect.type).build();
-    await this.protocol.sendPacket(packet);
-  }
-
   async moveEffect(fromSlot: number, toSlot: number): Promise<void> {
-    if (fromSlot < 0 || fromSlot > 7 || toSlot < 0 || toSlot > 7) {
+    if (!isValidSlot(fromSlot) || !isValidSlot(toSlot)) {
       throw new Error(`Invalid slot indices: ${fromSlot}, ${toSlot}`);
     }
     if (fromSlot === toSlot) return;
 
-    const state = this.store.getState();
-    const slots = [...state.slots];
+    const before = this.store.getState().slots;
+    const slots = [...before];
+    const size = LIMITS.GROUP_SIZE;
+    const fromStart = groupStart(fromSlot);
+    const toStart = groupStart(toSlot);
 
-    const fromGroup = fromSlot < 4 ? 'pre' : 'post';
-    const toGroup = toSlot < 4 ? 'pre' : 'post';
-
-    if (fromGroup === toGroup) {
-      // Intra-group Move
-      // Perform standard array move but only involving the indices of the group
-      // Actually we can just splice the whole array since indices outside don't shift?
-      // No, if we splice at 0 and insert at 1, indexes 2,3,4... shift down?
-      // Wait, 4-7 should NOT shift if we move 0->1.
-
-      const groupStart = fromGroup === 'pre' ? 0 : 4;
-      const groupEnd = fromGroup === 'pre' ? 4 : 8; // exclusive
-
-      const groupSlots = slots.slice(groupStart, groupEnd);
-      const relativeFrom = fromSlot - groupStart;
-      const relativeTo = toSlot - groupStart;
-
-      const [movedEffect] = groupSlots.splice(relativeFrom, 1);
-      groupSlots.splice(relativeTo, 0, movedEffect);
-
-      // Write back
-      for (let i = 0; i < 4; i++) {
-        slots[groupStart + i] = groupSlots[i];
-      }
+    if (fromStart === toStart) {
+      const group = slots.slice(fromStart, fromStart + size);
+      const [moved] = group.splice(fromSlot - fromStart, 1);
+      group.splice(toSlot - fromStart, 0, moved);
+      group.forEach((e, i) => (slots[fromStart + i] = e));
     } else {
-      // Inter-group Move
-      // 1. Remove from Source Group
-      const sourceStart = fromGroup === 'pre' ? 0 : 4;
-      const sourceSlots = slots.slice(sourceStart, sourceStart + 4);
-      const relativeFrom = fromSlot - sourceStart;
+      const source = slots.slice(fromStart, fromStart + size);
+      const [moved] = source.splice(fromSlot - fromStart, 1);
+      source.push(null);
 
-      const [movedEffect] = sourceSlots.splice(relativeFrom, 1);
-      sourceSlots.push(null); // Fill with empty at the end
+      const target = slots.slice(toStart, toStart + size);
+      target.splice(toSlot - toStart, 0, moved);
+      target.pop(); // keep group size fixed
 
-      // 2. Insert into Target Group
-      const targetStart = toGroup === 'pre' ? 0 : 4;
-      const targetSlots = slots.slice(targetStart, targetStart + 4);
-      const relativeTo = toSlot - targetStart;
-
-      targetSlots.splice(relativeTo, 0, movedEffect);
-      targetSlots.pop(); // Evict the last one to keep size 4
-
-      // Write back both
-      for (let i = 0; i < 4; i++) {
-        slots[sourceStart + i] = sourceSlots[i];
-        slots[targetStart + i] = targetSlots[i];
+      for (let i = 0; i < size; i++) {
+        slots[fromStart + i] = source[i];
+        slots[toStart + i] = target[i];
       }
     }
 
-    // Sync slots
-    // We update all slots just to be safe, or optimize range?
-    // Let's optimize: update only changed slots.
-    // Simpler to just iterate 0-7 and check diff against store,
-    // or just update all 8 slots?
-    // The previous implementation optimized range.
-    // Here we changed potentially two disjoint ranges.
-
-    for (let i = 0; i < 8; i++) {
-      const oldEffect = state.slots[i];
-      const newEffect = slots[i];
-
-      // Check for reference equality or content
-      // Since we shallow copied slots, strict equality check might fail if we replaced objects?
-      // But we spliced existing objects.
-      // So moved object is same ref.
-
-      // However, we need to update the 'slot' property on the effect state object!
-
-      if (newEffect !== oldEffect || (newEffect && newEffect.slot !== i)) {
-        if (newEffect) {
-          const updatedEffect: EffectState = { ...newEffect, slot: i };
-          this.store.updateSlotState(i, updatedEffect);
-          await this.sendEffectState(updatedEffect);
-        } else {
-          if (oldEffect) {
-            this.store.updateSlotState(i, null);
-            await this.clearEffectOnHardware(i);
-          }
-          // If both null, nothing to do (was empty, stays empty)
-        }
-      }
-    }
+    await this.syncSlots(before, slots);
   }
 
   /** @deprecated Use moveEffect instead */
   async swapEffects(slotA: number, slotB: number): Promise<void> {
-    if (slotA < 0 || slotA > 7 || slotB < 0 || slotB > 7) throw new Error(`Invalid slot indices: ${slotA}, ${slotB}`);
+    if (!isValidSlot(slotA) || !isValidSlot(slotB)) {
+      throw new Error(`Invalid slot indices: ${slotA}, ${slotB}`);
+    }
     if (slotA === slotB) return;
 
-    const state = this.store.getState();
-    const effectA = state.slots[slotA];
-    const effectB = state.slots[slotB];
-
-    // Clear both locally first
-    this.store.updateSlotState(slotA, null);
-    this.store.updateSlotState(slotB, null);
-
-    if (effectA) {
-      const newB: EffectState = { ...effectA, slot: slotB };
-      this.store.updateSlotState(slotB, newB);
-      await this.sendEffectState(newB);
-    } else {
-      await this.clearEffectOnHardware(slotB);
-    }
-
-    if (effectB) {
-      const newA: EffectState = { ...effectB, slot: slotA };
-      this.store.updateSlotState(slotA, newA);
-      await this.sendEffectState(newA);
-    } else {
-      await this.clearEffectOnHardware(slotA);
-    }
+    const before = this.store.getState().slots;
+    const slots = [...before];
+    [slots[slotA], slots[slotB]] = [slots[slotB], slots[slotA]];
+    await this.syncSlots(before, slots);
   }
 
   async clearEffect(slot: number): Promise<void> {
-    if (slot < 0 || slot > 7) throw new Error(`Invalid slot: ${slot}`);
-
-    const effect = this.store.getState().slots[slot];
-    const type = effect ? effect.type : DspType.STOMP;
-
-    this.store.clearSlot(slot); // Updates store to null
-
-    await this.sendClearPacket(slot, type);
+    this.assertSlot(slot);
+    const type = this.store.getState().slots[slot]?.type ?? DspType.STOMP;
+    this.cancelCoalesced(knobKey(slot));
+    this.store.clearSlot(slot);
+    await this.transmit(...this.buildClearPackets(slot, type));
   }
 
-  private async clearEffectOnHardware(slot: number) {
-    await this.sendClearPacket(slot, DspType.STOMP);
+  // ---------------------------------------------------------------------------
+  // Internals
+  // ---------------------------------------------------------------------------
+
+  private async syncSlots(before: ReadonlyArray<EffectState | null>, after: ReadonlyArray<EffectState | null>) {
+    const packets: PacketFactory[] = [];
+
+    // 1. Synchronize in-memory store state in a single atomic batch
+    this.store.batch(() => {
+      for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+        const newEffect = after[i];
+        const placed = newEffect ? { ...newEffect, slot: i } : null;
+        this.store.updateSlotState(i, placed);
+      }
+    });
+
+    // 2. Collect delta packets across all changed slots and transmit as one atomic transaction
+    for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+      const oldEffect = before[i];
+      const newEffect = after[i];
+      if (newEffect === oldEffect && (!newEffect || newEffect.slot === i)) continue;
+
+      this.cancelCoalesced(knobKey(i));
+      if (newEffect) {
+        const placed: EffectState = { ...newEffect, slot: i };
+        packets.push(...this.buildEffectStatePackets(placed));
+      } else if (oldEffect) {
+        packets.push(...this.buildClearPackets(i, oldEffect.type));
+      }
+    }
+
+    if (packets.length > 0) {
+      await this.transmit(...packets);
+    }
   }
 
-  private async sendClearPacket(slot: number, type: DspType) {
-    // Construct packet manually as before
-    const seq = this.protocol.getNextSequenceId();
-    const builder = PacketBuilder.dspWrite(type, seq);
-    builder.setByte(18, slot);
-    builder.setByte(22, 1); // Bypass/Empty
-
-    await this.protocol.sendPacket(builder.build());
-    await this.protocol.sendPacket(PacketBuilder.applyChange(type, this.protocol.getNextSequenceId()).build());
+  private buildClearPackets(slot: number, type: DspType): PacketFactory[] {
+    return [
+      () =>
+        PacketBuilder.dspWrite(type, this.protocol.getNextSequenceId())
+          .setByte(OFFSETS.SLOT_INDEX, slot)
+          .setByte(OFFSETS.BYPASS, VALUES.BYPASSED)
+          .build(),
+      this.applyPacket(type),
+    ];
   }
 
-  getEffectModel(slot: number): ModelDef | null {
-    const effect = this.store.getState().slots[slot];
-    if (!effect) return null;
-    return Object.values(EFFECT_MODELS).find(m => m.id === effect.modelId) || null;
+  private buildEffectStatePackets(state: EffectState): PacketFactory[] {
+    return [
+      () => PacketBuilder.fromEffectState(state, this.protocol.getNextSequenceId()).build(),
+      this.applyPacket(state.type),
+    ];
   }
 
-  async setEffectKnob(slot: number, index: number, value: number): Promise<void> {
-    const effect = this.store.getState().slots[slot];
-    if (!effect) throw new Error(`No effect in slot ${slot}`);
-
-    const newState = { ...effect, knobs: [...effect.knobs] };
-    newState.knobs[index] = value;
-
-    this.store.updateSlotState(slot, newState);
-
-    await this.sendEffectState(newState);
+  private otherSlotsOfType(slot: number, type: DspType): number[] {
+    const result: number[] = [];
+    this.forEachOtherSlotOfType(slot, type, i => result.push(i));
+    return result;
   }
 
-  private async sendEffectState(state: EffectState) {
-    const sequenceId = this.protocol.getNextSequenceId();
-    const packet = PacketBuilder.fromEffectState(state, sequenceId).build();
-    await this.protocol.sendPacket(packet);
-
-    const applyPacket = PacketBuilder.applyChange(state.type, this.protocol.getNextSequenceId()).build();
-    await this.protocol.sendPacket(applyPacket);
+  private forEachOtherSlotOfType(slot: number, type: DspType, fn: (i: number) => void) {
+    // Snapshot first: fn may mutate the store.
+    const slots = [...this.store.getState().slots];
+    slots.forEach((effect, i) => {
+      if (i !== slot && effect?.type === type) fn(i);
+    });
   }
+}
+
+function groupStart(slot: number): number {
+  return slot < LIMITS.GROUP_SIZE ? 0 : LIMITS.GROUP_SIZE;
+}
+
+function knobKey(slot: number): string {
+  return `fx-${slot}`;
+}
+
+export function normalizeKnobs(knobs: ArrayLike<number>): number[] {
+  return Array.from({ length: LIMITS.KNOB_COUNT }, (_, i) => toByte(knobs[i] ?? 0));
 }

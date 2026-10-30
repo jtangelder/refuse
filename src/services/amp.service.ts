@@ -1,13 +1,24 @@
-import { Injectable } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import { FuseService } from './fuse.service';
+import type { AdvancedAmpParam } from '../lib';
 
 @Injectable({ providedIn: 'root' })
 export class AmpService {
-  constructor(private fuse: FuseService) {}
+  private readonly fuse = inject(FuseService);
 
   get controller() {
     return this.fuse.api.amp;
   }
+
+  readonly settings = computed(() => {
+    this.fuse.amp();
+    return this.controller.getSettings();
+  });
+
+  readonly knobs = computed(() => {
+    this.fuse.amp();
+    return this.controller.getAmpKnobs();
+  });
 
   setAmpModelById(modelId: number) {
     return this.controller.setAmpModelById(modelId);
@@ -15,6 +26,10 @@ export class AmpService {
 
   setAmpKnob(index: number, value: number) {
     return this.controller.setAmpKnob(index, value);
+  }
+
+  setAdvancedSetting(key: AdvancedAmpParam, value: number) {
+    return this.controller.setAdvancedSetting(key, value);
   }
 
   setCabinetById(id: number) {

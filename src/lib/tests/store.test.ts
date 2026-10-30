@@ -156,4 +156,47 @@ describe('Store', () => {
       expect(store.getState().currentPresetSlot).toBe(1);
     });
   });
+
+  describe('Batching & Structural Guards', () => {
+    it('should coalesce multiple mutations inside store.batch into a single notification', () => {
+      const listener = vi.fn();
+      store.subscribe(listener);
+      listener.mockClear();
+
+      store.batch(() => {
+        store.setConnected(true);
+        store.setPresetMetadata(0, 'Preset A');
+        store.setPresetMetadata(1, 'Preset B');
+        store.updateSlotState(0, {
+          slot: 0,
+          type: DspType.STOMP,
+          modelId: 10,
+          enabled: true,
+          knobs: [],
+        });
+      });
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(store.getState().connected).toBe(true);
+      expect(store.getState().presets.size).toBe(2);
+      expect(store.getState().slots[0]?.modelId).toBe(10);
+    });
+
+    it('should skip redundant notifications for no-op slot clears and duplicate preset metadata', () => {
+      const listener = vi.fn();
+      store.subscribe(listener);
+      listener.mockClear();
+
+      // Slot 0 is already null
+      store.clearSlot(0);
+      expect(listener).not.toHaveBeenCalled();
+
+      store.setPresetMetadata(0, 'Clean');
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      // Setting identical preset name is a no-op
+      store.setPresetMetadata(0, 'Clean');
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
 });

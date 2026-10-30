@@ -1,5 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { SidebarComponent } from './sidebar';
 import { DashboardComponent } from './dashboard';
 import { WelcomeComponent } from './welcome';
@@ -7,8 +6,8 @@ import { FuseService } from '../services/fuse.service';
 
 @Component({
   selector: 'fuse-root',
-  standalone: true,
-  imports: [CommonModule, SidebarComponent, DashboardComponent, WelcomeComponent],
+  imports: [SidebarComponent, DashboardComponent, WelcomeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: ` @if (service.connected()) {
       <div class="container">
         <fuse-sidebar></fuse-sidebar>

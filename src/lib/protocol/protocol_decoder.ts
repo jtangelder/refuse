@@ -1,6 +1,8 @@
 import { DspType } from '../models';
 import { OFFSETS, VALUES } from './constants';
 
+const UTF8_DECODER = new TextDecoder('utf-8');
+
 export type CommandType =
   | 'KNOB_CHANGE'
   | 'AMP_UPDATE'
@@ -72,6 +74,10 @@ export type Command =
 
 export class ProtocolDecoder {
   static decode(data: Uint8Array): Command {
+    if (!data || data.length < 2) {
+      return { type: 'UNKNOWN', raw: data || new Uint8Array(0) };
+    }
+
     const command = data[OFFSETS.COMMAND];
     const subCommand = data[OFFSETS.SUB_COMMAND];
 
@@ -112,7 +118,7 @@ export class ProtocolDecoder {
         // Find the first null byte to correctly slice the buffer
         const nullIndex = nameBytes.indexOf(0);
         const slicedNameBytes = nullIndex !== -1 ? nameBytes.slice(0, nullIndex) : nameBytes;
-        const name = new TextDecoder('utf-8').decode(slicedNameBytes);
+        const name = UTF8_DECODER.decode(slicedNameBytes);
 
         if (type === 0x00) {
           return { type: 'PRESET_CHANGE', slot, name };

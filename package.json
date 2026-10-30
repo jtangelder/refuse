@@ -19,7 +19,7 @@
     "@angular/compiler": "^21.0.8",
     "@angular/core": "^21.0.8",
     "@angular/forms": "^21.0.8",
-    "@angular/material": "^21.0.6",
+    "@angular/material": "^21.1.2",
     "@angular/platform-browser": "^21.0.8",
     "@angular/platform-browser-dynamic": "^21.0.8",
     "@angular/router": "^21.0.8",
@@ -34,12 +34,14 @@
     "@angular/compiler-cli": "^21.0.8",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
+    "@types/sharp": "^0.31.1",
     "@types/w3c-web-hid": "^1.0.6",
     "@vitest/coverage-v8": "^4.0.17",
     "angular-cli-ghpages": "^3.0.2",
     "eslint": "^9.39.2",
     "jsdom": "^27.4.0",
     "prettier": "^3.8.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"
   }

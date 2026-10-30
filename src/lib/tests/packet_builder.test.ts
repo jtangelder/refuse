@@ -32,9 +32,10 @@ describe('PacketBuilder', () => {
     it('should ignore out of bounds setByte', () => {
       const builder = new PacketBuilder();
 
-      // Should not throw
+      // Should not throw or corrupt buffer
       builder.setByte(64, 0xaa);
       builder.setByte(-1, 0xaa);
+      expect(builder.build()).toEqual(new Uint8Array(64));
     });
 
     it('should add bytes from array or Uint8Array', () => {

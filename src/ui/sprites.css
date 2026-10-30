@@ -1,0 +1,419 @@
+/* Generated from sprites.json */
+.device-icon {
+  display: inline-block;
+  background-size: 2500px; /* 5 columns * 500px */
+  background-repeat: no-repeat;
+}
+
+.device-0x6700 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: 0 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x6400 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x7C00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -1000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x5300 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -1500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x6A00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -2000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x7500 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: 0 -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x7200 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x6100 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -1000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x7900 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -1500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x5E00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -2000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x5D00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: 0 -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x6D00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -500px -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0xF100 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -1000px -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0xF600 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -1500px -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0xF900 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -2000px -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0xFF00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: 0 -1500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0xFC00 {
+  background-image: url('../assets/sprites/amps.webp');
+  background-position: -500px -1500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x3C00 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: 0 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4900 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4A00 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -1000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1A00 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -1500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1C00 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -2000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x0700 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: 0 -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x8800 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x0301 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -1000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0xBA00 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -1500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x0101 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -2000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1101 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: 0 -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x0F01 {
+  background-image: url('../assets/sprites/stomp.webp');
+  background-position: -500px -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1200 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: 0 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1300 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1800 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -1000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1900 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -1500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2D00 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -2000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4000 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: 0 -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4100 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2200 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -1000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2900 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -1500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4F00 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: -2000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1F00 {
+  background-image: url('../assets/sprites/mod.webp');
+  background-position: 0 -1000px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1600 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: 0 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4300 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4800 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -1000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2B00 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -1500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2A00 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -2000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x1500 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: 0 -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4600 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4400 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -1000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4500 {
+  background-image: url('../assets/sprites/delay.webp');
+  background-position: -1500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2400 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: 0 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x3A00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2600 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -1000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x3B00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -1500px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4E00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -2000px 0;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4B00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: 0 -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4C00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x4D00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -1000px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x2100 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -1500px -500px;
+  width: 500px;
+  height: 500px;
+}
+
+.device-0x0B00 {
+  background-image: url('../assets/sprites/reverb.webp');
+  background-position: -2000px -500px;
+  width: 500px;
+  height: 500px;
+}

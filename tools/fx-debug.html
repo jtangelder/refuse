@@ -1,0 +1,1206 @@
+
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <style>
+      body { background: #333; color: white; font-family: sans-serif; padding: 20px; }
+      .container { display: flex; flex-wrap: wrap; gap: 20px; }
+      .item { border: 1px solid #666; padding: 15px; background: #222; border-radius: 8px; width: 320px; }
+      .preview { 
+         background-repeat: no-repeat; 
+         display: block; 
+         margin-bottom: 10px;
+         background-size: initial; 
+         zoom: 0.25; 
+         border: 1px dashed #555;
+      }
+      .info { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+      select { width: 100%; padding: 8px; background: #444; color: white; border: 1px solid #666; margin-bottom: 10px; }
+      button { background: #3498db; color: white; border: none; padding: 8px 16px; cursor: pointer; width: 100%; }
+      button:hover { background: #2980b9; }
+      .msg { font-size: 12px; color: #2ecc71; min-height: 1.2em; text-align: center; margin-top: 5px; }
+    </style>
+  </head>
+  <body>
+    <h1>FX Detection Debug</h1>
+    <p>Open this file directly in your browser. If images are missing, ensure you are opening it from the project root.</p>
+    <div class="container">
+  
+      <div class="item">
+        <h3>ID: fx_1.webp_0</h3>
+        <div class="preview" style="
+          width: 312px; 
+          height: 559px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -712px -83px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 712, 83, 312, 559
+        </div>
+        
+        <select id="sel-fx_1.webp_0">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_0')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_0"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_1</h3>
+        <div class="preview" style="
+          width: 335px; 
+          height: 559px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1241px -83px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1241, 83, 335, 559
+        </div>
+        
+        <select id="sel-fx_1.webp_1">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_1')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_1"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_2</h3>
+        <div class="preview" style="
+          width: 320px; 
+          height: 540px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -2350px -87px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 2350, 87, 320, 540
+        </div>
+        
+        <select id="sel-fx_1.webp_2">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_2')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_2"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_3</h3>
+        <div class="preview" style="
+          width: 313px; 
+          height: 545px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -154px -88px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 154, 88, 313, 545
+        </div>
+        
+        <select id="sel-fx_1.webp_3">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_3')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_3"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_4</h3>
+        <div class="preview" style="
+          width: 321px; 
+          height: 545px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1801px -91px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1801, 91, 321, 545
+        </div>
+        
+        <select id="sel-fx_1.webp_4">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_4')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_4"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_5</h3>
+        <div class="preview" style="
+          width: 32px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1314px -676px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1314, 676, 32, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_5">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_5')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_5"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_6</h3>
+        <div class="preview" style="
+          width: 33px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1475px -676px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1475, 676, 33, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_6">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_6')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_6"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_7</h3>
+        <div class="preview" style="
+          width: 52px; 
+          height: 43px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1907px -676px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1907, 676, 52, 43
+        </div>
+        
+        <select id="sel-fx_1.webp_7">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_7')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_7"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_8</h3>
+        <div class="preview" style="
+          width: 60px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -142px -677px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 142, 677, 60, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_8">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_8')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_8"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_9</h3>
+        <div class="preview" style="
+          width: 61px; 
+          height: 43px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -2406px -677px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 2406, 677, 61, 43
+        </div>
+        
+        <select id="sel-fx_1.webp_9">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_9')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_9"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_10</h3>
+        <div class="preview" style="
+          width: 54px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -266px -678px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 266, 678, 54, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_10">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_10')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_10"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_11</h3>
+        <div class="preview" style="
+          width: 256px; 
+          height: 562px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1832px -802px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1832, 802, 256, 562
+        </div>
+        
+        <select id="sel-fx_1.webp_11">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_11')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_11"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_12</h3>
+        <div class="preview" style="
+          width: 369px; 
+          height: 670px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -2383px -802px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 2383, 802, 369, 670
+        </div>
+        
+        <select id="sel-fx_1.webp_12">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_12')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_12"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_13</h3>
+        <div class="preview" style="
+          width: 413px; 
+          height: 558px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1200px -826px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1200, 826, 413, 558
+        </div>
+        
+        <select id="sel-fx_1.webp_13">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_13')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_13"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_14</h3>
+        <div class="preview" style="
+          width: 402px; 
+          height: 469px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -654px -832px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 654, 832, 402, 469
+        </div>
+        
+        <select id="sel-fx_1.webp_14">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_14')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_14"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_15</h3>
+        <div class="preview" style="
+          width: 395px; 
+          height: 456px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -114px -846px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 114, 846, 395, 456
+        </div>
+        
+        <select id="sel-fx_1.webp_15">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_15')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_15"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_16</h3>
+        <div class="preview" style="
+          width: 32px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -248px -1425px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 248, 1425, 32, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_16">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_16')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_16"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_17</h3>
+        <div class="preview" style="
+          width: 93px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -793px -1425px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 793, 1425, 93, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_17">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_17')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_17"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_18</h3>
+        <div class="preview" style="
+          width: 52px; 
+          height: 43px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1397px -1425px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1397, 1425, 52, 43
+        </div>
+        
+        <select id="sel-fx_1.webp_18">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_18')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_18"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_1.webp_19</h3>
+        <div class="preview" style="
+          width: 101px; 
+          height: 42px; 
+          background-image: url('../src/assets/fx_1.webp'); 
+          background-position: -1823px -1426px;
+        "></div>
+        <div class="info">
+          File: fx_1.webp<br>
+          Rect: 1823, 1426, 101, 42
+        </div>
+        
+        <select id="sel-fx_1.webp_19">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_1.webp_19')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_1.webp_19"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_0</h3>
+        <div class="preview" style="
+          width: 367px; 
+          height: 667px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -500px -70px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 500, 70, 367, 667
+        </div>
+        
+        <select id="sel-fx_2.webp_0">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_0')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_0"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_1</h3>
+        <div class="preview" style="
+          width: 337px; 
+          height: 625px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -64px -71px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 64, 71, 337, 625
+        </div>
+        
+        <select id="sel-fx_2.webp_1">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_1')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_1"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_2</h3>
+        <div class="preview" style="
+          width: 368px; 
+          height: 643px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -973px -71px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 973, 71, 368, 643
+        </div>
+        
+        <select id="sel-fx_2.webp_2">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_2')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_2"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_3</h3>
+        <div class="preview" style="
+          width: 371px; 
+          height: 643px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -1458px -71px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 1458, 71, 371, 643
+        </div>
+        
+        <select id="sel-fx_2.webp_3">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_3')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_3"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_4</h3>
+        <div class="preview" style="
+          width: 368px; 
+          height: 642px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -2386px -71px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 2386, 71, 368, 642
+        </div>
+        
+        <select id="sel-fx_2.webp_4">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_4')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_4"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_5</h3>
+        <div class="preview" style="
+          width: 363px; 
+          height: 642px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -1924px -72px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 1924, 72, 363, 642
+        </div>
+        
+        <select id="sel-fx_2.webp_5">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_5')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_5"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_6</h3>
+        <div class="preview" style="
+          width: 793px; 
+          height: 638px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -65px -804px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 65, 804, 793, 638
+        </div>
+        
+        <select id="sel-fx_2.webp_6">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_6')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_6"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_7</h3>
+        <div class="preview" style="
+          width: 862px; 
+          height: 292px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -1888px -988px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 1888, 988, 862, 292
+        </div>
+        
+        <select id="sel-fx_2.webp_7">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_7')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_7"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_8</h3>
+        <div class="preview" style="
+          width: 864px; 
+          height: 272px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -960px -1005px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 960, 1005, 864, 272
+        </div>
+        
+        <select id="sel-fx_2.webp_8">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_8')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_8"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_2.webp_9</h3>
+        <div class="preview" style="
+          width: 96px; 
+          height: 96px; 
+          background-image: url('../src/assets/fx_2.webp'); 
+          background-position: -2656px -1376px;
+        "></div>
+        <div class="info">
+          File: fx_2.webp<br>
+          Rect: 2656, 1376, 96, 96
+        </div>
+        
+        <select id="sel-fx_2.webp_9">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_2.webp_9')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_2.webp_9"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_0</h3>
+        <div class="preview" style="
+          width: 432px; 
+          height: 546px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -130px -139px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 130, 139, 432, 546
+        </div>
+        
+        <select id="sel-fx_3.webp_0">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_0')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_0"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_1</h3>
+        <div class="preview" style="
+          width: 435px; 
+          height: 546px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -712px -140px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 712, 140, 435, 546
+        </div>
+        
+        <select id="sel-fx_3.webp_1">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_1')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_1"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_2</h3>
+        <div class="preview" style="
+          width: 351px; 
+          height: 529px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -1763px -140px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 1763, 140, 351, 529
+        </div>
+        
+        <select id="sel-fx_3.webp_2">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_2')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_2"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_3</h3>
+        <div class="preview" style="
+          width: 344px; 
+          height: 545px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -2308px -140px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 2308, 140, 344, 545
+        </div>
+        
+        <select id="sel-fx_3.webp_3">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_3')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_3"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_4</h3>
+        <div class="preview" style="
+          width: 289px; 
+          height: 512px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -1289px -158px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 1289, 158, 289, 512
+        </div>
+        
+        <select id="sel-fx_3.webp_4">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_4')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_4"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_5</h3>
+        <div class="preview" style="
+          width: 318px; 
+          height: 529px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -173px -837px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 173, 837, 318, 529
+        </div>
+        
+        <select id="sel-fx_3.webp_5">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_5')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_5"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_6</h3>
+        <div class="preview" style="
+          width: 764px; 
+          height: 494px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -1271px -858px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 1271, 858, 764, 494
+        </div>
+        
+        <select id="sel-fx_3.webp_6">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_6')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_6"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_7</h3>
+        <div class="preview" style="
+          width: 452px; 
+          height: 488px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -632px -862px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 632, 862, 452, 488
+        </div>
+        
+        <select id="sel-fx_3.webp_7">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_7')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_7"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_3.webp_8</h3>
+        <div class="preview" style="
+          width: 493px; 
+          height: 610px; 
+          background-image: url('../src/assets/fx_3.webp'); 
+          background-position: -2259px -862px;
+        "></div>
+        <div class="info">
+          File: fx_3.webp<br>
+          Rect: 2259, 862, 493, 610
+        </div>
+        
+        <select id="sel-fx_3.webp_8">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_3.webp_8')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_3.webp_8"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_0</h3>
+        <div class="preview" style="
+          width: 307px; 
+          height: 559px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -212px -132px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 212, 132, 307, 559
+        </div>
+        
+        <select id="sel-fx_4.webp_0">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_0')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_0"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_1</h3>
+        <div class="preview" style="
+          width: 311px; 
+          height: 647px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -773px -132px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 773, 132, 311, 647
+        </div>
+        
+        <select id="sel-fx_4.webp_1">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_1')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_1"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_2</h3>
+        <div class="preview" style="
+          width: 1420px; 
+          height: 145px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -1278px -197px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 1278, 197, 1420, 145
+        </div>
+        
+        <select id="sel-fx_4.webp_2">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_2')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_2"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_3</h3>
+        <div class="preview" style="
+          width: 127px; 
+          height: 59px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -1833px -372px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 1833, 372, 127, 59
+        </div>
+        
+        <select id="sel-fx_4.webp_3">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_3')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_3"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_4</h3>
+        <div class="preview" style="
+          width: 145px; 
+          height: 57px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -2016px -372px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 2016, 372, 145, 57
+        </div>
+        
+        <select id="sel-fx_4.webp_4">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_4')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_4"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_5</h3>
+        <div class="preview" style="
+          width: 1424px; 
+          height: 263px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -1277px -608px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 1277, 608, 1424, 263
+        </div>
+        
+        <select id="sel-fx_4.webp_5">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_5')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_5"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_6</h3>
+        <div class="preview" style="
+          width: 134px; 
+          height: 58px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -277px -721px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 277, 721, 134, 58
+        </div>
+        
+        <select id="sel-fx_4.webp_6">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_6')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_6"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_7</h3>
+        <div class="preview" style="
+          width: 1109px; 
+          height: 456px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -113px -870px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 113, 870, 1109, 456
+        </div>
+        
+        <select id="sel-fx_4.webp_7">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_7')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_7"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_8</h3>
+        <div class="preview" style="
+          width: 199px; 
+          height: 70px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -1929px -902px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 1929, 902, 199, 70
+        </div>
+        
+        <select id="sel-fx_4.webp_8">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_8')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_8"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_9</h3>
+        <div class="preview" style="
+          width: 1418px; 
+          height: 346px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -1334px -1126px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 1334, 1126, 1418, 346
+        </div>
+        
+        <select id="sel-fx_4.webp_9">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_9')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_9"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_10</h3>
+        <div class="preview" style="
+          width: 70px; 
+          height: 58px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -433px -1367px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 433, 1367, 70, 58
+        </div>
+        
+        <select id="sel-fx_4.webp_10">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_10')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_10"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_11</h3>
+        <div class="preview" style="
+          width: 187px; 
+          height: 71px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -738px -1367px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 738, 1367, 187, 71
+        </div>
+        
+        <select id="sel-fx_4.webp_11">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_11')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_11"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_12</h3>
+        <div class="preview" style="
+          width: 68px; 
+          height: 45px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -554px -1380px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 554, 1380, 68, 45
+        </div>
+        
+        <select id="sel-fx_4.webp_12">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_12')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_12"></div>
+      </div>
+    
+      <div class="item">
+        <h3>ID: fx_4.webp_13</h3>
+        <div class="preview" style="
+          width: 33px; 
+          height: 44px; 
+          background-image: url('../src/assets/fx_4.webp'); 
+          background-position: -662px -1381px;
+        "></div>
+        <div class="info">
+          File: fx_4.webp<br>
+          Rect: 662, 1381, 33, 44
+        </div>
+        
+        <select id="sel-fx_4.webp_13">
+          <option value="">-- Guess Model --</option>
+          <option value="Overdrive">Overdrive</option><option value="Fixed Wah">Fixed Wah</option><option value="Touch Wah">Touch Wah</option><option value="Fuzz">Fuzz</option><option value="Fuzz Touch Wah">Fuzz Touch Wah</option><option value="Simple Comp">Simple Comp</option><option value="Compressor">Compressor</option><option value="Ranger Boost">Ranger Boost</option><option value="Green Box">Green Box</option><option value="Orange Box">Orange Box</option><option value="Black Box">Black Box</option><option value="Big Fuzz">Big Fuzz</option><option value="Sine Chorus">Sine Chorus</option><option value="Triangle Chorus">Triangle Chorus</option><option value="Sine Flanger">Sine Flanger</option><option value="Triangle Flanger">Triangle Flanger</option><option value="Vibratone">Vibratone</option><option value="Vintage Tremolo">Vintage Tremolo</option><option value="Sine Tremolo">Sine Tremolo</option><option value="Ring Modulator">Ring Modulator</option><option value="Step Filter">Step Filter</option><option value="Phaser">Phaser</option><option value="Pitch Shifter">Pitch Shifter</option><option value="Mono Delay">Mono Delay</option><option value="Mono Echo Filter">Mono Echo Filter</option><option value="Stereo Echo Filter">Stereo Echo Filter</option><option value="Tape Delay">Tape Delay</option><option value="Stereo Tape Delay">Stereo Tape Delay</option><option value="Ducking Delay">Ducking Delay</option><option value="Reverse Delay">Reverse Delay</option><option value="Multitap Delay">Multitap Delay</option><option value="Ping Pong Delay">Ping Pong Delay</option><option value="Small Hall">Small Hall</option><option value="Large Hall">Large Hall</option><option value="Small Room">Small Room</option><option value="Large Room">Large Room</option><option value="Small Plate">Small Plate</option><option value="Large Plate">Large Plate</option><option value="Ambient">Ambient</option><option value="Arena">Arena</option><option value="'63 Spring">'63 Spring</option><option value="'65 Spring">'65 Spring</option>
+        </select>
+        
+        <button onclick="copy('fx_4.webp_13')">Copy ID + Guess</button>
+        <div class="msg" id="msg-fx_4.webp_13"></div>
+      </div>
+    </div>
+  <script>
+    function copy(id) {
+        const sel = document.getElementById('sel-' + id);
+        const guess = sel.value;
+        const text = id + ': ' + (guess || 'Unknown');
+        navigator.clipboard.writeText(text).then(() => {
+            document.getElementById('msg-' + id).textContent = 'Copied!';
+            setTimeout(() => document.getElementById('msg-' + id).textContent = '', 2000);
+        });
+    }
+  </script>
+  </body></html>

@@ -1,4 +1,4 @@
-import { AMP_MODELS, EFFECT_MODELS } from './models';
+import { AMP_MODELS, EFFECT_MODELS, findAmpModel, findEffectModel } from './models';
 
 /**
  * Model Default Buffers
@@ -250,8 +250,29 @@ export const MODEL_DEFAULTS: Record<number, number[]> = {
 
 /**
  * Returns a copy of the default 64-byte buffer for the given model ID.
+ * If a model does not have a hand-tuned capture in MODEL_DEFAULTS, synthesizes
+ * a standard 64-byte buffer with noon (0x80) values for all active knobs so
+ * newly assigned effects are immediately audible rather than zeroed/muted.
  */
 export function getModelDefault(id: number): Uint8Array | null {
   const data = MODEL_DEFAULTS[id];
-  return data ? new Uint8Array(data) : null;
+  if (data) return new Uint8Array(data);
+
+  const model = findEffectModel(id) ?? findAmpModel(id);
+  if (!model) return null;
+
+  const buffer = new Uint8Array(64);
+  buffer[0] = 0x1c;
+  buffer[1] = 0x03;
+  buffer[2] = model.type;
+  buffer[6] = 0x01;
+  buffer[7] = 0x01;
+  buffer[16] = (model.id >> 8) & 0xff;
+  buffer[17] = model.id & 0xff;
+  model.knobs.forEach((knobName, index) => {
+    if (knobName && 32 + index < 64) {
+      buffer[32 + index] = 0x80;
+    }
+  });
+  return buffer;
 }

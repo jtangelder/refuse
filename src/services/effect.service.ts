@@ -1,9 +1,15 @@
-import { Injectable } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import { FuseService } from './fuse.service';
+import type { SetEffectOptions } from '../lib';
 
 @Injectable({ providedIn: 'root' })
 export class EffectService {
-  constructor(private fuse: FuseService) {}
+  private readonly fuse = inject(FuseService);
+
+  readonly allSettings = computed(() => {
+    this.fuse.effects();
+    return Array.from({ length: 8 }, (_, i) => this.controller.getSettings(i));
+  });
 
   get controller() {
     return this.fuse.api.effects;
@@ -11,6 +17,10 @@ export class EffectService {
 
   setEffectById(slot: number, modelId: number) {
     return this.controller.setEffectById(slot, modelId);
+  }
+
+  setEffect(slot: number, modelId: number, options?: SetEffectOptions) {
+    return this.controller.setEffect(slot, modelId, options);
   }
 
   setEffectEnabled(slot: number, enabled: boolean) {
@@ -31,6 +41,10 @@ export class EffectService {
 
   setEffectKnob(slot: number, index: number, value: number) {
     return this.controller.setEffectKnob(slot, index, value);
+  }
+
+  setDelayTempoBpm(bpm: number) {
+    return this.controller.setDelayTempoBpm(bpm);
   }
 
   getEffectModel(slot: number) {

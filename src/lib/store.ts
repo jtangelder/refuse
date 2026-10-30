@@ -18,12 +18,22 @@ export interface EffectState extends EntityState {
   slot: number;
 }
 
+export interface PresetDetails {
+  author?: string;
+  description?: string;
+  tags?: string;
+  genre1?: string;
+  genre2?: string;
+  genre3?: string;
+}
+
 export interface State {
   amp: AmpState;
   slots: (EffectState | null)[]; // 8 slots, null if empty
 
   currentPresetSlot: number | null;
   presets: Map<number, PresetMetadata>;
+  presetDetails: PresetDetails;
   connected: boolean;
   refreshing: boolean;
 }
@@ -33,6 +43,8 @@ type StateListener = (state: State) => void;
 export class Store {
   private state: State;
   private listeners: Set<StateListener> = new Set();
+  private batchDepth = 0;
+  private dirty = false;
 
   constructor() {
     this.state = {
@@ -46,6 +58,7 @@ export class Store {
 
       currentPresetSlot: null,
       presets: new Map(),
+      presetDetails: {},
       connected: false,
       refreshing: false,
     };
@@ -63,7 +76,28 @@ export class Store {
   }
 
   public notify() {
+    if (this.batchDepth > 0) {
+      this.dirty = true;
+      return;
+    }
     this.listeners.forEach(l => l(this.state));
+  }
+
+  /**
+   * Group multiple state mutations into a single notification tick.
+   * Nested `batch()` calls are supported; listeners fire once when the outermost batch completes.
+   */
+  public batch(fn: () => void): void {
+    this.batchDepth++;
+    try {
+      fn();
+    } finally {
+      this.batchDepth--;
+      if (this.batchDepth === 0 && this.dirty) {
+        this.dirty = false;
+        this.listeners.forEach(l => l(this.state));
+      }
+    }
   }
 
   public setConnected(connected: boolean) {
@@ -101,6 +135,7 @@ export class Store {
 
   public setPresetMetadata(slot: number, name: string) {
     if (!name) return;
+    if (this.state.presets.get(slot)?.name === name) return;
     const newPresets = new Map(this.state.presets);
     newPresets.set(slot, { slot, name });
     this.state = {
@@ -117,6 +152,7 @@ export class Store {
 
   public updateSlotState(slot: number, state: EffectState | null) {
     if (slot >= 0 && slot < 8) {
+      if (this.state.slots[slot] === state) return;
       const newSlots = [...this.state.slots];
       newSlots[slot] = state;
 
@@ -131,10 +167,9 @@ export class Store {
   public setEffectBypass(slot: number, enabled: boolean) {
     if (slot >= 0 && slot < 8) {
       const effect = this.state.slots[slot];
+      if (!effect || effect.enabled === enabled) return;
       const newSlots = [...this.state.slots];
-      if (effect) {
-        newSlots[slot] = { ...effect, enabled };
-      }
+      newSlots[slot] = { ...effect, enabled };
 
       this.state = {
         ...this.state,
@@ -146,6 +181,7 @@ export class Store {
 
   public clearSlot(slot: number) {
     if (slot >= 0 && slot < 8) {
+      if (this.state.slots[slot] === null) return;
       const newSlots = [...this.state.slots];
       newSlots[slot] = null;
 
@@ -155,5 +191,22 @@ export class Store {
       };
       this.notify();
     }
+  }
+
+  public clearAllSlots() {
+    if (this.state.slots.every(s => s === null)) return;
+    this.state = {
+      ...this.state,
+      slots: new Array(8).fill(null),
+    };
+    this.notify();
+  }
+
+  public updatePresetDetails(details: Partial<PresetDetails>) {
+    this.state = {
+      ...this.state,
+      presetDetails: { ...this.state.presetDetails, ...details },
+    };
+    this.notify();
   }
 }

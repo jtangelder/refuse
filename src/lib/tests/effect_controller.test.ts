@@ -230,5 +230,14 @@ describe('EffectController', () => {
 
       // F (Large Hall) should be gone
     });
+
+    it('should sync active Delay Time knob via setDelayTempoBpm', async () => {
+      await controller.setEffectById(2, EFFECT_MODELS.MONO_DELAY.id);
+
+      const updated = await controller.setDelayTempoBpm(120); // 120 BPM = 500ms -> ~85/255
+      expect(updated).toBe(true);
+      // Mono Delay 'Delay Time' is knob index 1
+      expect(store.getState().slots[2]?.knobs[1]).toBe(85);
+    });
   });
 });

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Protocol } from '../protocol/protocol';
 import { FENDER_VID, OPCODES } from '../protocol/constants';
 import { PacketBuilder } from '../protocol/packet_builder';
@@ -16,19 +17,21 @@ const mockDevice = {
 
 const mockHid = {
   requestDevice: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
 };
 
 describe('Protocol', () => {
   let protocol: Protocol;
 
   beforeEach(() => {
-    // Setup generic global navigator mock
     vi.stubGlobal('navigator', {
       hid: mockHid,
     });
 
-    // Reset mocks
     mockHid.requestDevice.mockReset();
+    mockHid.addEventListener.mockReset();
+    mockHid.removeEventListener.mockReset();
     mockDevice.open.mockReset();
     mockDevice.close.mockReset();
     mockDevice.sendReport.mockReset();
@@ -45,11 +48,13 @@ describe('Protocol', () => {
   describe('Support & Connection', () => {
     it('should report supported if navigator.hid exists', () => {
       expect(protocol.isSupported).toBe(true);
+      expect(Protocol.isHidSupported()).toBe(true);
     });
 
     it('should report not supported if navigator.hid is missing', () => {
       vi.stubGlobal('navigator', {});
       expect(protocol.isSupported).toBe(false);
+      expect(Protocol.isHidSupported()).toBe(false);
     });
 
     it('should connect successfully when device is selected', async () => {
@@ -62,7 +67,7 @@ describe('Protocol', () => {
       expect(mockHid.requestDevice).toHaveBeenCalledWith({ filters: [{ vendorId: FENDER_VID }] });
       expect(mockDevice.open).toHaveBeenCalled();
 
-      // Should perform handshake
+      // Should perform 2-step handshake
       expect(mockDevice.sendReport).toHaveBeenCalledTimes(2);
       expect(mockDevice.sendReport).toHaveBeenCalledWith(0, expect.any(Uint8Array));
 
@@ -81,7 +86,6 @@ describe('Protocol', () => {
     });
 
     it('should disconnect and cleanup', async () => {
-      // Connect first
       mockHid.requestDevice.mockResolvedValue([mockDevice]);
       await protocol.connect();
 
@@ -95,13 +99,28 @@ describe('Protocol', () => {
       await protocol.disconnect();
       expect(mockDevice.close).not.toHaveBeenCalled();
     });
+
+    it('should invoke onDisconnect and close device on unexpected USB unplug', async () => {
+      mockHid.requestDevice.mockResolvedValue([mockDevice]);
+      const onDisconnectSpy = vi.fn();
+      protocol.onDisconnect = onDisconnectSpy;
+
+      await protocol.connect();
+      expect(mockHid.addEventListener).toHaveBeenCalledWith('disconnect', expect.any(Function));
+
+      const disconnectHandler = mockHid.addEventListener.mock.calls[0][1];
+      disconnectHandler({ device: mockDevice });
+
+      expect(onDisconnectSpy).toHaveBeenCalledTimes(1);
+      expect(protocol.isConnected).toBe(false);
+    });
   });
 
   describe('Communication', () => {
     beforeEach(async () => {
       mockHid.requestDevice.mockResolvedValue([mockDevice]);
       await protocol.connect();
-      mockDevice.sendReport.mockReset(); // Clear handshake calls
+      mockDevice.sendReport.mockReset();
     });
 
     it('should send packet to device', async () => {
@@ -129,7 +148,7 @@ describe('Protocol', () => {
       expect(sent[1]).toBe(OPCODES.REQUEST_BYPASS_BYTE2);
     });
 
-    it('should increment sequence ID', () => {
+    it('should increment sequence ID modulo 256', () => {
       const seq1 = protocol.getNextSequenceId();
       const seq2 = protocol.getNextSequenceId();
       expect(seq2).toBe((seq1 + 1) & 0xff);
@@ -137,43 +156,44 @@ describe('Protocol', () => {
   });
 
   describe('Events', () => {
-    beforeEach(async () => {
-      mockHid.requestDevice.mockResolvedValue([mockDevice]);
-      await protocol.connect();
-    });
-
-    it('should add event listener to device', () => {
+    it('should bind listeners registered before connect() once connected', async () => {
       const cb = vi.fn();
       protocol.addEventListener(cb);
+      expect(mockDevice.addEventListener).not.toHaveBeenCalled();
+
+      mockHid.requestDevice.mockResolvedValue([mockDevice]);
+      await protocol.connect();
 
       expect(mockDevice.addEventListener).toHaveBeenCalledWith('inputreport', expect.any(Function));
     });
 
-    it('should handle incoming inputreport events', () => {
+    it('should handle incoming inputreport events with DataView byteOffset and byteLength', async () => {
+      mockHid.requestDevice.mockResolvedValue([mockDevice]);
+      await protocol.connect();
+
       const cb = vi.fn();
       protocol.addEventListener(cb);
 
-      // Extract the event handler registered with the mock
       const handler = mockDevice.addEventListener.mock.calls[0][1];
 
-      // Simulate event
-      const eventData = new Uint8Array([0xaa, 0xbb]);
-      const mockEvent = { data: { buffer: eventData.buffer } };
-      handler(mockEvent);
+      // Create a larger backing ArrayBuffer and a sub-view at offset 4, length 2
+      const backing = new Uint8Array([0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb, 0xff, 0xff]);
+      const view = new DataView(backing.buffer, 4, 2);
+      handler({ data: view });
 
-      expect(cb).toHaveBeenCalledWith(expect.any(Uint8Array));
-      const received = cb.mock.calls[0][0];
-      expect(received[0]).toBe(0xaa);
-      expect(received[1]).toBe(0xbb);
+      expect(cb).toHaveBeenCalledTimes(1);
+      const received: Uint8Array = cb.mock.calls[0][0];
+      expect(Array.from(received)).toEqual([0xaa, 0xbb]);
     });
 
-    it('should remove event listener', () => {
+    it('should remove the exact same event listener function that was added', async () => {
+      mockHid.requestDevice.mockResolvedValue([mockDevice]);
+      await protocol.connect();
+
       const cb = vi.fn();
       protocol.addEventListener(cb);
 
-      // Capture the actual listener added to the device
       const addedListener = mockDevice.addEventListener.mock.calls[0][1];
-
       protocol.removeEventListener(cb);
 
       expect(mockDevice.removeEventListener).toHaveBeenCalledWith('inputreport', addedListener);

@@ -1,24 +1,17 @@
-import { BaseController } from './base_controller';
 import { debug } from '../helpers';
 import type { PresetMetadata } from '../index';
 import { PacketBuilder } from '../protocol/packet_builder';
-import { Protocol } from '../protocol/protocol';
-import type { PresetChangeCommand, PresetInfoCommand } from '../protocol/protocol_decoder';
-import { PresetImporter } from '../preset_importer';
-import type { Store } from '../store';
+import { LIMITS } from '../protocol/constants';
+import { type PresetChangeCommand, type PresetInfoCommand } from '../protocol/protocol_decoder';
+
+import { BaseController } from './base_controller';
 
 export class PresetController extends BaseController {
   public onLoad?: (payload: { slot: number; name: string }) => void;
-  private importer: PresetImporter;
-
-  constructor(store: Store, protocol: Protocol) {
-    super(store, protocol);
-    this.importer = new PresetImporter(protocol);
-  }
 
   handlePresetChange(command: PresetChangeCommand): boolean {
     const { slot, name } = command;
-    debug(`[DEBUG] PresetController PRESET_CHANGE: ${slot} ${name}`);
+    debug(`[PresetController] PRESET_CHANGE: ${slot} ${name}`);
     this.store.setPresetActive(slot, name);
     this.onLoad?.({ slot, name });
     return true;
@@ -26,31 +19,26 @@ export class PresetController extends BaseController {
 
   handlePresetInfo(command: PresetInfoCommand): boolean {
     const { slot, name } = command;
-    debug(`[DEBUG] PresetController PRESET_INFO: ${slot} ${name}`);
+    debug(`[PresetController] PRESET_INFO: ${slot} ${name}`);
     this.store.setPresetMetadata(slot, name);
     return true;
   }
 
   async loadPreset(slot: number): Promise<void> {
-    debug(`[PresetController] loadPreset(slot: ${slot})`);
-    const packet = PacketBuilder.loadPreset(slot).build();
-    await this.protocol.sendPacket(packet);
+    assertPresetSlot(slot);
+    debug(`[PresetController] loadPreset(${slot})`);
+    await this.transmit(() => PacketBuilder.loadPreset(slot).build());
   }
 
   async savePreset(slot: number, name: string): Promise<void> {
-    debug(`[PresetController] savePreset(slot: ${slot}, name: "${name}")`);
-    const packet = PacketBuilder.savePreset(slot, name).build();
-    await this.protocol.sendPacket(packet);
+    assertPresetSlot(slot);
+    const cleanName = sanitizePresetName(name);
+    if (!cleanName) throw new Error('Preset name must not be empty');
+    debug(`[PresetController] savePreset(${slot}, "${cleanName}")`);
 
-    this.store.setPresetActive(slot, name);
-    this.onLoad?.({ slot, name });
-  }
-
-  async loadXml(xmlString: string): Promise<void> {
-    await this.importer.loadXml(xmlString);
-
-    // Trigger state refresh/UI update
-    this.onLoad?.({ slot: this.store.getState().currentPresetSlot || 0, name: 'Imported Preset' });
+    await this.transmit(() => PacketBuilder.savePreset(slot, cleanName).build());
+    this.store.setPresetActive(slot, cleanName);
+    this.onLoad?.({ slot, name: cleanName });
   }
 
   getPresets(): PresetMetadata[] {
@@ -60,4 +48,16 @@ export class PresetController extends BaseController {
   getPreset(slot: number): PresetMetadata | undefined {
     return this.store.getState().presets.get(slot);
   }
+}
+
+function assertPresetSlot(slot: number): void {
+  if (!Number.isInteger(slot) || slot < 0 || slot > LIMITS.MAX_PRESET_SLOT) {
+    throw new Error(`Invalid preset slot: ${slot}`);
+  }
+}
+
+/** Strip control characters and surrounding whitespace; the amp displays raw bytes. */
+export function sanitizePresetName(name: string): string {
+  // eslint-disable-next-line no-control-regex
+  return name.replace(/[\u0000-\u001f\u007f]/g, '').trim();
 }

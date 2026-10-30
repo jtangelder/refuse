@@ -1,5 +1,10 @@
 import { DspType } from '../models';
-import { OFFSETS, VALUES, OPCODES } from './constants';
+import { OFFSETS, VALUES, OPCODES, LIMITS, toByte } from './constants';
+
+const UTF8_ENCODER = new TextEncoder();
+
+/** Fixed HID report size used by all Mustang packets. */
+export const PACKET_SIZE = 64;
 
 export class PacketBuilder {
   private buffer: Uint8Array;
@@ -23,18 +28,20 @@ export class PacketBuilder {
     return this;
   }
 
+  /**
+   * Write a single byte. Out-of-range indices are ignored and values are clamped
+   * to 0-255, so callers can never produce a wrapped (e.g. 300 -> 44) value.
+   */
   public setByte(index: number, value: number): this {
-    if (index >= 0 && index < 64) {
-      this.buffer[index] = value;
+    if (Number.isInteger(index) && index >= 0 && index < PACKET_SIZE) {
+      this.buffer[index] = toByte(value);
     }
     return this;
   }
 
-  public addBytes(startIndex: number, values: number[] | Uint8Array): this {
+  public addBytes(startIndex: number, values: ArrayLike<number>): this {
     for (let i = 0; i < values.length; i++) {
-      if (startIndex + i < 64) {
-        this.buffer[startIndex + i] = values[i];
-      }
+      this.setByte(startIndex + i, values[i]);
     }
     return this;
   }
@@ -91,7 +98,8 @@ export class PacketBuilder {
       .setByte(6, 0x01)
       .setByte(7, 0x01);
 
-    const nameBytes = new TextEncoder().encode(name.substring(0, 32));
+    // Truncate on bytes (not characters) so multi-byte UTF-8 can't overflow the field.
+    const nameBytes = UTF8_ENCODER.encode(name).slice(0, LIMITS.PRESET_NAME_BYTES);
     builder.addBytes(OFFSETS.PRESET_NAME, nameBytes); // 16
 
     return builder;
@@ -116,9 +124,8 @@ export class PacketBuilder {
     const builder = PacketBuilder.dspWrite(DspType.AMP, sequenceId);
     builder.setByte(OFFSETS.MODEL_ID_MSB, (state.modelId >> 8) & 0xff);
     builder.setByte(OFFSETS.MODEL_ID_LSB, state.modelId & 0xff);
-    builder.setByte(OFFSETS.CABINET_ID, state.cabinetId);
-
     builder.addBytes(OFFSETS.KNOB_START, state.knobs);
+    builder.setByte(OFFSETS.CABINET_ID, state.cabinetId);
     return builder;
   }
 

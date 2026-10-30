@@ -2,26 +2,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AmpController } from '../controllers/amp_controller';
 import { Store } from '../store';
 import { DspType, AMP_MODELS, CABINET_MODELS } from '../models';
-
-// Mock Protocol
-const mockProtocol = {
-  sendPacket: vi.fn(),
-  getNextSequenceId: vi.fn().mockReturnValue(1),
-};
+import type { IProtocol } from '../protocol/protocol_interface';
 
 describe('AmpController', () => {
   let store: Store;
+  let mockProtocol: IProtocol;
   let controller: AmpController;
 
   beforeEach(() => {
     store = new Store();
-    vi.clearAllMocks();
-    controller = new AmpController(store, mockProtocol as any);
+    mockProtocol = {
+      isConnected: true,
+      isSupported: true,
+      connect: vi.fn().mockResolvedValue(true),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      sendPacket: vi.fn().mockResolvedValue(undefined),
+      getNextSequenceId: vi.fn().mockReturnValue(1),
+    };
+    controller = new AmpController(store, mockProtocol);
   });
 
   describe('Command Processing', () => {
     it('should process KNOB_CHANGE for Amp', () => {
-      // Setup initial state so we have knobs to update
       store.updateAmpState({
         modelId: 0x00,
         enabled: true,
@@ -29,39 +33,35 @@ describe('AmpController', () => {
         knobs: new Array(32).fill(0),
       });
 
-      const command = {
+      const handled = controller.handleKnobChange({
         type: 'KNOB_CHANGE',
         dspType: DspType.AMP,
+        slot: 0,
         knobIndex: 5,
         value: 255,
-      } as any;
-
-      const handled = controller.handleKnobChange(command);
+      });
       expect(handled).toBe(true);
       expect(store.getState().amp.knobs[5]).toBe(255);
     });
 
-    it('should ignore KNOB_CHANGE for other types', () => {
-      const command = {
+    it('should ignore KNOB_CHANGE for other DSP types', () => {
+      const handled = controller.handleKnobChange({
         type: 'KNOB_CHANGE',
         dspType: DspType.STOMP,
+        slot: 0,
         knobIndex: 5,
         value: 255,
-      } as any;
-
-      const handled = controller.handleKnobChange(command);
+      });
       expect(handled).toBe(false);
     });
 
     it('should process AMP_UPDATE', () => {
-      const command = {
+      const handled = controller.handleAmpUpdate({
         type: 'AMP_UPDATE',
         modelId: 0x1234,
         cabinetId: 0x05,
         knobs: new Array(32).fill(100),
-      } as any;
-
-      const handled = controller.handleAmpUpdate(command);
+      });
       expect(handled).toBe(true);
       expect(store.getState().amp.modelId).toBe(0x1234);
       expect(store.getState().amp.cabinetId).toBe(0x05);
@@ -79,7 +79,7 @@ describe('AmpController', () => {
     });
 
     it('should throw error for unknown amp model ID', async () => {
-      await expect(controller.setAmpModelById(0x9999)).rejects.toThrow();
+      await expect(controller.setAmpModelById(0x9999)).rejects.toThrow(/Unknown amp model ID/);
     });
 
     it('should set cabinet by ID', async () => {
@@ -91,23 +91,36 @@ describe('AmpController', () => {
     });
 
     it('should throw error for unknown cabinet ID', async () => {
-      await expect(controller.setCabinetById(0xff)).rejects.toThrow();
+      await expect(controller.setCabinetById(0xff)).rejects.toThrow(/Unknown cabinet ID/);
     });
 
-    it('should set amp knob', async () => {
-      // Init
+    it('should set amp knob and reject out-of-range knob indices', async () => {
       await controller.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
-      mockProtocol.sendPacket.mockClear();
+      vi.mocked(mockProtocol.sendPacket).mockClear();
 
       await controller.setAmpKnob(0, 123);
 
       expect(store.getState().amp.knobs[0]).toBe(123);
-      expect(mockProtocol.sendPacket).toHaveBeenCalled();
+      expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(2);
+
+      await expect(controller.setAmpKnob(-1, 50)).rejects.toThrow(/Invalid amp knob index/);
+      await expect(controller.setAmpKnob(32, 50)).rejects.toThrow(/Invalid amp knob index/);
+    });
+
+    it('should preserve sparse hardware knob indices (e.g. skipping empty slot 2 on 57 Deluxe)', async () => {
+      // '57 Deluxe: ["Vol", "Gain", "", "Master", "Treb", "Mid", "Bass", "Pres"]
+      await controller.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
+
+      const knobs = controller.getAmpKnobs();
+      const vol = knobs.find(k => k.name === 'Vol');
+      const bass = knobs.find(k => k.name === 'Bass');
+
+      expect(vol?.index).toBe(0);
+      expect(bass?.index).toBe(6);
     });
 
     it('should get settings correctly', async () => {
       await controller.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
-      // '57 Deluxe: Vol(0), Gain(1), Master(3), Treble(4), Mid(5), Bass(6), Pres(7)
       await controller.setAmpKnob(0, 10); // Vol
       await controller.setAmpKnob(4, 50); // Treble
 
