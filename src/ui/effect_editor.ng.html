@@ -1,0 +1,120 @@
+<section class="card">
+  @if (activeSlot() !== null) {
+    <header class="editor-header">
+      <!-- Position & Category Tag -->
+      <div class="slot-badge-group">
+        <span class="slot-pos-badge" [class.rack]="isPostAmp()">
+          {{ isPostAmp() ? 'Post-Amp Rack' : 'Pre-Amp Pedal' }}
+        </span>
+        <h2 class="slot-title">{{ slotCategoryName() }}</h2>
+      </div>
+
+      <!-- Bypass Checkbox with indicator -->
+      <div class="bypass-control">
+        @if (effect()) {
+          <mat-checkbox
+            [checked]="effect()!.enabled"
+            (change)="onToggleEffect($event.checked)"
+            color="primary"
+            class="bypass-checkbox"
+          >
+            <span class="status-indicator" [class.active]="effect()!.enabled"></span>
+            <span>{{ effect()!.enabled ? 'Active' : 'Bypassed' }}</span>
+          </mat-checkbox>
+        }
+      </div>
+
+      <!-- Model Dropdown -->
+      <div class="model-selector">
+        <button mat-button [matMenuTriggerFor]="typeMenu" class="model-select-btn">
+          <span class="model-label">{{ currentModelName() }}</span>
+          <mat-icon class="dropdown-icon" aria-hidden="true">arrow_drop_down</mat-icon>
+        </button>
+
+        <mat-menu #typeMenu="matMenu">
+          @if (effect()) {
+            <button mat-menu-item class="remove-menu-item" (click)="onClearSlot()">
+              <mat-icon aria-hidden="true">delete_outline</mat-icon>
+              <span>Remove Effect</span>
+            </button>
+          }
+          @for (m of categoryModels(); track m.id) {
+            <button
+              mat-menu-item
+              (click)="onAssignEffect(m.id)"
+              [class.selected-model]="effect()?.modelId === m.id"
+            >
+              <mat-icon aria-hidden="true">{{
+                effect()?.modelId === m.id ? 'check' : 'radio_button_unchecked'
+              }}</mat-icon>
+              <span>{{ m.name }}</span>
+            </button>
+          }
+        </mat-menu>
+      </div>
+
+      <!-- Quick Actions: Move Pre/Post & Clear -->
+      <div class="header-actions">
+        @if (canMovePosition()) {
+          <button
+            type="button"
+            class="pos-switch-btn"
+            (click)="onMovePosition()"
+            [title]="isPostAmp() ? 'Move this effect to Pre-Amp Pedalboard' : 'Move this effect to Post-Amp Rack'"
+          >
+            <mat-icon aria-hidden="true">{{ isPostAmp() ? 'reply' : 'forward' }}</mat-icon>
+            <span>{{ isPostAmp() ? 'Move to Pedals' : 'Move to Rack' }}</span>
+          </button>
+        }
+
+        @if (effect()) {
+          <button type="button" class="clear-btn" (click)="onClearSlot()" title="Remove this effect from the slot">
+            <mat-icon aria-hidden="true">delete_outline</mat-icon>
+            <span>Remove</span>
+          </button>
+        }
+      </div>
+    </header>
+
+    <!-- Knobs Grid -->
+    @if (effect() && effect()!.knobs.length > 0) {
+      <div class="knob-grid">
+        @for (knob of effect()!.knobs; track knob.index) {
+          <div class="knob-control">
+            <fuse-knob
+              [name]="knob.name"
+              [value]="knob.value"
+              (valueChange)="onKnobChange(knob.index, $event)"
+            ></fuse-knob>
+          </div>
+        }
+      </div>
+    } @else if (effect()) {
+      <div class="empty-state">
+        <p>No parameter knobs available for this model.</p>
+      </div>
+    } @else {
+      <!-- Empty Slot Model Gallery -->
+      <div class="empty-slot-gallery">
+        <div class="model-chip-grid">
+          @for (m of categoryModels(); track m.id) {
+            <button
+              type="button"
+              class="model-chip"
+              (click)="onAssignEffect(m.id)"
+              [attr.aria-label]="'Assign ' + m.name"
+            >
+              <mat-icon class="chip-icon" aria-hidden="true">add</mat-icon>
+              <span class="chip-name">{{ m.name }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="empty-state">
+      <p>Click a slot in the signal chain above to view and edit its settings.</p>
+    </div>
+  }
+</section>
+

@@ -8,14 +8,7 @@ import { FuseService } from '../services/fuse.service';
   selector: 'fuse-root',
   imports: [SidebarComponent, DashboardComponent, WelcomeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: ` @if (service.connected()) {
-      <div class="container">
-        <fuse-sidebar></fuse-sidebar>
-        <fuse-dashboard></fuse-dashboard>
-      </div>
-    } @else {
-      <fuse-welcome></fuse-welcome>
-    }`,
+  templateUrl: './root.ng.html',
 })
 export class RootComponent {
   protected readonly service = inject(FuseService);

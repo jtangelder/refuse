@@ -1,0 +1,235 @@
+<!-- Top Bar -->
+<header class="fender-top-bar">
+  <div class="top-bar-left">
+    <div class="preset-play-badge" title="Active Preset">
+      <mat-icon aria-hidden="true">widgets</mat-icon>
+    </div>
+    <h1 class="top-preset-title">{{ currentPresetName() }}</h1>
+    @if (service.presetDetails().author) {
+    <span class="top-preset-author">by {{ service.presetDetails().author }}</span>
+    }
+  </div>
+
+  <div class="top-bar-right">
+    <div class="top-connection">
+      <span class="status-dot connected" [class.demo]="service.isDemo()"></span>
+      <span class="status-label">{{ service.isDemo() ? 'Demo Mode' : 'Connected' }}</span>
+    </div>
+    <a class="top-save-btn" target="_blank" href="http://github.com/jtangelder/refuse">About</a>
+    <button
+      type="button"
+      class="top-save-btn"
+      (click)="openPresetInfoDialog()"
+      title="Edit Preset Metadata (Author, Genres, Tags, Description)"
+    >
+      Preset Info
+    </button>
+    <button type="button" class="top-save-btn primary" (click)="openSaveAsDialog()">Save As</button>
+    <div class="preset-arrows-group">
+      <button
+        type="button"
+        class="arrow-btn"
+        aria-label="Previous Preset"
+        title="Previous Preset"
+        (click)="onPrevPreset()"
+      >
+        <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
+      </button>
+      <button type="button" class="arrow-btn" aria-label="Next Preset" title="Next Preset" (click)="onNextPreset()">
+        <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="disconnect-btn"
+      [title]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
+      [attr.aria-label]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
+      (click)="onDisconnect()"
+    >
+      <mat-icon aria-hidden="true">power_settings_new</mat-icon>
+    </button>
+  </div>
+</header>
+
+<!-- Signal Chain on Audio Wire -->
+<fuse-signal-chain
+  [activeSlot]="activeSlot()"
+  [effects]="allEffectSettings()"
+  [ampSettings]="ampSettings()"
+  [cabinetModels]="cabModels"
+  (activeSlotChange)="onSelectSlot($event)"
+  (emptyCategorySelect)="onSelectEmptyCategory($event)"
+  (toggleEffect)="toggleEffect($event.slot, $event.enabled)"
+  (clearEffect)="clearSlot($event)"
+  (movePosition)="moveEffectPosition($event.fromSlot, $event.toSlot)"
+  (quickAdd)="onQuickAdd()"
+  (openPresetInfo)="openPresetInfoDialog()"
+  (tapTempoBpm)="onTapTempoBpm($event)"
+></fuse-signal-chain>
+
+<main class="editor-container">
+  <!-- Amp Control -->
+  @if (activeSlot() === 'amp') {
+  <fuse-amp-editor
+    [settings]="ampSettings()"
+    [knobs]="ampKnobs()"
+    [ampModels]="ampModels"
+    [cabModels]="cabModels"
+    (ampChange)="changeAmp($event)"
+    (cabinetChange)="changeCabinet($event)"
+    (knobChange)="changeAmpKnob($event.index, $event.value)"
+    (advancedSettingChange)="changeAdvancedSetting($event.key, $event.value)"
+  ></fuse-amp-editor>
+  }
+
+  <!-- Effect Slot Control -->
+  @if (isEffectSlot(activeSlot())) {
+  <fuse-effect-editor
+    [activeSlot]="asNumber(activeSlot())"
+    [slotCategory]="selectedSlotCategory()"
+    [effect]="selectedEffect()"
+    [allEffects]="allEffectSettings()"
+    [effectModels]="effectModels"
+    (assignChange)="assignEffect(asNumber(activeSlot())!, $event)"
+    (toggleChange)="toggleEffect(asNumber(activeSlot())!, $event)"
+    (knobChange)="changeEffectKnob(asNumber(activeSlot())!, $event.index, $event.value)"
+    (clearRequest)="clearSlot(asNumber(activeSlot())!)"
+    (movePositionRequest)="moveEffectPosition($event.fromSlot, $event.toSlot)"
+  ></fuse-effect-editor>
+  }
+</main>
+
+<!-- Native Save As Dialog -->
+<dialog #saveAsDialog class="fuse-dialog" aria-labelledby="save-as-dialog-title" (close)="onSaveAsDialogClosed()">
+  <form method="dialog" class="dialog-form">
+    <h3 id="save-as-dialog-title">Save Active Preset</h3>
+    <p class="dialog-subtitle">Choose a target slot and name on your amplifier</p>
+    <label class="dialog-label" for="save-as-slot-select">Target Slot</label>
+    <select
+      id="save-as-slot-select"
+      class="dialog-input"
+      [value]="saveAsTargetSlot()"
+      (change)="onSaveAsSlotChange($event)"
+    >
+      @for (slot of presetService.allSlots(); track slot) {
+      <option [value]="slot" [selected]="slot === saveAsTargetSlot()">
+        {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
+      </option>
+      }
+    </select>
+    <label class="dialog-label" for="save-as-name-input">Preset Name</label>
+    <input
+      id="save-as-name-input"
+      type="text"
+      class="dialog-input"
+      maxlength="31"
+      [value]="saveAsDraftName()"
+      (input)="onSaveAsNameInput($event)"
+      autofocus
+    />
+    <div class="dialog-actions">
+      <button type="submit" value="cancel" class="dialog-btn cancel">Cancel</button>
+      <button type="submit" value="confirm" class="dialog-btn confirm">Save Preset</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Native Preset Info Dialog (Fender FUSE Manual p.6) -->
+<dialog
+  #presetInfoDialog
+  class="fuse-dialog info-dialog"
+  aria-labelledby="preset-info-title"
+  (close)="onPresetInfoDialogClosed()"
+>
+  <form method="dialog" class="dialog-form">
+    <h3 id="preset-info-title">Preset Information</h3>
+    <p class="dialog-subtitle">
+      Edit FUSE metadata stored when exporting or sharing presets ({{ currentPresetName() }})
+    </p>
+
+    <div class="dialog-grid">
+      <div class="field-group">
+        <label class="dialog-label" for="info-author">Author</label>
+        <input
+          id="info-author"
+          type="text"
+          class="dialog-input"
+          placeholder="e.g. Fender Audio"
+          [value]="infoAuthor()"
+          (input)="onInfoFieldInput('author', $event)"
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="dialog-label" for="info-tags">Search Tags</label>
+        <input
+          id="info-tags"
+          type="text"
+          class="dialog-input"
+          placeholder="e.g. clean, vintage, slapback"
+          [value]="infoTags()"
+          (input)="onInfoFieldInput('tags', $event)"
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="dialog-label" for="info-genre1">Main Genre</label>
+        <select
+          id="info-genre1"
+          class="dialog-input"
+          [value]="infoGenre1()"
+          (change)="onInfoFieldInput('genre1', $event)"
+        >
+          @for (g of genres; track g) {
+          <option [value]="g">{{ g || '-- None --' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="dialog-label" for="info-genre2">Sub-Genre 1</label>
+        <select
+          id="info-genre2"
+          class="dialog-input"
+          [value]="infoGenre2()"
+          (change)="onInfoFieldInput('genre2', $event)"
+        >
+          @for (g of genres; track g) {
+          <option [value]="g">{{ g || '-- None --' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field-group full-width">
+        <label class="dialog-label" for="info-genre3">Sub-Genre 2</label>
+        <select
+          id="info-genre3"
+          class="dialog-input"
+          [value]="infoGenre3()"
+          (change)="onInfoFieldInput('genre3', $event)"
+        >
+          @for (g of genres; track g) {
+          <option [value]="g">{{ g || '-- None --' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field-group full-width">
+        <label class="dialog-label" for="info-description">Description / Notes</label>
+        <textarea
+          id="info-description"
+          class="dialog-input dialog-textarea"
+          rows="3"
+          placeholder="Describe pickup position, guitar type, or performance notes..."
+          [value]="infoDescription()"
+          (input)="onInfoFieldInput('description', $event)"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="submit" value="cancel" class="dialog-btn cancel">Cancel</button>
+      <button type="submit" value="confirm" class="dialog-btn confirm">Apply Info</button>
+    </div>
+  </form>
+</dialog>

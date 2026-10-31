@@ -1,123 +1,4 @@
 {
-  "0x6700": {
-    "sheet": "amps",
-    "x": 0,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x6400": {
-    "sheet": "amps",
-    "x": 500,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x7C00": {
-    "sheet": "amps",
-    "x": 1000,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x5300": {
-    "sheet": "amps",
-    "x": 1500,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x6A00": {
-    "sheet": "amps",
-    "x": 2000,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x7500": {
-    "sheet": "amps",
-    "x": 0,
-    "y": 500,
-    "width": 500,
-    "height": 500
-  },
-  "0x7200": {
-    "sheet": "amps",
-    "x": 500,
-    "y": 500,
-    "width": 500,
-    "height": 500
-  },
-  "0x6100": {
-    "sheet": "amps",
-    "x": 1000,
-    "y": 500,
-    "width": 500,
-    "height": 500
-  },
-  "0x7900": {
-    "sheet": "amps",
-    "x": 1500,
-    "y": 500,
-    "width": 500,
-    "height": 500
-  },
-  "0x5E00": {
-    "sheet": "amps",
-    "x": 2000,
-    "y": 500,
-    "width": 500,
-    "height": 500
-  },
-  "0x5D00": {
-    "sheet": "amps",
-    "x": 0,
-    "y": 1000,
-    "width": 500,
-    "height": 500
-  },
-  "0x6D00": {
-    "sheet": "amps",
-    "x": 500,
-    "y": 1000,
-    "width": 500,
-    "height": 500
-  },
-  "0xF100": {
-    "sheet": "amps",
-    "x": 1000,
-    "y": 1000,
-    "width": 500,
-    "height": 500
-  },
-  "0xF600": {
-    "sheet": "amps",
-    "x": 1500,
-    "y": 1000,
-    "width": 500,
-    "height": 500
-  },
-  "0xF900": {
-    "sheet": "amps",
-    "x": 2000,
-    "y": 1000,
-    "width": 500,
-    "height": 500
-  },
-  "0xFF00": {
-    "sheet": "amps",
-    "x": 0,
-    "y": 1500,
-    "width": 500,
-    "height": 500
-  },
-  "0xFC00": {
-    "sheet": "amps",
-    "x": 500,
-    "y": 1500,
-    "width": 500,
-    "height": 500
-  },
   "0x3C00": {
     "sheet": "stomp",
     "x": 0,
@@ -153,14 +34,14 @@
     "width": 500,
     "height": 500
   },
-  "0x0700": {
+  "0x8800": {
     "sheet": "stomp",
     "x": 0,
     "y": 500,
     "width": 500,
     "height": 500
   },
-  "0x8800": {
+  "0x0700": {
     "sheet": "stomp",
     "x": 500,
     "y": 500,
@@ -286,28 +167,28 @@
     "width": 500,
     "height": 500
   },
-  "0x4300": {
+  "0x2B00": {
     "sheet": "delay",
     "x": 500,
     "y": 0,
     "width": 500,
     "height": 500
   },
-  "0x4800": {
+  "0x2A00": {
     "sheet": "delay",
     "x": 1000,
     "y": 0,
     "width": 500,
     "height": 500
   },
-  "0x2B00": {
+  "0x4300": {
     "sheet": "delay",
     "x": 1500,
     "y": 0,
     "width": 500,
     "height": 500
   },
-  "0x2A00": {
+  "0x4800": {
     "sheet": "delay",
     "x": 2000,
     "y": 0,
@@ -342,73 +223,192 @@
     "width": 500,
     "height": 500
   },
-  "0x2400": {
+  "0x2100": {
     "sheet": "reverb",
     "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x0B00": {
+    "sheet": "reverb",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x2400": {
+    "sheet": "reverb",
+    "x": 1000,
     "y": 0,
     "width": 500,
     "height": 500
   },
   "0x3A00": {
     "sheet": "reverb",
-    "x": 500,
+    "x": 1500,
     "y": 0,
     "width": 500,
     "height": 500
   },
   "0x2600": {
     "sheet": "reverb",
-    "x": 1000,
+    "x": 2000,
     "y": 0,
     "width": 500,
     "height": 500
   },
   "0x3B00": {
     "sheet": "reverb",
-    "x": 1500,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x4E00": {
-    "sheet": "reverb",
-    "x": 2000,
-    "y": 0,
-    "width": 500,
-    "height": 500
-  },
-  "0x4B00": {
-    "sheet": "reverb",
     "x": 0,
     "y": 500,
     "width": 500,
     "height": 500
   },
-  "0x4C00": {
+  "0x4E00": {
     "sheet": "reverb",
     "x": 500,
     "y": 500,
     "width": 500,
     "height": 500
   },
-  "0x4D00": {
+  "0x4B00": {
     "sheet": "reverb",
     "x": 1000,
     "y": 500,
     "width": 500,
     "height": 500
   },
-  "0x2100": {
+  "0x4C00": {
     "sheet": "reverb",
     "x": 1500,
     "y": 500,
     "width": 500,
     "height": 500
   },
-  "0x0B00": {
+  "0x4D00": {
     "sheet": "reverb",
     "x": 2000,
     "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x6700": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x6400": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x7C00": {
+    "sheet": "amps",
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x5300": {
+    "sheet": "amps",
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x6A00": {
+    "sheet": "amps",
+    "x": 2000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x7500": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x7200": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x6100": {
+    "sheet": "amps",
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x7900": {
+    "sheet": "amps",
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x5E00": {
+    "sheet": "amps",
+    "x": 2000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x5D00": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0x6D00": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xF100": {
+    "sheet": "amps",
+    "x": 1000,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xF600": {
+    "sheet": "amps",
+    "x": 1500,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xF900": {
+    "sheet": "amps",
+    "x": 2000,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xFF00": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 1500,
+    "width": 500,
+    "height": 500
+  },
+  "0xFC00": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 1500,
     "width": 500,
     "height": 500
   }

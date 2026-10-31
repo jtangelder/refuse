@@ -1,0 +1,267 @@
+/* M3 Filled Card (Borderless Tonal Containment) */
+.card {
+  background: var(--mat-sys-surface-container-low);
+  border: none;
+  border-radius: var(--md-corner-xl);
+  padding: 14px 20px;
+  margin-bottom: 0;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.slot-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* M3 Chip Badge (8px corner radius) */
+.slot-pos-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--md-corner-sm);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.slot-pos-badge.rack {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.slot-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mat-sys-on-surface);
+  margin: 0;
+}
+
+.bypass-control {
+  display: flex;
+  align-items: center;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mat-sys-error);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.status-indicator.active {
+  background: #34d399;
+}
+
+.model-selector {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+/* M3 Filled Tonal Selector Field (Borderless) */
+.model-select-btn {
+  width: 100%;
+  height: 36px;
+  background: var(--mat-sys-surface-container-high);
+  border: none;
+  color: var(--mat-sys-on-surface);
+  padding: 0 12px;
+  border-radius: var(--md-corner-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 500;
+  text-transform: none;
+  transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+  }
+}
+
+.model-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* M3 Tonal Action Pills */
+.pos-switch-btn {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  border: none;
+  padding: 0 14px;
+  border-radius: var(--md-corner-full);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    color 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.clear-btn {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-error);
+  border: none;
+  padding: 0 14px;
+  border-radius: var(--md-corner-full);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    color 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.remove-menu-item {
+  color: var(--mat-sys-error) !important;
+}
+
+.selected-model {
+  color: var(--mat-sys-primary) !important;
+}
+
+.knob-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--mat-sys-surface-container);
+  border-radius: 16px;
+  padding: 12px 16px;
+  min-height: 102px;
+  box-sizing: border-box;
+}
+
+.knob-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Empty Slot Gallery (M3 Suggestion / Assist Chips per m3.material.io/components/chips/overview) */
+.empty-slot-gallery {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--mat-sys-surface-container);
+  border-radius: 16px;
+  padding: 12px 18px;
+  min-height: 102px;
+  box-sizing: border-box;
+}
+
+.model-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* M3 Elevated / Tonal Assist Chip: 32px height, 8px corner radius, borderless tonal container */
+.model-chip {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mat-sys-surface-container-high);
+  border: none;
+  color: var(--mat-sys-on-surface);
+  padding: 0 12px 0 8px;
+  border-radius: var(--md-corner-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    color 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+
+    .chip-icon {
+      color: var(--mat-sys-on-secondary-container);
+    }
+  }
+
+  .chip-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--mat-sys-primary);
+    transition: color 0.15s;
+  }
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 16px;
+  min-height: 102px;
+  box-sizing: border-box;
+  background: var(--mat-sys-surface-container);
+  border-radius: 16px;
+  color: var(--mat-sys-on-surface-variant);
+
+  p {
+    margin: 0;
+  }
+}
+

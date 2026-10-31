@@ -1,0 +1,79 @@
+<nav class="sidebar-container" aria-label="Preset list">
+  <div class="sidebar-search-wrapper">
+    <div class="sidebar-search-box">
+      <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
+      <input
+        type="search"
+        class="search-input"
+        placeholder="Filter presets"
+        aria-label="Filter presets"
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+      />
+    </div>
+  </div>
+
+  <div class="presets-list-scroll">
+    <ul class="preset-items" role="list" (keydown)="onListKeyDown($event)">
+      @for (slot of filteredSlots(); track slot) {
+        <li class="preset-row">
+          <button
+            type="button"
+            [attr.data-slot]="slot"
+            (click)="changePreset(slot)"
+            [class.active]="service.currentPresetSlot() === slot"
+            [attr.aria-current]="service.currentPresetSlot() === slot ? 'true' : null"
+            class="preset-item-btn"
+            [attr.aria-label]="
+              'Select preset ' + (slot + 1) + ': ' + (service.presets().get(slot)?.name || 'Preset ' + (slot + 1))
+            "
+          >
+            <span class="slot-num">{{ slot + 1 | number: '2.0' }}</span>
+            <span class="preset-name">{{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <!-- Bottom Actions -->
+  <div class="sidebar-bottom-controls">
+    <button type="button" class="action-pill-btn" (click)="openSaveDialog()" title="Save preset to amplifier">
+      <mat-icon aria-hidden="true">save</mat-icon>
+      <span>Save</span>
+    </button>
+    <button type="button" class="action-pill-btn" (click)="fileInput.click()" title="Import .fuse or .xml preset">
+      <mat-icon aria-hidden="true">file_upload</mat-icon>
+      <span>Import</span>
+    </button>
+    <button type="button" class="action-pill-btn" (click)="exportFusePreset()" title="Export .fuse preset">
+      <mat-icon aria-hidden="true">file_download</mat-icon>
+      <span>Export</span>
+    </button>
+    <input #fileInput type="file" accept=".fuse,.xml" (change)="importFusePreset($event)" style="display: none;" />
+  </div>
+</nav>
+
+<dialog #saveDialog class="fuse-modal-dialog" aria-labelledby="sidebar-save-title" (close)="onDialogClose()">
+  <form method="dialog" class="modal-form">
+    <h2 id="sidebar-save-title">Save Preset</h2>
+    <div class="form-field">
+      <label for="sidebar-preset-name-input">Preset Name</label>
+      <input
+        #presetNameInput
+        id="sidebar-preset-name-input"
+        type="text"
+        maxlength="32"
+        required
+        autofocus
+        [value]="draftName()"
+        (input)="onDraftNameInput($event)"
+      />
+    </div>
+    <div class="modal-actions">
+      <button type="submit" value="cancel" formnovalidate class="btn-secondary">Cancel</button>
+      <button type="submit" value="save" class="btn-primary">Save</button>
+    </div>
+  </form>
+</dialog>
+

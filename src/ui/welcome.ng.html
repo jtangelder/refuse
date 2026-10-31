@@ -1,0 +1,70 @@
+<div class="illustration">
+  <img ngSrc="assets/mustang-intro.webp" width="350" height="260" priority alt="Fender Mustang amplifier" />
+</div>
+<div class="message">
+  <h1>Unofficial Fender FUSE replacement</h1>
+
+  @if (!service.isSupported()) {
+    <div class="browser-warning" role="alert">
+      <mat-icon class="warning-icon" aria-hidden="true">warning</mat-icon>
+      <div class="warning-content">
+        <strong>WebHID Not Supported in This Browser</strong>
+        <p>
+          Safari and Firefox currently do not support the WebHID API required to communicate with your amplifier via
+          USB.
+        </p>
+        <p>
+          Please use <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Opera</strong> to
+          connect your amplifier. You can still test all controls right now in <strong>Demo Mode</strong> below!
+        </p>
+      </div>
+    </div>
+  }
+
+  <p>
+    This tool restores the editing functionality lost when Fender
+    <a
+      href="https://support.fender.com/en-us/knowledgebase/article/KA-01924"
+      target="_blank"
+      rel="noopener noreferrer"
+      >discontinued</a
+    >
+    their FUSE application.
+  </p>
+
+  <p>
+    It provides a simple interface to manage your presets, configure signal chains, and access the "hidden" amp
+    models that require software control. No installation is needed; it runs entirely via your browser's USB
+    connection.
+  </p>
+
+  <p>
+    <strong>Get started by connecting your amplifier to your computer via USB.</strong>
+  </p>
+  <div class="connect">
+    <button
+      mat-flat-button
+      color="primary"
+      [disabled]="!service.isSupported() || service.connecting()"
+      (click)="service.connect()"
+    >
+      <mat-icon aria-hidden="true">usb</mat-icon>
+      {{ service.connecting() ? 'Connecting...' : 'Connect your amp' }}
+    </button>
+    <button matButton="tonal" [disabled]="service.connecting()" (click)="service.enableDemo()">
+      <mat-icon aria-hidden="true">play_arrow</mat-icon>
+      Try Demo
+    </button>
+  </div>
+
+  <p class="disclaimer">
+    <em>
+      This is a hobby project, not affiliated with Fender in any way. Please
+      <a href="https://github.com/jtangelder/mustang" target="_blank" rel="noopener noreferrer"
+        >contribute on GitHub</a
+      >
+      if you find it useful.
+    </em>
+  </p>
+</div>
+

@@ -1,0 +1,9 @@
+@if (service.connected()) {
+  <div class="container">
+    <fuse-sidebar></fuse-sidebar>
+    <fuse-dashboard></fuse-dashboard>
+  </div>
+} @else {
+  <fuse-welcome></fuse-welcome>
+}
+

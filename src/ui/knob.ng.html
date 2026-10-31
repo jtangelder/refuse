@@ -1,0 +1,35 @@
+<div
+  class="knob-container"
+  [class.knob-dragging]="isDragging()"
+  tabindex="0"
+  role="slider"
+  [attr.aria-label]="name()"
+  [attr.aria-valuenow]="value()"
+  [attr.aria-valuemin]="min()"
+  [attr.aria-valuemax]="max()"
+  [attr.aria-valuetext]="displayValue()"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerCancel($event)"
+  (keydown)="onKeyDown($event)"
+>
+  <div class="knob" [style.transform]="'rotate(' + rotation() + 'deg)'">
+    <!-- SVG Knob Graphic (M3 Tonal Rotary Control) -->
+    <svg viewBox="0 0 100 100" class="knob-svg" aria-hidden="true">
+      <circle cx="50" cy="50" r="46" fill="#151c25" />
+      <circle cx="50" cy="50" r="38" fill="#232e3c" />
+      <!-- Indicator Line -->
+      <line x1="50" y1="44" x2="50" y2="15" stroke="#8ccff9" stroke-width="4" stroke-linecap="round" />
+    </svg>
+  </div>
+
+  @if (isDragging()) {
+    <div class="tooltip" role="status" aria-live="polite">
+      {{ displayValue() }}
+    </div>
+  }
+</div>
+
+<span class="name">{{ name() }}</span>
+

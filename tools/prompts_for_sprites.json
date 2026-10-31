@@ -1,0 +1,99 @@
+{
+  "categories": [
+    {
+      "name": "stomp",
+      "grid": { "cols": 4, "rows": 3 },
+      "models": [
+        { "id": "0x3C00", "name": "Overdrive", "ref": "Boss SD-1 Super Overdrive: bright yellow compact Boss enclosure, stepped black rubber footswitch with silver thumbscrew, 3 black knobs" },
+        { "id": "0x4900", "name": "Fixed Wah", "ref": "Dunlop Cry Baby: black crinkle finish aluminum wedge chassis, grooved rubber treadle pad" },
+        { "id": "0x4A00", "name": "Touch Wah", "ref": "Boss AW-2 / Auto Wah: compact green Boss enclosure, black rubber footswitch, 4 small knobs" },
+        { "id": "0x1A00", "name": "Fuzz", "ref": "Dallas-Arbiter Fuzz Face: iconic circular round red metal disc enclosure, black rubber smile tread, 2 fluted knobs, chrome stomp button" },
+        { "id": "0x1C00", "name": "Fuzz Touch Wah", "ref": "Fuzz Face circular round blue metal enclosure with wah toggle/indicator" },
+        { "id": "0x8800", "name": "Simple Comp", "ref": "MXR Dyna Comp: bright red compact die-cast enclosure, script logo, 2 large black fluted knobs" },
+        { "id": "0x0700", "name": "Compressor", "ref": "Boss CS-3 Compression Sustainer: classic sky-blue Boss compact enclosure, black rubber footswitch, silver thumbscrew, 4 knobs" },
+        { "id": "0x0301", "name": "Ranger Boost", "ref": "Dallas Rangemaster Treble Booster: 1960s hammerite grey metal wedge casing, white front panel with black chicken-head pointer knob" },
+        { "id": "0xBA00", "name": "Green Box", "ref": "Ibanez TS9 Tube Screamer: vibrant lime-green rectangular pedal, square silver/rubber footpad, 3 knobs" },
+        { "id": "0x0101", "name": "Orange Box", "ref": "Boss DS-1 Distortion: bright orange Boss compact enclosure, black rubber footswitch with silver thumbscrew, 3 black knobs" },
+        { "id": "0x1101", "name": "Black Box", "ref": "ProCo RAT 2: industrial sloped black steel enclosure, white stenciled RAT logo, 3 white-pointer knobs" },
+        { "id": "0x0F01", "name": "Big Fuzz", "ref": "Electro-Harmonix Big Muff Pi: large folded sheet metal enclosure, brushed aluminum face with red/black graphics, 3 large black hockey-puck knobs" }
+      ]
+    },
+    {
+      "name": "mod",
+      "grid": { "cols": 4, "rows": 3 },
+      "models": [
+        { "id": "0x1200", "name": "Sine Chorus", "ref": "Boss CE-2 Chorus: iconic sky-blue Boss compact enclosure, black rubber footswitch with thumbscrew, 2 black knobs" },
+        { "id": "0x1300", "name": "Triangle Chorus", "ref": "Boss CH-1 Super Chorus: blue/silver metallic Boss compact enclosure, 4 control knobs" },
+        { "id": "0x1800", "name": "Sine Flanger", "ref": "Boss BF-2 Flanger: metallic dark purple Boss compact enclosure, black rubber footswitch, 4 black knobs" },
+        { "id": "0x1900", "name": "Triangle Flanger", "ref": "MXR M-117 Flanger: grey compact box with horizontal racing stripes and 4 knobs" },
+        { "id": "0x2D00", "name": "Vibratone", "ref": "Fender Vibratone Leslie: vintage black tolex rotary speaker cabinet with Fender silverface sparkle grille cloth" },
+        { "id": "0x4000", "name": "Vintage Tremolo", "ref": "Boss TR-2 Tremolo: deep green Boss compact enclosure, black rubber footswitch, 3 black knobs" },
+        { "id": "0x4100", "name": "Sine Tremolo", "ref": "Fender Brownface Optical Tremolo: brown textured panel with cream vintage radio knobs" },
+        { "id": "0x2200", "name": "Ring Modulator", "ref": "Moog Moogerfooger MF-102: walnut wood side cheeks, black matte console face, big rotary dials, rocker switches" },
+        { "id": "0x2900", "name": "Step Filter", "ref": "Oberheim / Maestro Sample & Hold: brushed aluminum chassis with colorful stepped indicator sliders/knobs" },
+        { "id": "0x4F00", "name": "Phaser", "ref": "MXR Phase 90: bright orange compact box, script Phase 90 logo, single giant black fluted knob" },
+        { "id": "0x1F00", "name": "Pitch Shifter", "ref": "DigiTech Whammy: Ferrari red metal wedge enclosure with treadle foot pedal" },
+        { "id": "blank", "name": "Spare Mod Unit", "ref": "Vintage boutique chrome tremolo pedal" }
+      ]
+    },
+    {
+      "name": "delay",
+      "grid": { "cols": 3, "rows": 3 },
+      "models": [
+        { "id": "0x1600", "name": "Mono Delay", "ref": "Boss DD-3 Digital Delay: white Boss compact enclosure, blue lettering, black rubber footswitch, 4 knobs" },
+        { "id": "0x2B00", "name": "Tape Delay", "ref": "Roland RE-201 Space Echo: black and green chassis with clear tape transport window and analog round VU meter" },
+        { "id": "0x2A00", "name": "Stereo Tape Delay", "ref": "Maestro Echoplex EP-3: vintage metal chassis with sliding tape speed playhead lever and green pilot light" },
+        { "id": "0x4300", "name": "Mono Echo Filter", "ref": "Line 6 DL4 Delay Modeler: olive green die-cast enclosure, 4 chrome stomp switches, 6 control knobs" },
+        { "id": "0x4800", "name": "Stereo Echo Filter", "ref": "Line 6 DL4 stereo variant in brushed metallic green with 4 footswitches" },
+        { "id": "0x1500", "name": "Ducking Delay", "ref": "TC Electronic 2290: 19-inch 1U black brushed rack faceplate with red digital 7-segment LED display" },
+        { "id": "0x4600", "name": "Reverse Delay", "ref": "Electro-Harmonix Memory Man: die-cast chassis with blue/red graphics, chrome stomp switch, 5 knobs" },
+        { "id": "0x4400", "name": "Multitap Delay", "ref": "Lexicon PCM42 studio rackmount delay with numeric readouts and input limiter LED" },
+        { "id": "0x4500", "name": "Ping Pong Delay", "ref": "Eventide TimeFactor: dark slate twin stompbox with LED matrix display and dual encoders" }
+      ]
+    },
+    {
+      "name": "reverb",
+      "grid": { "cols": 4, "rows": 3 },
+      "models": [
+        { "id": "0x2100", "name": "'63 Spring", "ref": "Fender 1963 Reverb Tank 6G15: brown tolex cabinet, chrome panel with red jewel pilot light, 3 knobs (Dwell, Mixer, Tone)" },
+        { "id": "0x0B00", "name": "'65 Spring", "ref": "Fender 1965 Blackface Reverb: black textured tolex, silver sparkle grille, blackface chrome panel" },
+        { "id": "0x2400", "name": "Small Hall", "ref": "Lexicon 224 LARC: beige desktop remote controller with vertical sliders and red LED displays" },
+        { "id": "0x3A00", "name": "Large Hall", "ref": "Lexicon 480L LARC: iconic studio remote controller with dual motorized faders and blue keypad buttons" },
+        { "id": "0x2600", "name": "Small Room", "ref": "Electro-Harmonix Holy Grail: compact die-cast aluminum box, large black pointer knob, toggle switch" },
+        { "id": "0x3B00", "name": "Large Room", "ref": "Boss RV-5 Digital Reverb: dark grey metallic Boss compact enclosure, black rubber footswitch" },
+        { "id": "0x4E00", "name": "Small Plate", "ref": "EMT 140 Plate Reverb: classic hammerite industrial metal chassis with dampening control dial" },
+        { "id": "0x4B00", "name": "Large Plate", "ref": "EMT 250 Electronic Reverberator: space-age vertical console with 4 red/white control levers" },
+        { "id": "0x4C00", "name": "Ambient", "ref": "Strymon BigSky: brushed dark cyan anodized aluminum pedal with OLED display and soft-touch footswitches" },
+        { "id": "0x4D00", "name": "Arena", "ref": "TC Electronic Hall of Fame: fiery red compact stompbox with 4 black dials and TonePrint switch" },
+        { "id": "blank1", "name": "Spare Studio Reverb", "ref": "Universal Audio plate reverb unit" },
+        { "id": "blank2", "name": "Spare Spring Reverb", "ref": "Vintage tube spring reverb tank" }
+      ]
+    },
+    {
+      "name": "amps",
+      "grid": { "cols": 5, "rows": 4 },
+      "models": [
+        { "id": "0x6700", "name": "'57 Deluxe", "ref": "1957 Fender Tweed Deluxe (5E3): diagonal tweed, oxblood grille cloth, chrome top control panel, chicken-head knobs" },
+        { "id": "0x6400", "name": "'59 Bassman", "ref": "1959 Fender 4x10 Bassman: wide tweed combo, 4 Jensen speakers behind oxblood/gold grille, chrome chassis" },
+        { "id": "0x7C00", "name": "'57 Champ", "ref": "1957 Fender Tweed Champ (5F1): compact narrow-panel tweed box with single chicken-head volume knob" },
+        { "id": "0x5300", "name": "'65 Deluxe Reverb", "ref": "1965 Fender Blackface Deluxe Reverb: black tolex, silver sparkle grille, blackface numbered skirted knobs, red jewel" },
+        { "id": "0x6A00", "name": "'65 Princeton", "ref": "1965 Fender Blackface Princeton Reverb: compact black combo with silver grille cloth" },
+        { "id": "0x7500", "name": "'65 Twin Reverb", "ref": "1965 Fender Blackface Twin Reverb: wide 2x12 combo, dual-channel blackface panel, tilt-back legs" },
+        { "id": "0x7200", "name": "Super-Sonic", "ref": "Fender Super-Sonic 22: blonde tolex combo, chrome front panel, vintage white radio knobs" },
+        { "id": "0x6100", "name": "British '60s", "ref": "VOX AC30 Top Boost: black basketweave vinyl, brown diamond grille cloth, copper top panel, white VOX logo" },
+        { "id": "0x7900", "name": "British '70s", "ref": "Marshall 1959SLP Super Lead Plexi: black Levant tolex head, gold brushed Plexi panel, script Marshall logo" },
+        { "id": "0x5E00", "name": "British '80s", "ref": "Marshall JCM800: black elephant tolex head, white piping, horizontal brushed gold panel, bold white logo" },
+        { "id": "0x5D00", "name": "American '90s", "ref": "Mesa/Boogie Dual Rectifier Solo: polished diamond-plate aluminum faceplate, heavy chrome toggles" },
+        { "id": "0x6D00", "name": "Metal 2000", "ref": "Peavey 5150: black head shell, perforated black metal front grille, white block logo" },
+        { "id": "0xF100", "name": "Studio Preamp", "ref": "Avalon Vt-737sp / UA 6176: brushed silver 19-inch rack unit with round backlit analog VU meter" },
+        { "id": "0xF600", "name": "'57 Twin", "ref": "1957 Fender Tweed Twin-Amp: wide tweed combo with dual 12-inch speakers and chrome panel" },
+        { "id": "0xF900", "name": "'60s Thrift", "ref": "1964 Sears Silvertone 1484 Twin Twelve: textured grey/black vinyl head, silver/blue sparkle grille, metal latches" },
+        { "id": "0xFF00", "name": "British Watts", "ref": "Hiwatt Custom 100 DR103: heavy-duty white piping, black vinyl head, brushed military faceplate, pointer knobs" },
+        { "id": "0xFC00", "name": "British Colour", "ref": "Orange Custom Shop 50: bright orange vinyl head shell, white enamel faceplate with Orange hieroglyphics" },
+        { "id": "spare1", "name": "Spare Vintage Amp", "ref": "Fender Brownface Concert combo" },
+        { "id": "spare2", "name": "Spare Boutique Amp", "ref": "Dumble Overdrive Special head" },
+        { "id": "spare3", "name": "Spare Bass Amp", "ref": "Ampeg SVT classic bass head" }
+      ]
+    }
+  ]
+}

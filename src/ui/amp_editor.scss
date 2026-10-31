@@ -1,0 +1,183 @@
+/* M3 Filled Card (Borderless Tonal Containment) */
+.card {
+  background: var(--mat-sys-surface-container-low);
+  border: none;
+  border-radius: var(--md-corner-xl);
+  padding: 14px 20px;
+  margin-bottom: 0;
+}
+
+.amp-editor-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.header-titles {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* M3 Assist/Filter Chip Badge (8px corner radius) */
+.amp-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--md-corner-sm);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.header-main-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mat-sys-on-surface);
+  margin: 0;
+}
+
+.selectors-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.selector-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+  max-width: 340px;
+  flex: 1;
+}
+
+.selector-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+/* M3 Filled Tonal Selector Field (Borderless) */
+.model-select-btn {
+  width: 100%;
+  height: 36px;
+  background: var(--mat-sys-surface-container-high);
+  border: none;
+  color: var(--mat-sys-on-surface);
+  padding: 0 12px;
+  border-radius: var(--md-corner-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 500;
+  text-transform: none;
+  transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+  }
+}
+
+.btn-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.selected-menu-item {
+  color: var(--mat-sys-primary) !important;
+}
+
+.knobs-section {
+  background: var(--mat-sys-surface-container);
+  border-radius: 16px;
+  padding: 12px 16px;
+  min-height: 102px;
+  box-sizing: border-box;
+}
+
+.knob-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.knob-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.advanced-toggle-control {
+  gap: 5px;
+  margin-left: 4px;
+  padding-left: 20px;
+  border-left: 1px solid var(--mat-sys-surface-container-highest);
+}
+
+.advanced-knob-toggle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: none;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1);
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+    color: var(--mat-sys-on-surface);
+  }
+
+  &.active {
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+    box-shadow: 0 0 0 2px var(--mat-sys-primary);
+  }
+}
+
+.toggle-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+  user-select: none;
+}
+
+.advanced-grid {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--mat-sys-surface-container-high);
+  border-radius: var(--md-corner-md);
+  border: none;
+}
+
