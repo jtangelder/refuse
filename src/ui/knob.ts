@@ -21,12 +21,12 @@ import { Component, ChangeDetectionStrategy, input, output, signal, computed } f
       (keydown)="onKeyDown($event)"
     >
       <div class="knob" [style.transform]="'rotate(' + rotation() + 'deg)'">
-        <!-- SVG Knob Graphic -->
+        <!-- SVG Knob Graphic (M3 Tonal Rotary Control) -->
         <svg viewBox="0 0 100 100" class="knob-svg" aria-hidden="true">
-          <circle cx="50" cy="50" r="45" fill="#222" stroke="#111" stroke-width="2" />
-          <circle cx="50" cy="50" r="40" fill="transparent" stroke="#444" stroke-width="1" stroke-dasharray="2 4" />
+          <circle cx="50" cy="50" r="46" fill="#151c25" />
+          <circle cx="50" cy="50" r="38" fill="#232e3c" />
           <!-- Indicator Line -->
-          <line x1="50" y1="50" x2="50" y2="10" stroke="#eee" stroke-width="4" stroke-linecap="round" />
+          <line x1="50" y1="44" x2="50" y2="15" stroke="#8ccff9" stroke-width="4" stroke-linecap="round" />
         </svg>
       </div>
 
@@ -37,7 +37,7 @@ import { Component, ChangeDetectionStrategy, input, output, signal, computed } f
       }
     </div>
 
-    <label class="name">{{ name() }}</label>
+    <span class="name">{{ name() }}</span>
   `,
   styles: [
     `
@@ -59,11 +59,11 @@ import { Component, ChangeDetectionStrategy, input, output, signal, computed } f
         justify-content: center;
         border-radius: 50%;
         outline: none;
-        touch-action: none;
+        touch-action: pan-x;
       }
 
       .knob-container:focus-visible {
-        outline: 2px solid var(--primary, #3498db);
+        outline: 2px solid var(--mat-sys-primary);
         outline-offset: 4px;
       }
 
@@ -71,7 +71,11 @@ import { Component, ChangeDetectionStrategy, input, output, signal, computed } f
         width: 100%;
         height: 100%;
         cursor: ns-resize;
-        transition: transform 0.1s cubic-bezier(0.1, 0, 0.3, 1);
+        transition: transform 0.1s cubic-bezier(0.2, 0, 0, 1);
+
+        @media (prefers-reduced-motion: reduce) {
+          transition: none;
+        }
       }
 
       /* Disable transition when dragging for instant response */
@@ -82,42 +86,32 @@ import { Component, ChangeDetectionStrategy, input, output, signal, computed } f
       .knob-svg {
         width: 100%;
         height: 100%;
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
       }
 
       .tooltip {
         position: absolute;
-        top: -30px;
+        top: -34px;
         left: 50%;
         transform: translateX(-50%);
-        background: #f1c40f;
-        color: #000;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        font-weight: bold;
+        background: var(--mat-sys-primary);
+        color: var(--mat-sys-on-primary);
+        padding: 3px 10px;
+        border-radius: var(--md-corner-full);
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.75rem;
+        font-weight: 600;
         pointer-events: none;
         z-index: 100;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
         white-space: nowrap;
       }
 
-      .tooltip::after {
-        content: '';
-        position: absolute;
-        bottom: -4px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-width: 4px 4px 0;
-        border-style: solid;
-        border-color: #f1c40f transparent transparent transparent;
-      }
-
-      label.name {
+      .name {
         font-size: 0.75rem;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface-variant);
         text-align: center;
       }
     `,
@@ -143,7 +137,7 @@ export class KnobComponent {
     return -135 + normalized * 270;
   });
 
-  // Display value: Map min-max to 1.0 - 10.0 (or raw if step is coarse)
+  // Display value: Map min-max to 0.0 - 10.0
   displayValue = computed(() => {
     const val = this.value();
     const min = this.min();
@@ -214,7 +208,8 @@ export class KnobComponent {
     const max = this.max();
     const current = this.value();
     const range = max - min;
-    const step = Math.max(1, Math.round(range / 100));
+    const unitStep = Math.max(1, Math.round(range / 100));
+    const step = event.shiftKey ? unitStep * 5 : unitStep;
     const bigStep = Math.max(5, Math.round(range / 10));
 
     let nextValue: number | null = null;

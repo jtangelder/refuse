@@ -17,9 +17,9 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
           <!-- Position & Category Tag -->
           <div class="slot-badge-group">
             <span class="slot-pos-badge" [class.rack]="isPostAmp()">
-              {{ isPostAmp() ? 'POST-AMP RACK' : 'PRE-AMP PEDAL' }}
+              {{ isPostAmp() ? 'Post-Amp Rack' : 'Pre-Amp Pedal' }}
             </span>
-            <span class="slot-title">{{ slotCategoryName() }}</span>
+            <h2 class="slot-title">{{ slotCategoryName() }}</h2>
           </div>
 
           <!-- Bypass Checkbox with indicator -->
@@ -47,7 +47,7 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
             <mat-menu #typeMenu="matMenu">
               @if (effect()) {
                 <button mat-menu-item class="remove-menu-item" (click)="onClearSlot()">
-                  <mat-icon>delete_outline</mat-icon>
+                  <mat-icon aria-hidden="true">delete_outline</mat-icon>
                   <span>Remove Effect</span>
                 </button>
               }
@@ -57,7 +57,9 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
                   (click)="onAssignEffect(m.id)"
                   [class.selected-model]="effect()?.modelId === m.id"
                 >
-                  <mat-icon>{{ effect()?.modelId === m.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    effect()?.modelId === m.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ m.name }}</span>
                 </button>
               }
@@ -73,14 +75,14 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
                 (click)="onMovePosition()"
                 [title]="isPostAmp() ? 'Move this effect to Pre-Amp Pedalboard' : 'Move this effect to Post-Amp Rack'"
               >
-                <mat-icon>{{ isPostAmp() ? 'reply' : 'forward' }}</mat-icon>
+                <mat-icon aria-hidden="true">{{ isPostAmp() ? 'reply' : 'forward' }}</mat-icon>
                 <span>{{ isPostAmp() ? 'Move to Pedals' : 'Move to Rack' }}</span>
               </button>
             }
 
             @if (effect()) {
               <button type="button" class="clear-btn" (click)="onClearSlot()" title="Remove this effect from the slot">
-                <mat-icon>delete_outline</mat-icon>
+                <mat-icon aria-hidden="true">delete_outline</mat-icon>
                 <span>Remove</span>
               </button>
             }
@@ -120,7 +122,7 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
                   (click)="onAssignEffect(m.id)"
                   [attr.aria-label]="'Assign ' + m.name"
                 >
-                  <mat-icon class="chip-icon">add</mat-icon>
+                  <mat-icon class="chip-icon" aria-hidden="true">add</mat-icon>
                   <span class="chip-name">{{ m.name }}</span>
                 </button>
               }
@@ -140,13 +142,13 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
   `,
   styles: [
     `
+      /* M3 Filled Card (Borderless Tonal Containment) */
       .card {
-        background: #18181b;
-        border: 1px solid #27272a;
-        border-radius: 12px;
+        background: var(--mat-sys-surface-container-low);
+        border: none;
+        border-radius: var(--md-corner-xl);
         padding: 24px;
         margin-bottom: 24px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       }
 
       .editor-header {
@@ -155,38 +157,36 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
         justify-content: space-between;
         gap: 16px;
         flex-wrap: wrap;
-        padding-bottom: 20px;
-        margin-bottom: 28px;
-        border-bottom: 1px solid #27272a;
+        margin-bottom: 20px;
       }
 
       .slot-badge-group {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       }
 
+      /* M3 Chip Badge (8px corner radius) */
       .slot-pos-badge {
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        padding: 3px 8px;
-        border-radius: 4px;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: var(--md-corner-sm);
+        background: var(--mat-sys-secondary-container);
+        color: var(--mat-sys-on-secondary-container);
       }
 
       .slot-pos-badge.rack {
-        background: rgba(14, 165, 233, 0.15);
-        color: #38bdf8;
-        border-color: rgba(56, 189, 248, 0.3);
+        background: var(--mat-sys-primary-container);
+        color: var(--mat-sys-on-primary-container);
       }
 
       .slot-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #f4f4f5;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--mat-sys-on-surface);
+        margin: 0;
       }
 
       .bypass-control {
@@ -199,15 +199,13 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #ef4444;
-        box-shadow: 0 0 6px #ef4444;
+        background: var(--mat-sys-error);
         margin-right: 6px;
         vertical-align: middle;
       }
 
       .status-indicator.active {
-        background: #10b981;
-        box-shadow: 0 0 8px #10b981;
+        background: #34d399;
       }
 
       .model-selector {
@@ -216,23 +214,24 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
         max-width: 320px;
       }
 
+      /* M3 Filled Tonal Selector Field (Borderless) */
       .model-select-btn {
         width: 100%;
-        background: #27272a;
-        border: 1px solid #3f3f46;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 6px;
+        height: 44px;
+        background: var(--mat-sys-surface-container-high);
+        border: none;
+        color: var(--mat-sys-on-surface);
+        padding: 0 16px;
+        border-radius: var(--md-corner-md);
         display: flex;
         align-items: center;
         justify-content: space-between;
         font-weight: 500;
         text-transform: none;
-        transition: all 0.15s;
+        transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          border-color: #71717a;
-          background: #333338;
+          background: var(--mat-sys-surface-container-highest);
         }
       }
 
@@ -245,26 +244,30 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
       .header-actions {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
       }
 
+      /* M3 Tonal Action Pills */
       .pos-switch-btn {
+        height: 36px;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(14, 165, 233, 0.12);
-        color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
+        background: var(--mat-sys-secondary-container);
+        color: var(--mat-sys-on-secondary-container);
+        border: none;
+        padding: 0 14px;
+        border-radius: var(--md-corner-full);
+        font-size: 0.8125rem;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.15s;
+        transition:
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          background: rgba(14, 165, 233, 0.25);
-          border-color: #38bdf8;
+          background: var(--mat-sys-primary-container);
+          color: var(--mat-sys-on-primary-container);
         }
 
         mat-icon {
@@ -275,22 +278,25 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
       }
 
       .clear-btn {
+        height: 36px;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        background: rgba(239, 68, 68, 0.1);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
+        gap: 6px;
+        background: var(--mat-sys-surface-container-high);
+        color: var(--mat-sys-error);
+        border: none;
+        padding: 0 14px;
+        border-radius: var(--md-corner-full);
+        font-size: 0.8125rem;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.15s;
+        transition:
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          background: rgba(239, 68, 68, 0.2);
-          border-color: #f87171;
+          background: var(--mat-sys-error-container);
+          color: var(--mat-sys-on-error-container);
         }
 
         mat-icon {
@@ -301,11 +307,11 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
       }
 
       .remove-menu-item {
-        color: #f87171 !important;
+        color: var(--mat-sys-error) !important;
       }
 
       .selected-model {
-        color: #38bdf8 !important;
+        color: var(--mat-sys-primary) !important;
       }
 
       .knob-grid {
@@ -314,7 +320,9 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
         align-items: center;
         justify-content: center;
         gap: 32px;
-        padding: 10px 0;
+        background: var(--mat-sys-surface-container);
+        border-radius: 20px;
+        padding: 24px 20px;
       }
 
       .knob-control {
@@ -323,77 +331,84 @@ import { DspType, type EffectSettings, type ModelDef } from '../lib';
         align-items: center;
       }
 
-      /* Empty Slot Gallery */
+      /* Empty Slot Gallery (M3 Suggestion / Assist Chips per m3.material.io/components/chips/overview) */
       .empty-slot-gallery {
         text-align: center;
-        padding: 24px 16px;
+        background: var(--mat-sys-surface-container);
+        border-radius: 20px;
+        padding: 28px 20px;
       }
 
       .gallery-header h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #f4f4f5;
-        margin-bottom: 6px;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--mat-sys-on-surface);
+        margin: 0 0 6px 0;
       }
 
       .gallery-header p {
-        font-size: 0.9rem;
-        color: #a1a1aa;
+        font-size: 0.875rem;
+        color: var(--mat-sys-on-surface-variant);
         margin: 0 0 20px 0;
       }
 
       .model-chip-grid {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
         justify-content: center;
-        max-width: 700px;
+        max-width: 720px;
         margin: 0 auto 24px;
       }
 
+      /* M3 Elevated / Tonal Assist Chip: 32px height, 8px corner radius, borderless tonal container */
       .model-chip {
+        height: 34px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        background: #202024;
-        border: 1px solid #3f3f46;
-        color: #e4e4e7;
-        padding: 8px 14px;
-        border-radius: 8px;
-        font-size: 0.85rem;
+        gap: 8px;
+        background: var(--mat-sys-surface-container-high);
+        border: none;
+        color: var(--mat-sys-on-surface);
+        padding: 0 14px 0 10px;
+        border-radius: var(--md-corner-sm);
+        font-size: 0.875rem;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.15s;
+        transition:
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          background: #2e2e34;
-          border-color: #38bdf8;
-          color: #fff;
-          transform: translateY(-1px);
+          background: var(--mat-sys-secondary-container);
+          color: var(--mat-sys-on-secondary-container);
+
+          .chip-icon {
+            color: var(--mat-sys-on-secondary-container);
+          }
         }
 
         .chip-icon {
-          font-size: 16px;
-          width: 16px;
-          height: 16px;
-          color: #38bdf8;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: var(--mat-sys-primary);
+          transition: color 0.15s;
         }
       }
 
       .muted-note {
-        font-size: 0.8rem;
-        color: #71717a;
+        font-size: 0.78rem;
+        color: var(--mat-sys-on-surface-variant);
         margin: 0;
       }
 
       .empty-state {
         text-align: center;
-        padding: 40px 10px;
-        color: #71717a;
-      }
-
-      .icon {
-        font-family: 'Material Symbols Outlined';
+        padding: 40px 16px;
+        background: var(--mat-sys-surface-container);
+        border-radius: 20px;
+        color: var(--mat-sys-on-surface-variant);
       }
     `,
   ],

@@ -45,13 +45,13 @@ const FUSE_GENRES: readonly string[] = [
   imports: [MatButtonModule, MatIconModule, SignalChainComponent, AmpEditorComponent, EffectEditorComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Fender TONE Desktop Top Bar -->
+    <!-- Top Bar -->
     <header class="fender-top-bar">
       <div class="top-bar-left">
         <div class="preset-play-badge" title="Active Preset">
           <mat-icon aria-hidden="true">play_arrow</mat-icon>
         </div>
-        <h1 class="top-preset-title">{{ currentPresetName().toUpperCase() }}</h1>
+        <h1 class="top-preset-title">{{ currentPresetName() }}</h1>
         @if (service.presetDetails().author) {
           <span class="top-preset-author">by {{ service.presetDetails().author }}</span>
         }
@@ -287,141 +287,164 @@ const FUSE_GENRES: readonly string[] = [
         display: flex;
         flex-direction: column;
         flex: 1;
+        min-width: 0;
         overflow-y: auto;
-        background: #18191c;
+        background: var(--mat-sys-surface);
+        border-radius: 24px 0 0 24px;
       }
 
-      /* Fender TONE Top Bar */
+      @media (max-width: 850px) {
+        :host {
+          border-radius: 0;
+        }
+      }
+
+      /* M3 Top App Bar (Borderless, Tonal Surface) */
       .fender-top-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        height: 50px;
-        background: #1f2125;
-        border-bottom: 1px solid #282a30;
-        padding: 0 18px;
+        min-height: 64px;
+        background: transparent;
+        padding: 12px 24px;
+        gap: 16px;
+        flex-wrap: wrap;
         user-select: none;
       }
 
       .top-bar-left {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
       }
 
       .preset-play-badge {
-        width: 26px;
-        height: 26px;
-        background: #353842;
-        border-radius: 4px;
+        width: 36px;
+        height: 36px;
+        background: var(--mat-sys-secondary-container);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #ffffff;
+        color: var(--mat-sys-on-secondary-container);
 
         mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
         }
       }
 
       .top-preset-title {
-        font-size: 1.05rem;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: 0.04em;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--mat-sys-on-surface);
         margin: 0;
       }
 
       .top-preset-author {
-        font-size: 0.76rem;
-        color: #8b92a5;
+        font-size: 0.8125rem;
+        color: var(--mat-sys-on-surface-variant);
         font-weight: 500;
+        background: var(--mat-sys-surface-container);
+        padding: 4px 10px;
+        border-radius: var(--md-corner-sm);
       }
 
       .top-bar-right {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .top-connection {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
-        margin-right: 6px;
+        gap: 8px;
+        background: var(--mat-sys-surface-container-low);
+        padding: 6px 14px;
+        border-radius: var(--md-corner-full);
+        margin-right: 4px;
       }
 
       .status-dot {
-        width: 7px;
-        height: 7px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        background: #ef4444;
+        background: var(--mat-sys-error);
 
         &.connected {
-          background: #00e676;
-          box-shadow: 0 0 8px #00e676;
+          background: #34d399;
         }
 
         &.connected.demo {
-          background: #f59e0b;
-          box-shadow: 0 0 8px #f59e0b;
+          background: var(--mat-sys-primary);
         }
       }
 
       .status-label {
         font-size: 0.75rem;
-        font-weight: 600;
-        color: #8b92a5;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface-variant);
       }
 
+      /* M3 Filled Tonal & Primary Pill Buttons */
       .top-save-btn {
-        background: #252830;
-        border: 1px solid #353842;
-        color: #c2c8d6;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 6px 12px;
-        border-radius: 4px;
+        height: 36px;
+        background: var(--mat-sys-secondary-container);
+        border: none;
+        color: var(--mat-sys-on-secondary-container);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        padding: 0 16px;
+        border-radius: var(--md-corner-full);
         cursor: pointer;
-        transition: all 0.15s;
+        transition:
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          background: #2c303a;
-          color: #ffffff;
-          border-color: #4a4f5d;
+          background: var(--mat-sys-surface-container-highest);
+          color: var(--mat-sys-on-surface);
         }
 
         &.primary {
-          border-color: rgba(0, 176, 255, 0.4);
-          color: #38bdf8;
+          background: var(--mat-sys-primary);
+          color: var(--mat-sys-on-primary);
+          font-weight: 600;
 
           &:hover {
-            background: rgba(0, 176, 255, 0.14);
-            color: #ffffff;
+            filter: brightness(1.08);
           }
         }
       }
 
       .preset-arrows-group {
-        display: flex;
+        display: inline-flex;
         gap: 4px;
+        background: var(--mat-sys-surface-container-low);
+        padding: 2px;
+        border-radius: var(--md-corner-full);
       }
 
       .arrow-btn,
       .disconnect-btn {
-        width: 28px;
-        height: 28px;
-        background: #252830;
-        border: 1px solid #353842;
-        border-radius: 4px;
-        color: #8e95a5;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        background: var(--mat-sys-surface-container-high);
+        border: none;
+        border-radius: 50%;
+        color: var(--mat-sys-on-surface-variant);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.15s;
+        transition:
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         mat-icon {
           font-size: 18px;
@@ -430,74 +453,74 @@ const FUSE_GENRES: readonly string[] = [
         }
 
         &:hover {
-          color: #ffffff;
-          border-color: #00b0ff;
-          background: #2c303a;
+          color: var(--mat-sys-on-surface);
+          background: var(--mat-sys-surface-container-highest);
         }
       }
 
       .disconnect-btn:hover {
-        border-color: #ef4444;
-        color: #f87171;
+        background: var(--mat-sys-error-container);
+        color: var(--mat-sys-on-error-container);
       }
 
       .editor-container {
-        padding: 24px 20px 48px;
-        max-width: 900px;
+        padding: 20px 24px 48px;
+        max-width: 960px;
         width: 100%;
         margin: 0 auto;
         box-sizing: border-box;
       }
 
-      /* Native <dialog> Modals */
+      /* M3 Dialogs (28px Extra-Large Radius, Tonal Surface Container High, Borderless) */
       .fuse-dialog {
-        background: #1f2125;
-        color: #f4f4f5;
-        border: 1px solid #353842;
-        border-radius: 10px;
-        padding: 20px 24px;
-        width: min(380px, 90vw);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.65);
+        background: var(--mat-sys-surface-container-high);
+        color: var(--mat-sys-on-surface);
+        border: none;
+        border-radius: var(--md-corner-2xl);
+        padding: 24px;
+        width: min(400px, 90vw);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
         overscroll-behavior: contain;
 
         &.info-dialog {
-          width: min(520px, 92vw);
+          width: min(540px, 92vw);
         }
 
         &::backdrop {
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(2px);
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(3px);
         }
       }
 
       .dialog-form {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
 
         h3 {
           margin: 0;
-          font-size: 1.05rem;
-          font-weight: 700;
+          font-size: 1.375rem;
+          font-weight: 500;
+          letter-spacing: -0.01em;
         }
       }
 
       .dialog-subtitle {
         margin: 0;
-        font-size: 0.8rem;
-        color: #8b92a5;
+        font-size: 0.875rem;
+        color: var(--mat-sys-on-surface-variant);
       }
 
       .dialog-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        gap: 14px;
       }
 
       .field-group {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
 
         &.full-width {
           grid-column: 1 / -1;
@@ -505,58 +528,60 @@ const FUSE_GENRES: readonly string[] = [
       }
 
       .dialog-label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #9ba1b0;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface-variant);
       }
 
       .dialog-input {
-        background: #141619;
-        border: 1px solid #353842;
-        border-radius: 6px;
-        padding: 8px 10px;
-        color: #ffffff;
-        font-size: 0.88rem;
-        outline: none;
+        background: var(--mat-sys-surface-container-highest);
+        border: none;
+        border-radius: var(--md-corner-md);
+        padding: 10px 14px;
+        color: var(--mat-sys-on-surface);
+        font-size: 0.875rem;
         font-family: inherit;
-
-        &:focus {
-          border-color: #00b0ff;
-        }
       }
 
       .dialog-textarea {
         resize: vertical;
-        min-height: 64px;
+        min-height: 72px;
       }
 
       .dialog-actions {
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        margin-top: 8px;
+        margin-top: 10px;
       }
 
       .dialog-btn {
-        padding: 7px 14px;
-        border-radius: 6px;
-        font-size: 0.82rem;
-        font-weight: 600;
+        height: 40px;
+        padding: 0 20px;
+        border-radius: var(--md-corner-full);
+        font-size: 0.875rem;
+        font-weight: 500;
         cursor: pointer;
-        border: 1px solid transparent;
+        border: none;
+        transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &.cancel {
-          background: #2a2d35;
-          color: #c2c8d6;
-          border-color: #3a3f4b;
+          background: transparent;
+          color: var(--mat-sys-primary);
+
+          &:hover {
+            background: rgba(140, 207, 249, 0.08);
+          }
         }
 
         &.confirm {
-          background: #00b0ff;
-          color: #09131c;
-          font-weight: 700;
+          background: var(--mat-sys-primary);
+          color: var(--mat-sys-on-primary);
+          font-weight: 600;
+
+          &:hover {
+            filter: brightness(1.08);
+          }
         }
       }
     `,

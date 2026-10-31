@@ -13,8 +13,8 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
     <section class="card">
       <header class="amp-editor-header">
         <div class="header-titles">
-          <span class="amp-tag">AMPLIFIER</span>
-          <span class="header-main-title">Tone Controls & Cabinets</span>
+          <span class="amp-tag">Amplifier</span>
+          <h2 class="header-main-title">Tone Controls &amp; Cabinets</h2>
         </div>
 
         <div class="selectors-row">
@@ -23,12 +23,12 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
             <span class="selector-label">Amp Model</span>
             <button mat-button [matMenuTriggerFor]="ampRootMenu" class="model-select-btn">
               <span class="btn-text">{{ currentAmpName() }}</span>
-              <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+              <mat-icon class="dropdown-icon" aria-hidden="true">arrow_drop_down</mat-icon>
             </button>
             <mat-menu #ampRootMenu="matMenu">
               <button mat-menu-item [matMenuTriggerFor]="fenderMenu">Fender Amps</button>
               <button mat-menu-item [matMenuTriggerFor]="britishMenu">British Amps</button>
-              <button mat-menu-item [matMenuTriggerFor]="otherMenu">High Gain & Studio</button>
+              <button mat-menu-item [matMenuTriggerFor]="otherMenu">High Gain &amp; Studio</button>
             </mat-menu>
 
             <mat-menu #fenderMenu="matMenu">
@@ -38,7 +38,9 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
                   (click)="onAmpChange(model.id)"
                   [class.selected-menu-item]="settings()?.modelId === model.id"
                 >
-                  <mat-icon>{{ settings()?.modelId === model.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    settings()?.modelId === model.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ model.name }}</span>
                 </button>
               }
@@ -50,7 +52,9 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
                   (click)="onAmpChange(model.id)"
                   [class.selected-menu-item]="settings()?.modelId === model.id"
                 >
-                  <mat-icon>{{ settings()?.modelId === model.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    settings()?.modelId === model.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ model.name }}</span>
                 </button>
               }
@@ -62,7 +66,9 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
                   (click)="onAmpChange(model.id)"
                   [class.selected-menu-item]="settings()?.modelId === model.id"
                 >
-                  <mat-icon>{{ settings()?.modelId === model.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    settings()?.modelId === model.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ model.name }}</span>
                 </button>
               }
@@ -74,11 +80,13 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
             <span class="selector-label">Cabinet Simulation</span>
             <button mat-button [matMenuTriggerFor]="cabRootMenu" class="model-select-btn cab-btn">
               <span class="btn-text">{{ currentCabName() }}</span>
-              <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+              <mat-icon class="dropdown-icon" aria-hidden="true">arrow_drop_down</mat-icon>
             </button>
             <mat-menu #cabRootMenu="matMenu">
               <button mat-menu-item (click)="onCabinetChange(0)">
-                <mat-icon>{{ settings()?.cabinetId === 0 ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                <mat-icon aria-hidden="true">{{
+                  settings()?.cabinetId === 0 ? 'check' : 'radio_button_unchecked'
+                }}</mat-icon>
                 <span>Direct / Cab Simulation Off</span>
               </button>
               <button mat-menu-item [matMenuTriggerFor]="cab1xMenu">1 x Speaker Cabs</button>
@@ -93,7 +101,9 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
                   (click)="onCabinetChange(cab.id)"
                   [class.selected-menu-item]="settings()?.cabinetId === cab.id"
                 >
-                  <mat-icon>{{ settings()?.cabinetId === cab.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    settings()?.cabinetId === cab.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ cab.name }}</span>
                 </button>
               }
@@ -105,7 +115,9 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
                   (click)="onCabinetChange(cab.id)"
                   [class.selected-menu-item]="settings()?.cabinetId === cab.id"
                 >
-                  <mat-icon>{{ settings()?.cabinetId === cab.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    settings()?.cabinetId === cab.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ cab.name }}</span>
                 </button>
               }
@@ -117,7 +129,9 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
                   (click)="onCabinetChange(cab.id)"
                   [class.selected-menu-item]="settings()?.cabinetId === cab.id"
                 >
-                  <mat-icon>{{ settings()?.cabinetId === cab.id ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+                  <mat-icon aria-hidden="true">{{
+                    settings()?.cabinetId === cab.id ? 'check' : 'radio_button_unchecked'
+                  }}</mat-icon>
                   <span>{{ cab.name }}</span>
                 </button>
               }
@@ -144,7 +158,7 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
       <!-- Advanced Amp Parameters Collapsible -->
       <details class="advanced-section">
         <summary>
-          <mat-icon class="summary-icon">tune</mat-icon>
+          <mat-icon class="summary-icon" aria-hidden="true">tune</mat-icon>
           <span>Advanced Amplifier Parameters (Sag, Bias, Gate, Brightness, Depth)</span>
         </summary>
         <div class="knob-grid advanced-grid">
@@ -163,50 +177,49 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
   `,
   styles: [
     `
+      /* M3 Filled Card (Borderless Tonal Containment) */
       .card {
-        background: #18181b;
-        border: 1px solid #27272a;
-        border-radius: 12px;
+        background: var(--mat-sys-surface-container-low);
+        border: none;
+        border-radius: var(--md-corner-xl);
         padding: 24px;
         margin-bottom: 24px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       }
 
       .amp-editor-header {
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        padding-bottom: 20px;
-        margin-bottom: 24px;
-        border-bottom: 1px solid #27272a;
+        gap: 18px;
+        margin-bottom: 20px;
       }
 
       .header-titles {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       }
 
+      /* M3 Assist/Filter Chip Badge (8px corner radius) */
       .amp-tag {
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        padding: 3px 8px;
-        border-radius: 4px;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: var(--md-corner-sm);
+        background: var(--mat-sys-secondary-container);
+        color: var(--mat-sys-on-secondary-container);
       }
 
       .header-main-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #f4f4f5;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--mat-sys-on-surface);
+        margin: 0;
       }
 
       .selectors-row {
         display: flex;
-        gap: 20px;
+        gap: 16px;
         flex-wrap: wrap;
       }
 
@@ -220,34 +233,30 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
 
       .selector-label {
         font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: #a1a1aa;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface-variant);
+        padding-left: 4px;
       }
 
+      /* M3 Filled Tonal Selector Field (Borderless) */
       .model-select-btn {
         width: 100%;
-        background: #27272a;
-        border: 1px solid #3f3f46;
-        color: #f4f4f5;
-        padding: 8px 14px;
-        border-radius: 6px;
+        height: 44px;
+        background: var(--mat-sys-surface-container-high);
+        border: none;
+        color: var(--mat-sys-on-surface);
+        padding: 0 16px;
+        border-radius: var(--md-corner-md);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-weight: 600;
+        font-weight: 500;
         text-transform: none;
-        transition: all 0.15s;
+        transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          border-color: #f59e0b;
-          background: #333338;
+          background: var(--mat-sys-surface-container-highest);
         }
-      }
-
-      .cab-btn:hover {
-        border-color: #38bdf8;
       }
 
       .btn-text {
@@ -257,15 +266,17 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
       }
 
       .dropdown-icon {
-        color: #a1a1aa;
+        color: var(--mat-sys-on-surface-variant);
       }
 
       .selected-menu-item {
-        color: #f59e0b !important;
+        color: var(--mat-sys-primary) !important;
       }
 
       .knobs-section {
-        padding: 8px 0 16px;
+        background: var(--mat-sys-surface-container);
+        border-radius: 20px;
+        padding: 24px 20px;
       }
 
       .knob-grid {
@@ -283,40 +294,46 @@ import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } fr
       }
 
       .advanced-section {
-        margin-top: 24px;
-        border-top: 1px solid #27272a;
-        padding-top: 16px;
+        margin-top: 16px;
+        background: var(--mat-sys-surface-container);
+        border-radius: var(--md-corner-lg);
+        padding: 14px 20px;
       }
 
       summary {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         cursor: pointer;
-        color: #a1a1aa;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 20px;
+        color: var(--mat-sys-on-surface-variant);
+        font-size: 0.875rem;
+        font-weight: 500;
         user-select: none;
         transition: color 0.15s;
+        list-style: none;
+
+        &::-webkit-details-marker {
+          display: none;
+        }
 
         &:hover {
-          color: #f4f4f5;
+          color: var(--mat-sys-on-surface);
         }
 
         .summary-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
-          color: #f59e0b;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          color: var(--mat-sys-primary);
         }
       }
 
       .advanced-grid {
-        padding: 8px 0;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-top: 16px;
+        padding: 20px 12px;
+        background: var(--mat-sys-surface-container-high);
+        border-radius: var(--md-corner-md);
+        border: none;
       }
     `,
   ],

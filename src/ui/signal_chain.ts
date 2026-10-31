@@ -54,12 +54,17 @@ export interface EmptySlotPlaceholder {
               [cdkDragData]="item"
               [class.selected]="activeSlot() === item.slot"
               [class.bypassed]="!item.enabled"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="item.typeTitle + ': ' + item.model"
               (click)="onSelectSlot(item.slot)"
+              (keydown.enter)="onSelectSlot(item.slot)"
+              (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
             >
               <!-- Drag Placeholder on Wire -->
               <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
                 <div class="placeholder-wire-circle">
-                  <mat-icon>add</mat-icon>
+                  <mat-icon aria-hidden="true">add</mat-icon>
                 </div>
                 <span class="placeholder-label">{{ item.typeTitle }}</span>
               </div>
@@ -73,21 +78,23 @@ export interface EmptySlotPlaceholder {
               </div>
 
               <!-- Wire Jack connectors -->
-              <div class="jack-socket jack-in"></div>
-              <div class="jack-socket jack-out"></div>
+              <div class="jack-socket jack-in" aria-hidden="true"></div>
+              <div class="jack-socket jack-out" aria-hidden="true"></div>
 
               <!-- Bypass LED button -->
               <button
                 type="button"
                 class="pedal-led-btn"
+                [attr.aria-pressed]="item.enabled"
+                [attr.aria-label]="(item.enabled ? 'Bypass ' : 'Enable ') + item.model"
                 [matTooltip]="item.enabled ? 'Click to bypass' : 'Click to enable'"
                 (click)="onToggleBypass($event, item)"
               >
-                <span class="led-dot" [class.active]="item.enabled"></span>
+                <span class="led-dot" [class.active]="item.enabled" aria-hidden="true"></span>
               </button>
 
               <!-- Pedal Sprite Frame -->
-              <div class="pedal-sprite-frame">
+              <div class="pedal-sprite-frame" aria-hidden="true">
                 <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
               </div>
 
@@ -102,19 +109,21 @@ export interface EmptySlotPlaceholder {
                     <button
                       type="button"
                       class="action-btn"
+                      [attr.aria-label]="'Move ' + item.model + ' to Post-Amp Loop'"
                       matTooltip="Move to Post-Amp Loop"
                       (click)="onMoveToPartner($event, item)"
                     >
-                      <mat-icon>arrow_forward</mat-icon>
+                      <mat-icon aria-hidden="true">arrow_forward</mat-icon>
                     </button>
                   }
                   <button
                     type="button"
                     class="action-btn remove-btn"
+                    [attr.aria-label]="'Remove ' + item.model"
                     matTooltip="Remove pedal"
                     (click)="onClearEffect($event, item.slot)"
                   >
-                    <mat-icon>close</mat-icon>
+                    <mat-icon aria-hidden="true">close</mat-icon>
                   </button>
                 </div>
               </div>
@@ -123,27 +132,38 @@ export interface EmptySlotPlaceholder {
 
           <!-- Empty Slot Nodes on Wire (+ CATEGORY) -->
           @for (empty of preEmptySlots(); track empty.category) {
-            <div
+            <button
+              type="button"
               class="wire-empty-node"
               [class.selected]="activeSlot() === empty.targetSlot"
+              [attr.aria-label]="'Add ' + empty.label"
               (click)="onSelectEmpty(empty.targetSlot, empty.category)"
             >
-              <div class="empty-slot-card">
-                <span class="empty-plus">+</span>
+              <span class="empty-slot-card">
+                <span class="empty-plus" aria-hidden="true">+</span>
                 <span class="empty-label">{{ empty.label }}</span>
-              </div>
-            </div>
+              </span>
+            </button>
           }
         </div>
 
         <!-- CENTER: AMPLIFIER (Directly on wire) -->
-        <div class="amp-node" [class.selected]="activeSlot() === 'amp'" (click)="onSelectAmp()">
+        <div
+          class="amp-node"
+          [class.selected]="activeSlot() === 'amp'"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Amplifier: ' + ampModelName() + ', ' + currentCabName()"
+          (click)="onSelectAmp()"
+          (keydown.enter)="onSelectAmp()"
+          (keydown.space)="$event.preventDefault(); onSelectAmp()"
+        >
           <!-- Wire Jack connectors -->
-          <div class="jack-socket jack-in"></div>
-          <div class="jack-socket jack-out"></div>
+          <div class="jack-socket jack-in" aria-hidden="true"></div>
+          <div class="jack-socket jack-out" aria-hidden="true"></div>
 
           <!-- Amp Sprite Frame -->
-          <div class="amp-sprite-frame">
+          <div class="amp-sprite-frame" aria-hidden="true">
             <div class="amp-icon {{ getAmpClass(ampModelName(), ampSettings()?.modelId) }}"></div>
           </div>
 
@@ -172,12 +192,17 @@ export interface EmptySlotPlaceholder {
               [cdkDragData]="item"
               [class.selected]="activeSlot() === item.slot"
               [class.bypassed]="!item.enabled"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="item.typeTitle + ': ' + item.model"
               (click)="onSelectSlot(item.slot)"
+              (keydown.enter)="onSelectSlot(item.slot)"
+              (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
             >
               <!-- Drag Placeholder on Wire -->
               <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
                 <div class="placeholder-wire-circle">
-                  <mat-icon>add</mat-icon>
+                  <mat-icon aria-hidden="true">add</mat-icon>
                 </div>
                 <span class="placeholder-label">{{ item.typeTitle }}</span>
               </div>
@@ -190,20 +215,22 @@ export interface EmptySlotPlaceholder {
                 <span class="preview-title">{{ item.model }}</span>
               </div>
 
-              <div class="jack-socket jack-in"></div>
-              <div class="jack-socket jack-out"></div>
+              <div class="jack-socket jack-in" aria-hidden="true"></div>
+              <div class="jack-socket jack-out" aria-hidden="true"></div>
 
               <!-- Bypass LED button -->
               <button
                 type="button"
                 class="pedal-led-btn"
+                [attr.aria-pressed]="item.enabled"
+                [attr.aria-label]="(item.enabled ? 'Bypass ' : 'Enable ') + item.model"
                 [matTooltip]="item.enabled ? 'Click to bypass' : 'Click to enable'"
                 (click)="onToggleBypass($event, item)"
               >
-                <span class="led-dot" [class.active]="item.enabled"></span>
+                <span class="led-dot" [class.active]="item.enabled" aria-hidden="true"></span>
               </button>
 
-              <div class="pedal-sprite-frame">
+              <div class="pedal-sprite-frame" aria-hidden="true">
                 <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
               </div>
 
@@ -216,19 +243,21 @@ export interface EmptySlotPlaceholder {
                     <button
                       type="button"
                       class="action-btn"
+                      [attr.aria-label]="'Move ' + item.model + ' to Pre-Amp'"
                       matTooltip="Move to Pre-Amp"
                       (click)="onMoveToPartner($event, item)"
                     >
-                      <mat-icon>arrow_back</mat-icon>
+                      <mat-icon aria-hidden="true">arrow_back</mat-icon>
                     </button>
                   }
                   <button
                     type="button"
                     class="action-btn remove-btn"
+                    [attr.aria-label]="'Remove ' + item.model"
                     matTooltip="Remove effect"
                     (click)="onClearEffect($event, item.slot)"
                   >
-                    <mat-icon>close</mat-icon>
+                    <mat-icon aria-hidden="true">close</mat-icon>
                   </button>
                 </div>
               </div>
@@ -237,21 +266,23 @@ export interface EmptySlotPlaceholder {
 
           <!-- Empty Slot Nodes on Wire (+ CATEGORY) -->
           @for (empty of postEmptySlots(); track empty.category) {
-            <div
+            <button
+              type="button"
               class="wire-empty-node"
               [class.selected]="activeSlot() === empty.targetSlot"
+              [attr.aria-label]="'Add ' + empty.label"
               (click)="onSelectEmpty(empty.targetSlot, empty.category)"
             >
-              <div class="empty-slot-card">
-                <span class="empty-plus">+</span>
+              <span class="empty-slot-card">
+                <span class="empty-plus" aria-hidden="true">+</span>
                 <span class="empty-label">{{ empty.label }}</span>
-              </div>
-            </div>
+              </span>
+            </button>
           }
         </div>
       </div>
 
-      <!-- Fender TONE Bottom Dock Bar -->
+      <!-- Bottom Dock Bar -->
       <div class="tone-dock">
         <button type="button" class="dock-btn" (click)="onOpenPresetInfo()">
           <mat-icon aria-hidden="true">info_outline</mat-icon>
@@ -280,12 +311,21 @@ export interface EmptySlotPlaceholder {
   styles: [
     `
       .tone-canvas {
-        background: #17181c;
-        border-bottom: 1px solid #1f2127;
-        padding: 20px 24px 14px;
+        background: var(--mat-sys-surface-container-low);
+        border: none;
+        border-radius: var(--md-corner-xl);
+        margin: 0 24px;
+        padding: 20px 24px 16px;
         position: relative;
         overflow-x: auto;
         user-select: none;
+      }
+
+      @media (max-width: 850px) {
+        .tone-canvas {
+          margin: 0 12px;
+          padding: 16px;
+        }
       }
 
       /* Continuous Track & Audio Cable */
@@ -295,6 +335,7 @@ export interface EmptySlotPlaceholder {
         align-items: center;
         justify-content: center;
         min-width: 100%;
+        box-sizing: border-box;
         padding: 24px 20px;
         min-height: 260px;
       }
@@ -305,8 +346,9 @@ export interface EmptySlotPlaceholder {
         left: 20px;
         right: 20px;
         top: 50%;
-        height: 2px;
-        background: #474a56;
+        height: 3px;
+        background: var(--mat-sys-surface-container-highest);
+        border-radius: 999px;
         transform: translateY(-50%);
         z-index: 1;
       }
@@ -320,7 +362,7 @@ export interface EmptySlotPlaceholder {
         height: 0;
         border-top: 5px solid transparent;
         border-bottom: 5px solid transparent;
-        border-left: 8px solid #6b7082;
+        border-left: 8px solid var(--mat-sys-outline);
       }
 
       .cable-end-dot {
@@ -331,7 +373,7 @@ export interface EmptySlotPlaceholder {
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #6b7082;
+        background: var(--mat-sys-outline);
       }
 
       /* Drop Lists (Pre and Post) */
@@ -351,23 +393,23 @@ export interface EmptySlotPlaceholder {
         top: 50%;
         width: 6px;
         height: 12px;
-        background: #4e515d;
-        border: 1px solid #6b7080;
+        background: var(--mat-sys-surface-container-highest);
+        border: none;
         transform: translateY(-50%);
         z-index: 3;
       }
 
       .jack-in {
         left: -6px;
-        border-radius: 2px 0 0 2px;
+        border-radius: 3px 0 0 3px;
       }
 
       .jack-out {
         right: -6px;
-        border-radius: 0 2px 2px 0;
+        border-radius: 0 3px 3px 0;
       }
 
-      /* PEDAL NODE (Directly on wire, no box background!) */
+      /* PEDAL NODE */
       .pedal-node {
         position: relative;
         z-index: 2;
@@ -377,18 +419,24 @@ export interface EmptySlotPlaceholder {
         align-items: center;
         cursor: grab;
         user-select: none;
-        touch-action: none;
+        touch-action: pan-y;
         background: transparent;
         border: none;
-        outline: none;
+        border-radius: var(--md-corner-md);
         padding: 4px 0;
         flex-shrink: 0;
 
-        &:hover {
+        &:hover,
+        &:focus-within {
           .pedal-hover-actions {
             opacity: 1;
             pointer-events: auto;
           }
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--mat-sys-primary);
+          outline-offset: 2px;
         }
 
         &:active {
@@ -396,7 +444,7 @@ export interface EmptySlotPlaceholder {
         }
 
         &.selected .pedal-sprite-frame {
-          filter: drop-shadow(0 0 16px rgba(0, 176, 255, 0.9)) drop-shadow(0 14px 22px rgba(0, 0, 0, 0.95));
+          filter: drop-shadow(0 0 14px rgba(140, 207, 249, 0.7)) drop-shadow(0 12px 20px rgba(0, 0, 0, 0.85));
         }
 
         &.bypassed {
@@ -406,37 +454,37 @@ export interface EmptySlotPlaceholder {
           }
 
           .pedal-title {
-            color: #64748b;
+            color: var(--mat-sys-on-surface-variant);
           }
         }
       }
 
       /* Smooth hover lift ONLY when not dragging in the list */
       :not(.cdk-drop-list-dragging) > .pedal-node:not(.cdk-drag-dragging):not(.cdk-drag-animating) {
-        transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 
-        &:hover {
-          transform: translateY(-4px);
+        @media (prefers-reduced-motion: no-preference) {
+          &:hover {
+            transform: translateY(-4px);
+          }
         }
       }
 
-      /* Active element being dragged: hide original in place while placeholder shows */
       .pedal-node.cdk-drag-dragging {
         transition: none !important;
         opacity: 0;
         pointer-events: none;
       }
 
-      /* Sibling pedals in the drop list smoothly slide out of the way when dragging */
       .zone-drop-list.cdk-drop-list-dragging .pedal-node:not(.cdk-drag-placeholder) {
-        transition: transform 220ms cubic-bezier(0.2, 0, 0.2, 1) !important;
+        transition: transform 200ms cubic-bezier(0.2, 0, 0, 1) !important;
       }
 
       /* Bypass LED indicator button above pedal */
       .pedal-led-btn {
         background: transparent;
         border: none;
-        padding: 2px;
+        padding: 4px;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -448,16 +496,15 @@ export interface EmptySlotPlaceholder {
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: #ef4444;
-        box-shadow: 0 0 4px #ef4444;
-        transition: all 0.2s;
+        background: var(--mat-sys-error);
+        transition:
+          background-color 0.2s,
+          box-shadow 0.2s;
       }
 
       .led-dot.active {
-        background: #00e676;
-        box-shadow:
-          0 0 8px #00e676,
-          0 0 12px rgba(0, 230, 118, 0.6);
+        background: #34d399;
+        box-shadow: 0 0 8px rgba(52, 211, 153, 0.65);
       }
 
       /* Pedal Sprite Viewport */
@@ -470,10 +517,10 @@ export interface EmptySlotPlaceholder {
         align-items: center;
         justify-content: center;
         border-radius: 6px;
-        filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.85));
+        filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.8));
         transition:
-          filter 0.25s,
-          opacity 0.25s;
+          filter 0.2s,
+          opacity 0.2s;
       }
 
       .pedal-sprite-frame .device-icon {
@@ -496,9 +543,9 @@ export interface EmptySlotPlaceholder {
       }
 
       .pedal-title {
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: #f1f5f9;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--mat-sys-on-surface);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -507,11 +554,9 @@ export interface EmptySlotPlaceholder {
       }
 
       .pedal-tag {
-        font-size: 0.6rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #64748b;
-        letter-spacing: 0.05em;
+        font-size: 0.65rem;
+        font-weight: 500;
+        color: var(--mat-sys-on-surface-variant);
       }
 
       .pedal-hover-actions {
@@ -519,60 +564,60 @@ export interface EmptySlotPlaceholder {
         top: -2px;
         display: flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.15s;
-        background: rgba(18, 19, 23, 0.9);
-        border: 1px solid #333646;
-        border-radius: 4px;
-        padding: 2px 4px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+        background: var(--mat-sys-surface-container-highest);
+        border: none;
+        border-radius: var(--md-corner-full);
+        padding: 3px 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
         z-index: 10;
       }
 
       .action-btn {
         background: transparent;
         border: none;
-        color: #cbd5e1;
+        color: var(--mat-sys-on-surface);
         cursor: pointer;
-        padding: 1px 3px;
+        padding: 3px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 3px;
+        border-radius: 50%;
 
         &:hover {
-          background: #2b2e3c;
-          color: #00b0ff;
+          background: var(--mat-sys-secondary-container);
+          color: var(--mat-sys-on-secondary-container);
         }
 
         mat-icon {
-          font-size: 13px;
-          width: 13px;
-          height: 13px;
+          font-size: 14px;
+          width: 14px;
+          height: 14px;
         }
       }
 
       .action-btn.remove-btn:hover {
-        color: #f87171;
+        background: var(--mat-sys-error-container);
+        color: var(--mat-sys-on-error-container);
       }
 
       /* Drag Preview & Placeholder */
       .cdk-drag-preview {
         box-sizing: border-box;
-        border-radius: 8px;
+        border-radius: var(--md-corner-md);
         box-shadow:
-          0 20px 30px rgba(0, 0, 0, 0.9),
-          0 0 20px rgba(0, 176, 255, 0.8);
+          0 20px 30px rgba(0, 0, 0, 0.8),
+          0 0 16px rgba(140, 207, 249, 0.5);
         z-index: 9999 !important;
         cursor: grabbing !important;
         pointer-events: none;
       }
 
-      /* Drop animation: smoothly flies the dropped preview to the placeholder */
       .cdk-drag-animating {
-        transition: transform 220ms cubic-bezier(0.2, 0, 0.2, 1) !important;
+        transition: transform 200ms cubic-bezier(0.2, 0, 0, 1) !important;
       }
 
       .pedal-drag-preview {
@@ -582,11 +627,11 @@ export interface EmptySlotPlaceholder {
 
         .preview-title {
           font-size: 0.75rem;
-          font-weight: 700;
-          color: #fff;
-          background: rgba(0, 0, 0, 0.8);
-          padding: 2px 8px;
-          border-radius: 4px;
+          font-weight: 600;
+          color: var(--mat-sys-on-surface);
+          background: var(--mat-sys-surface-container-high);
+          padding: 3px 10px;
+          border-radius: var(--md-corner-sm);
           margin-top: 4px;
         }
       }
@@ -595,16 +640,14 @@ export interface EmptySlotPlaceholder {
         box-sizing: border-box;
         width: 120px;
         height: 175px;
-        border: 2px dashed #00b0ff;
-        border-radius: 8px;
-        background: rgba(0, 176, 255, 0.08);
+        border: none;
+        border-radius: var(--md-corner-lg);
+        background: var(--mat-sys-surface-container-high);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        box-shadow: 0 0 16px rgba(0, 176, 255, 0.3);
-        transition: transform 220ms cubic-bezier(0.2, 0, 0.2, 1);
         flex-shrink: 0;
       }
 
@@ -612,8 +655,8 @@ export interface EmptySlotPlaceholder {
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: #00b0ff;
-        color: #000;
+        background: var(--mat-sys-primary);
+        color: var(--mat-sys-on-primary);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -626,15 +669,14 @@ export interface EmptySlotPlaceholder {
       }
 
       .placeholder-label {
-        font-size: 0.65rem;
-        font-weight: 800;
-        color: #00b0ff;
-        text-transform: uppercase;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--mat-sys-primary);
       }
 
-      /* EMPTY WIRE NODE (Matching Fender Tone Empty Slot Card) */
+      /* EMPTY WIRE NODE (Borderless M3 Tonal Surface Card) */
       .wire-empty-node {
-        width: 66px;
+        width: 68px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -643,64 +685,63 @@ export interface EmptySlotPlaceholder {
         position: relative;
         z-index: 2;
         padding: 4px 2px;
+        background: transparent;
+        border: none;
         flex-shrink: 0;
 
         &:hover {
           .empty-slot-card {
-            border-color: #00b0ff;
-            background: rgba(0, 176, 255, 0.08);
-            box-shadow: 0 0 14px rgba(0, 176, 255, 0.4);
+            background: var(--mat-sys-surface-container-highest);
 
-            .empty-plus {
-              color: #00b0ff;
-            }
-
+            .empty-plus,
             .empty-label {
-              color: #00b0ff;
+              color: var(--mat-sys-primary);
             }
           }
         }
 
         &.selected .empty-slot-card {
-          border-color: #00b0ff;
-          box-shadow: 0 0 16px rgba(0, 176, 255, 0.5);
+          background: var(--mat-sys-secondary-container);
+
+          .empty-plus,
+          .empty-label {
+            color: var(--mat-sys-on-secondary-container);
+          }
         }
       }
 
       .empty-slot-card {
-        width: 60px;
-        height: 110px;
-        border: 1px solid #2e313a;
-        border-radius: 6px;
-        background: rgba(18, 19, 24, 0.7);
+        width: 62px;
+        height: 112px;
+        border: none;
+        border-radius: var(--md-corner-lg);
+        background: var(--mat-sys-surface-container-high);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
       }
 
       .empty-plus {
-        font-size: 2rem;
+        font-size: 1.75rem;
         font-weight: 300;
-        color: #434756;
+        color: var(--mat-sys-on-surface-variant);
         line-height: 1;
-        transition: color 0.2s;
+        transition: color 0.15s;
       }
 
       .empty-label {
         font-size: 0.62rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #4e5364;
-        transition: color 0.2s;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--mat-sys-on-surface-variant);
+        transition: color 0.15s;
         text-align: center;
       }
 
-      /* CENTER AMPLIFIER NODE (Directly on wire) */
+      /* CENTER AMPLIFIER NODE */
       .amp-node {
         position: relative;
         z-index: 2;
@@ -710,15 +751,23 @@ export interface EmptySlotPlaceholder {
         align-items: center;
         cursor: pointer;
         margin: 0 12px;
+        border-radius: var(--md-corner-md);
         flex-shrink: 0;
-        transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 
-        &:hover {
-          transform: translateY(-4px);
+        @media (prefers-reduced-motion: no-preference) {
+          &:hover {
+            transform: translateY(-4px);
+          }
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--mat-sys-primary);
+          outline-offset: 2px;
         }
 
         &.selected .amp-sprite-frame {
-          filter: drop-shadow(0 0 20px rgba(0, 176, 255, 0.9)) drop-shadow(0 16px 24px rgba(0, 0, 0, 0.95));
+          filter: drop-shadow(0 0 16px rgba(140, 207, 249, 0.7)) drop-shadow(0 16px 24px rgba(0, 0, 0, 0.9));
         }
       }
 
@@ -731,8 +780,8 @@ export interface EmptySlotPlaceholder {
         align-items: center;
         justify-content: center;
         border-radius: 4px;
-        filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.9));
-        transition: filter 0.25s;
+        filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.85));
+        transition: filter 0.2s;
       }
 
       .amp-sprite-frame .device-icon {
@@ -753,9 +802,9 @@ export interface EmptySlotPlaceholder {
       }
 
       .amp-title {
-        font-size: 0.78rem;
-        font-weight: 800;
-        color: #ffffff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--mat-sys-on-surface);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -763,54 +812,63 @@ export interface EmptySlotPlaceholder {
       }
 
       .cab-title {
-        font-size: 0.65rem;
-        color: #8b92a5;
+        font-size: 0.68rem;
+        color: var(--mat-sys-on-surface-variant);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
       }
 
-      /* Fender TONE Bottom Dock Bar */
+      /* Bottom Dock Bar — M3 Assist Chips (32px height, 8px radius, tonal surface-container-high) */
       .tone-dock {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-top: 14px;
-        padding-top: 10px;
-        border-top: 1px solid #14151c;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 6px;
+        border-top: none;
       }
 
       .dock-btn {
-        background: transparent;
+        height: 32px;
+        background: var(--mat-sys-surface-container-high);
         border: none;
-        color: #7d8396;
+        color: var(--mat-sys-on-surface);
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 6px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 4px;
-        transition: all 0.15s;
+        gap: 8px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        padding: 0 12px;
+        border-radius: var(--md-corner-sm);
+        transition:
+          color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         mat-icon {
-          font-size: 16px;
-          width: 16px;
-          height: 16px;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: var(--mat-sys-primary);
         }
 
         &:hover {
-          color: #f1f5f9;
-          background: #121318;
+          background: var(--mat-sys-surface-container-highest);
         }
 
         &.add-btn {
-          color: #00b0ff;
+          background: var(--mat-sys-secondary-container);
+          color: var(--mat-sys-on-secondary-container);
+
+          mat-icon {
+            color: var(--mat-sys-on-secondary-container);
+          }
 
           &:hover {
-            background: rgba(0, 176, 255, 0.12);
+            background: var(--mat-sys-primary-container);
+            color: var(--mat-sys-on-primary-container);
           }
         }
       }
@@ -825,34 +883,34 @@ export interface EmptySlotPlaceholder {
       }
 
       .tap-pill {
-        background: #111216;
-        border: 1px solid #282a36;
-        color: #f1f5f9;
-        border-radius: 16px;
-        padding: 4px 12px;
+        height: 32px;
+        background: var(--mat-sys-surface-container-high);
+        border: none;
+        color: var(--mat-sys-on-surface);
+        border-radius: var(--md-corner-sm);
+        padding: 0 10px 0 12px;
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
         font-size: 0.75rem;
-        font-weight: 800;
-        transition: all 0.15s;
+        font-weight: 600;
+        transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          border-color: #00b0ff;
-          box-shadow: 0 0 10px rgba(0, 176, 255, 0.4);
-        }
-
-        &:active {
-          transform: scale(0.96);
+          background: var(--mat-sys-surface-container-highest);
         }
 
         .tap-badge {
-          background: #232532;
-          color: #00b0ff;
-          padding: 2px 6px;
-          border-radius: 10px;
-          font-size: 0.65rem;
+          background: var(--mat-sys-secondary-container);
+          color: var(--mat-sys-on-secondary-container);
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-family: var(--font-sans);
+          font-size: 0.6875rem;
+          font-weight: 600;
         }
       }
     `,

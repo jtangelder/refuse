@@ -17,7 +17,7 @@ import { FuseService } from '../services/fuse.service';
 
       @if (!service.isSupported()) {
         <div class="browser-warning" role="alert">
-          <mat-icon class="warning-icon">warning</mat-icon>
+          <mat-icon class="warning-icon" aria-hidden="true">warning</mat-icon>
           <div class="warning-content">
             <strong>WebHID Not Supported in This Browser</strong>
             <p>
@@ -54,16 +54,16 @@ import { FuseService } from '../services/fuse.service';
       </p>
       <div class="connect">
         <button
-          mat-raised-button
+          mat-flat-button
           color="primary"
           [disabled]="!service.isSupported() || service.connecting()"
           (click)="service.connect()"
         >
-          <mat-icon>usb</mat-icon>
+          <mat-icon aria-hidden="true">usb</mat-icon>
           {{ service.connecting() ? 'Connecting...' : 'Connect your amp' }}
         </button>
-        <button mat-stroked-button [disabled]="service.connecting()" (click)="service.enableDemo()">
-          <mat-icon>play_arrow</mat-icon>
+        <button mat-tonal-button [disabled]="service.connecting()" (click)="service.enableDemo()">
+          <mat-icon aria-hidden="true">play_arrow</mat-icon>
           Try Demo
         </button>
       </div>
@@ -84,69 +84,83 @@ import { FuseService } from '../services/fuse.service';
       :host {
         flex: 1;
         overflow: auto;
-        padding: 40px 20px;
-        font-size: 1.1em;
+        padding: 48px 24px;
+        font-size: 1.02rem;
         display: flex;
+        align-items: center;
         justify-content: center;
-        gap: 40px;
+        gap: 48px;
         margin: 0 auto;
-        max-width: 1000px;
+        max-width: 1040px;
       }
 
       a {
-        color: var(--primary, #3498db);
+        color: var(--mat-sys-primary);
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
       }
 
       .illustration {
-        flex: 0.35;
-        padding-top: 60px;
+        flex: 0.38;
         display: flex;
         justify-content: center;
+        background: var(--mat-sys-surface-container-low);
+        padding: 32px;
+        border-radius: var(--md-corner-2xl);
 
         img {
           width: 100%;
-          max-width: 350px;
+          max-width: 340px;
           height: auto;
-          border-radius: 8px;
+          border-radius: var(--md-corner-lg);
         }
       }
 
       .message {
-        flex: 0.65;
+        flex: 0.62;
+        background: var(--mat-sys-surface-container-low);
+        padding: 36px 40px;
+        border-radius: var(--md-corner-2xl);
       }
 
       h1 {
-        font-size: 1.8rem;
-        margin-bottom: 16px;
+        font-size: 1.85rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin: 0 0 18px 0;
+        color: var(--mat-sys-on-surface);
       }
 
       .browser-warning {
         display: flex;
         align-items: flex-start;
-        gap: 12px;
-        background: rgba(231, 76, 60, 0.15);
-        border: 1px solid var(--accent, #e74c3c);
-        border-radius: 8px;
-        padding: 16px;
+        gap: 14px;
+        background: var(--mat-sys-error-container);
+        border: none;
+        border-radius: var(--md-corner-lg);
+        padding: 16px 20px;
         margin-bottom: 20px;
-        color: #ffb8b8;
+        color: var(--mat-sys-on-error-container);
 
         .warning-icon {
-          color: #ff6b6b;
-          font-size: 28px;
-          width: 28px;
-          height: 28px;
+          color: var(--mat-sys-on-error-container);
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
           flex-shrink: 0;
+          margin-top: 2px;
         }
 
         .warning-content {
-          font-size: 0.9em;
+          font-size: 0.9rem;
 
           strong {
             display: block;
             margin-bottom: 4px;
-            font-size: 1.05em;
-            color: #fff;
+            font-size: 1rem;
           }
 
           p {
@@ -157,16 +171,26 @@ import { FuseService } from '../services/fuse.service';
 
       .connect {
         margin: 1.5em auto;
-        font-size: 1.2em;
         display: flex;
         gap: 16px;
         align-items: center;
       }
 
       .disclaimer {
-        color: var(--text-muted, #888);
+        color: var(--mat-sys-on-surface-variant);
         font-size: 0.85em;
         margin-top: 30px;
+      }
+
+      @media (max-width: 850px) {
+        :host {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .illustration {
+          padding-top: 0;
+        }
       }
     `,
   ],

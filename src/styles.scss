@@ -1,37 +1,69 @@
-@import '@angular/material/prebuilt-themes/purple-green.css';
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: dark;
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Inter,
+      density: 0,
+    )
+  );
+}
 
 :root {
-  --primary: #00b0ff;
-  --primary-hover: #38bdf8;
-  --secondary: #00e676;
-  --accent: #ff5252;
-  --warning: #ffb300;
-  --bg: #000000;
-  --surface: #0e0f13;
-  --card-bg: #14151a;
-  --border: #242630;
-  --text: #f1f5f9;
-  --text-muted: #717688;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Shape Scale */
+  --md-corner-sm: 8px;
+  --md-corner-md: 12px;
+  --md-corner-lg: 16px;
+  --md-corner-xl: 24px;
+  --md-corner-2xl: 28px;
+  --md-corner-full: 9999px;
 }
 
 body {
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 1em/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--mat-sys-surface-dim);
+  color: var(--mat-sys-on-surface);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.5;
   overflow: hidden;
+  text-align: start;
 }
 
 a {
-  color: var(--primary);
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 h1,
 h2,
-h3 {
+h3,
+h4 {
   margin: 0;
+  font-family: var(--font-sans);
   font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--mat-sys-on-surface);
+}
+
+:where(a:any-link, button, input, select, textarea, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
 }
 
 .icon {
@@ -41,57 +73,29 @@ h3 {
   vertical-align: middle;
 }
 
-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &.secondary {
-    background: #444;
-  }
-
-  &.danger {
-    background: var(--accent);
-  }
-
-  &.success {
-    background: var(--secondary);
-  }
-}
-
 select,
 input[type='text'],
-input[type='number'] {
-  background: #333;
-  border: 1px solid #444;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 4px;
+input[type='number'],
+input[type='search'],
+textarea {
+  background: var(--mat-sys-surface-container-highest);
+  border: none;
+  color: var(--mat-sys-on-surface);
+  padding: 10px 14px;
+  border-radius: var(--md-corner-md);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 1px;
+  }
 }
 
 .loading-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(9, 13, 18, 0.65);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -103,38 +107,46 @@ input[type='number'] {
   flex-direction: row;
   width: 100vw;
   height: 100vh;
+  background: var(--mat-sys-surface-dim);
+
+  @media (max-width: 850px) {
+    flex-direction: column-reverse;
+  }
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+
+  @media (max-width: 850px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-.badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  text-transform: uppercase;
+/* M3 Menu Surface */
+.mat-mdc-menu-panel {
+  background: var(--mat-sys-surface-container-high) !important;
+  border: none !important;
+  border-radius: var(--md-corner-lg) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #111;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: var(--mat-sys-surface-container-highest);
+  border-radius: var(--md-corner-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: var(--mat-sys-outline);
 }
-

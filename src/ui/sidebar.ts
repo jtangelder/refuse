@@ -13,26 +13,30 @@ import { NotificationService } from '../services/notification.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav class="sidebar-container" aria-label="Preset list">
-      <div class="sidebar-search-box">
-        <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
-        <input
-          type="search"
-          class="search-input"
-          placeholder="Filter presets..."
-          aria-label="Filter presets"
-          [value]="searchQuery()"
-          (input)="onSearchInput($event)"
-        />
+      <div class="sidebar-search-wrapper">
+        <div class="sidebar-search-box">
+          <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
+          <input
+            type="search"
+            class="search-input"
+            placeholder="Filter presets"
+            aria-label="Filter presets"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
       </div>
 
       <div class="presets-list-scroll">
-        <ul class="preset-items" role="list">
+        <ul class="preset-items" role="list" (keydown)="onListKeyDown($event)">
           @for (slot of filteredSlots(); track slot) {
             <li class="preset-row">
               <button
                 type="button"
+                [attr.data-slot]="slot"
                 (click)="changePreset(slot)"
                 [class.active]="service.currentPresetSlot() === slot"
+                [attr.aria-current]="service.currentPresetSlot() === slot ? 'true' : null"
                 class="preset-item-btn"
                 [attr.aria-label]="
                   'Select preset ' + (slot + 1) + ': ' + (service.presets().get(slot)?.name || 'Preset ' + (slot + 1))
@@ -92,12 +96,12 @@ import { NotificationService } from '../services/notification.service';
       :host {
         display: flex;
         flex-direction: column;
-        background: #161719;
-        border-right: 1px solid #23252b;
-        width: 240px;
+        background: var(--mat-sys-surface-dim);
+        width: 264px;
         height: 100%;
         overflow: hidden;
         user-select: none;
+        flex-shrink: 0;
       }
 
       .sidebar-container {
@@ -107,33 +111,49 @@ import { NotificationService } from '../services/notification.service';
         overflow: hidden;
       }
 
+      .sidebar-search-wrapper {
+        padding: 12px 12px 8px;
+      }
+
+      /* M3 Search Bar Pill */
       .sidebar-search-box {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 10px 12px;
-        border-bottom: 1px solid #202227;
-        background: #131416;
+        gap: 10px;
+        height: 44px;
+        padding: 0 16px;
+        border-radius: var(--md-corner-full);
+        background: var(--mat-sys-surface-container-high);
+        transition: background-color 0.15s;
+
+        &:focus-within {
+          background: var(--mat-sys-surface-container-highest);
+          outline: 2px solid var(--mat-sys-primary);
+          outline-offset: -2px;
+        }
 
         .search-icon {
-          font-size: 16px;
-          width: 16px;
-          height: 16px;
-          color: #64748b;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: var(--mat-sys-on-surface-variant);
         }
 
         .search-input {
           flex: 1;
-          background: #1c1d22;
-          border: 1px solid #2d303a;
-          color: #f1f5f9;
-          padding: 5px 8px;
-          border-radius: 4px;
-          font-size: 0.78rem;
+          background: transparent;
+          border: none;
+          color: var(--mat-sys-on-surface);
+          padding: 0;
+          font-size: 0.875rem;
           outline: none;
 
+          &::placeholder {
+            color: var(--mat-sys-on-surface-variant);
+          }
+
           &:focus-visible {
-            border-color: #00b0ff;
+            outline: none;
           }
         }
       }
@@ -141,54 +161,68 @@ import { NotificationService } from '../services/notification.service';
       .presets-list-scroll {
         flex: 1;
         overflow-y: auto;
+        padding: 4px 12px;
       }
 
       .preset-items {
         list-style: none;
         padding: 0;
         margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
       }
 
       .preset-row {
-        border-bottom: 1px solid #202227;
+        margin: 0;
       }
 
+      /* M3 Navigation Drawer Item Pill */
       .preset-item-btn {
         width: 100%;
-        text-align: left;
+        height: 44px;
+        text-align: start;
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 16px;
+        padding: 0 16px;
         background: transparent;
         border: none;
-        color: #8c92a4;
+        border-radius: var(--md-corner-full);
+        color: var(--mat-sys-on-surface-variant);
         cursor: pointer;
-        font-size: 0.84rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
         font-weight: 500;
-        transition: all 0.12s;
+        transition:
+          background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+          color 0.15s cubic-bezier(0.2, 0, 0, 1);
 
         &:hover {
-          color: #f1f5f9;
-          background: #1d1e22;
+          color: var(--mat-sys-on-surface);
+          background: var(--mat-sys-surface-container);
         }
 
         &.active {
-          color: #ffffff;
-          background: #25272e;
-          font-weight: 700;
+          color: var(--mat-sys-on-secondary-container);
+          background: var(--mat-sys-secondary-container);
+          font-weight: 600;
 
           .slot-num {
-            color: #ffffff;
+            color: var(--mat-sys-primary);
+            background: rgba(140, 207, 249, 0.14);
           }
         }
 
         .slot-num {
-          font-variant: tabular-nums;
-          font-size: 0.85rem;
-          font-weight: 800;
-          color: #9da3b4;
-          width: 24px;
+          font-family: var(--font-mono);
+          font-variant-numeric: tabular-nums;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--mat-sys-on-surface-variant);
+          padding: 2px 7px;
+          border-radius: var(--md-corner-full);
+          background: var(--mat-sys-surface-container-low);
           flex-shrink: 0;
         }
 
@@ -201,49 +235,53 @@ import { NotificationService } from '../services/notification.service';
 
       .sidebar-bottom-controls {
         display: flex;
-        gap: 6px;
-        padding: 10px 10px;
-        border-top: 1px solid #202227;
-        background: #131416;
+        gap: 8px;
+        padding: 12px;
       }
 
+      /* M3 Tonal Action Pills */
       .action-pill-btn {
         flex: 1;
-        background: #1c1d22;
-        border: 1px solid #2d303a;
-        color: #a0a6b8;
-        padding: 6px 6px;
-        border-radius: 4px;
-        font-size: 0.72rem;
-        font-weight: 700;
+        height: 36px;
+        background: var(--mat-sys-surface-container-high);
+        border: none;
+        color: var(--mat-sys-on-surface);
+        padding: 0 10px;
+        border-radius: var(--md-corner-full);
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 500;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        transition: all 0.15s;
+        gap: 6px;
+        transition:
+          background-color 0.15s,
+          color 0.15s;
 
         mat-icon {
-          font-size: 14px;
-          width: 14px;
-          height: 14px;
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+          color: var(--mat-sys-primary);
         }
 
         &:hover {
-          border-color: #00b0ff;
-          color: #00b0ff;
-          background: #23252d;
+          background: var(--mat-sys-secondary-container);
+          color: var(--mat-sys-on-secondary-container);
         }
       }
 
+      /* M3 Dialog */
       .fuse-modal-dialog {
-        background: #18181b;
-        color: #f4f4f5;
-        border: 1px solid #3f3f46;
-        border-radius: 12px;
+        background: var(--mat-sys-surface-container-high);
+        color: var(--mat-sys-on-surface);
+        border: none;
+        border-radius: var(--md-corner-2xl);
         padding: 24px;
         min-width: 320px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
       }
 
       .fuse-modal-dialog:modal {
@@ -251,7 +289,7 @@ import { NotificationService } from '../services/notification.service';
       }
 
       .fuse-modal-dialog::backdrop {
-        background: rgba(0, 0, 0, 0.65);
+        background: rgba(0, 0, 0, 0.55);
         overflow: hidden;
         overscroll-behavior: contain;
       }
@@ -262,7 +300,8 @@ import { NotificationService } from '../services/notification.service';
         gap: 16px;
 
         h2 {
-          font-size: 1.15rem;
+          font-size: 1.25rem;
+          font-weight: 600;
           margin: 0;
         }
       }
@@ -270,40 +309,59 @@ import { NotificationService } from '../services/notification.service';
       .form-field {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
 
         label {
-          font-size: 0.78rem;
-          font-weight: 600;
-          color: #a1a1aa;
+          font-size: 0.8125rem;
+          font-weight: 500;
+          color: var(--mat-sys-on-surface-variant);
         }
 
         input {
-          background: #27272a;
-          border: 1px solid #3f3f46;
-          color: #ffffff;
-          padding: 8px 12px;
-          border-radius: 6px;
-          font-size: 0.9rem;
+          background: var(--mat-sys-surface-container-highest);
+          border: none;
+          color: var(--mat-sys-on-surface);
+          padding: 12px 14px;
+          border-radius: var(--md-corner-md);
+          font-size: 0.9375rem;
         }
       }
 
       .modal-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
+        gap: 8px;
         margin-top: 8px;
 
         .btn-secondary {
-          background: #27272a;
-          border: 1px solid #3f3f46;
-          color: #e4e4e7;
+          background: transparent;
+          border: none;
+          color: var(--mat-sys-primary);
+          font-weight: 500;
+          padding: 10px 18px;
+          border-radius: var(--md-corner-full);
+          cursor: pointer;
+
+          &:hover {
+            background: rgba(140, 207, 249, 0.08);
+          }
         }
 
         .btn-primary {
-          background: #00b0ff;
-          color: #000000;
-          font-weight: 700;
+          background: var(--mat-sys-primary);
+          border: none;
+          color: var(--mat-sys-on-primary);
+          font-weight: 600;
+          padding: 10px 20px;
+          border-radius: var(--md-corner-full);
+          cursor: pointer;
+        }
+      }
+
+      @media (max-width: 850px) {
+        :host {
+          width: 100%;
+          height: 190px;
         }
       }
     `,
@@ -345,6 +403,30 @@ export class SidebarComponent {
 
   async changePreset(slot: number) {
     await this.presetService.loadPreset(slot);
+  }
+
+  async onListKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    const slots = this.filteredSlots();
+    if (slots.length === 0) return;
+
+    event.preventDefault();
+    const targetEl = event.target as HTMLElement | null;
+    const currentAttr = targetEl?.closest('[data-slot]')?.getAttribute('data-slot');
+    const currentSlot =
+      currentAttr !== null && currentAttr !== undefined
+        ? Number(currentAttr)
+        : (this.service.currentPresetSlot() ?? slots[0]);
+
+    const idx = slots.indexOf(currentSlot);
+    const nextIdx =
+      event.key === 'ArrowDown' ? (idx < slots.length - 1 ? idx + 1 : 0) : idx > 0 ? idx - 1 : slots.length - 1;
+
+    const nextSlot = slots[nextIdx];
+    const listContainer = event.currentTarget as HTMLElement;
+    const nextBtn = listContainer.querySelector<HTMLButtonElement>(`button[data-slot="${nextSlot}"]`);
+    nextBtn?.focus();
+    await this.changePreset(nextSlot);
   }
 
   openSaveDialog() {
