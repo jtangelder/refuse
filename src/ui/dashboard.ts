@@ -5,14 +5,20 @@ import {
   inject,
   signal,
   viewChild,
-  type ElementRef,
+  type TemplateRef,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { AMP_MODELS, CABINET_MODELS, EFFECT_MODELS, DspType, type AdvancedAmpParam } from '../lib';
 import { SignalChainComponent } from './signal_chain';
 import { AmpEditorComponent } from './amp_editor';
 import { EffectEditorComponent } from './effect_editor';
+import { WelcomeComponent } from './welcome';
 
 import { FuseService } from '../services/fuse.service';
 import { AmpService } from '../services/amp.service';
@@ -42,7 +48,18 @@ const FUSE_GENRES: readonly string[] = [
 
 @Component({
   selector: 'fuse-dashboard',
-  imports: [MatButtonModule, MatIconModule, SignalChainComponent, AmpEditorComponent, EffectEditorComponent],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    SignalChainComponent,
+    AmpEditorComponent,
+    EffectEditorComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.ng.html',
   styleUrl: './dashboard.scss',
@@ -53,9 +70,10 @@ export class DashboardComponent {
   protected readonly effectService = inject(EffectService);
   protected readonly presetService = inject(PresetService);
   private readonly notifications = inject(NotificationService);
+  private readonly dialog = inject(MatDialog);
 
-  private readonly saveAsDialogRef = viewChild<ElementRef<HTMLDialogElement>>('saveAsDialog');
-  private readonly presetInfoDialogRef = viewChild<ElementRef<HTMLDialogElement>>('presetInfoDialog');
+  private readonly saveAsDialogTpl = viewChild.required<TemplateRef<unknown>>('saveAsDialogTpl');
+  private readonly presetInfoDialogTpl = viewChild.required<TemplateRef<unknown>>('presetInfoDialogTpl');
 
   protected readonly genres = FUSE_GENRES;
 
@@ -189,19 +207,18 @@ export class DashboardComponent {
     const slot = this.service.currentPresetSlot() ?? 0;
     this.saveAsTargetSlot.set(slot);
     this.saveAsDraftName.set(this.currentPresetName());
-    const dialog = this.saveAsDialogRef()?.nativeElement;
-    if (dialog) {
-      dialog.returnValue = '';
-      dialog.showModal();
-    }
-  }
-
-  onSaveAsSlotChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const targetSlot = Number(select.value);
-    if (Number.isInteger(targetSlot) && targetSlot >= 0) {
-      this.saveAsTargetSlot.set(targetSlot);
-    }
+    const dialogRef = this.dialog.open(this.saveAsDialogTpl(), {
+      width: '420px',
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result === 'confirm') {
+        const targetSlot = this.saveAsTargetSlot();
+        const name = this.saveAsDraftName().trim();
+        if (!name) return;
+        await this.presetService.savePreset(targetSlot, name);
+        this.notifications.info(`Saved preset "${name}" to slot ${targetSlot + 1}.`);
+      }
+    });
   }
 
   onSaveAsNameInput(event: Event) {
@@ -209,16 +226,11 @@ export class DashboardComponent {
     this.saveAsDraftName.set(input.value);
   }
 
-  async onSaveAsDialogClosed() {
-    const dialog = this.saveAsDialogRef()?.nativeElement;
-    if (!dialog || dialog.returnValue !== 'confirm') {
-      return;
-    }
-    const targetSlot = this.saveAsTargetSlot();
-    const name = this.saveAsDraftName().trim();
-    if (!name) return;
-    await this.presetService.savePreset(targetSlot, name);
-    this.notifications.info(`Saved preset "${name}" to slot ${targetSlot + 1}.`);
+  openAboutDialog() {
+    this.dialog.open(WelcomeComponent, {
+      width: '460px',
+      autoFocus: 'first-tabbable',
+    });
   }
 
   openPresetInfoDialog() {
@@ -230,15 +242,26 @@ export class DashboardComponent {
     this.infoGenre2.set(details.genre2 ?? '');
     this.infoGenre3.set(details.genre3 ?? '');
 
-    const dialog = this.presetInfoDialogRef()?.nativeElement;
-    if (dialog) {
-      dialog.returnValue = '';
-      dialog.showModal();
-    }
+    const dialogRef = this.dialog.open(this.presetInfoDialogTpl(), {
+      width: '560px',
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'confirm') {
+        this.presetService.updatePresetDetails({
+          author: this.infoAuthor().trim(),
+          description: this.infoDescription().trim(),
+          tags: this.infoTags().trim(),
+          genre1: this.infoGenre1(),
+          genre2: this.infoGenre2(),
+          genre3: this.infoGenre3(),
+        });
+        this.notifications.info('Updated preset information.');
+      }
+    });
   }
 
-  onInfoFieldInput(field: 'author' | 'description' | 'tags' | 'genre1' | 'genre2' | 'genre3', event: Event) {
-    const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+  onInfoFieldInput(field: 'author' | 'description' | 'tags', event: Event) {
+    const target = event.target as HTMLInputElement | HTMLTextAreaElement;
     const val = target.value;
     switch (field) {
       case 'author':
@@ -250,32 +273,7 @@ export class DashboardComponent {
       case 'tags':
         this.infoTags.set(val);
         break;
-      case 'genre1':
-        this.infoGenre1.set(val);
-        break;
-      case 'genre2':
-        this.infoGenre2.set(val);
-        break;
-      case 'genre3':
-        this.infoGenre3.set(val);
-        break;
     }
-  }
-
-  onPresetInfoDialogClosed() {
-    const dialog = this.presetInfoDialogRef()?.nativeElement;
-    if (!dialog || dialog.returnValue !== 'confirm') {
-      return;
-    }
-    this.presetService.updatePresetDetails({
-      author: this.infoAuthor().trim(),
-      description: this.infoDescription().trim(),
-      tags: this.infoTags().trim(),
-      genre1: this.infoGenre1(),
-      genre2: this.infoGenre2(),
-      genre3: this.infoGenre3(),
-    });
-    this.notifications.info('Updated preset information.');
   }
 
   async onTapTempoBpm(bpm: number) {

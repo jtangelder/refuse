@@ -1,21 +1,7 @@
 <nav class="sidebar-container" aria-label="Preset list">
-  <div class="sidebar-search-wrapper">
-    <div class="sidebar-search-box">
-      <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
-      <input
-        type="search"
-        class="search-input"
-        placeholder="Filter presets"
-        aria-label="Filter presets"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-      />
-    </div>
-  </div>
-
   <div class="presets-list-scroll">
     <ul class="preset-items" role="list" (keydown)="onListKeyDown($event)">
-      @for (slot of filteredSlots(); track slot) {
+      @for (slot of allPresetSlots(); track slot) {
         <li class="preset-row">
           <button
             type="button"
@@ -38,15 +24,30 @@
 
   <!-- Bottom Actions -->
   <div class="sidebar-bottom-controls">
-    <button type="button" class="action-pill-btn" (click)="openSaveDialog()" title="Save preset to amplifier">
+    <button
+      matButton="tonal"
+      class="action-pill-btn"
+      (click)="openSaveDialog()"
+      matTooltip="Save preset to amplifier"
+    >
       <mat-icon aria-hidden="true">save</mat-icon>
       <span>Save</span>
     </button>
-    <button type="button" class="action-pill-btn" (click)="fileInput.click()" title="Import .fuse or .xml preset">
+    <button
+      matButton="tonal"
+      class="action-pill-btn"
+      (click)="fileInput.click()"
+      matTooltip="Import .fuse or .xml preset"
+    >
       <mat-icon aria-hidden="true">file_upload</mat-icon>
       <span>Import</span>
     </button>
-    <button type="button" class="action-pill-btn" (click)="exportFusePreset()" title="Export .fuse preset">
+    <button
+      matButton="tonal"
+      class="action-pill-btn"
+      (click)="exportFusePreset()"
+      matTooltip="Export .fuse preset"
+    >
       <mat-icon aria-hidden="true">file_download</mat-icon>
       <span>Export</span>
     </button>
@@ -54,26 +55,25 @@
   </div>
 </nav>
 
-<dialog #saveDialog class="fuse-modal-dialog" aria-labelledby="sidebar-save-title" (close)="onDialogClose()">
-  <form method="dialog" class="modal-form">
-    <h2 id="sidebar-save-title">Save Preset</h2>
-    <div class="form-field">
-      <label for="sidebar-preset-name-input">Preset Name</label>
+<ng-template #saveDialogTpl>
+  <h2 mat-dialog-title>Save Preset</h2>
+  <mat-dialog-content>
+    <mat-form-field appearance="outline" class="dialog-full-width">
+      <mat-label>Preset Name</mat-label>
       <input
         #presetNameInput
-        id="sidebar-preset-name-input"
+        matInput
         type="text"
         maxlength="32"
         required
-        autofocus
         [value]="draftName()"
         (input)="onDraftNameInput($event)"
       />
-    </div>
-    <div class="modal-actions">
-      <button type="submit" value="cancel" formnovalidate class="btn-secondary">Cancel</button>
-      <button type="submit" value="save" class="btn-primary">Save</button>
-    </div>
-  </form>
-</dialog>
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" [mat-dialog-close]="'save'">Save</button>
+  </mat-dialog-actions>
+</ng-template>
 

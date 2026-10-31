@@ -144,12 +144,12 @@
       <!-- Advanced Amp Parameters Toggle in First Row of Knobs -->
       <div class="knob-control advanced-toggle-control">
         <button
-          type="button"
+          mat-icon-button
           class="advanced-knob-toggle"
           [class.active]="showAdvanced()"
           [attr.aria-expanded]="showAdvanced()"
           aria-label="Toggle Advanced Amplifier Parameters (Sag, Bias, Gate, Brightness, Depth)"
-          title="Advanced Amplifier Parameters (Sag, Bias, Gate, Brightness, Depth)"
+          matTooltip="Advanced Amplifier Parameters (Sag, Bias, Gate, Brightness, Depth)"
           (click)="toggleAdvanced()"
         >
           <mat-icon aria-hidden="true">tune</mat-icon>

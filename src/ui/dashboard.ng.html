@@ -12,42 +12,85 @@
 
   <div class="top-bar-right">
     <div class="top-connection">
-      <span class="status-dot connected" [class.demo]="service.isDemo()"></span>
-      <span class="status-label">{{ service.isDemo() ? 'Demo Mode' : 'Connected' }}</span>
+      @if (service.connected() && !service.isDemo()) {
+        <span class="status-dot connected"></span>
+        <span class="status-label">Connected</span>
+      } @else if (service.isDemo()) {
+        <span class="status-dot connected demo"></span>
+        <span class="status-label">Demo Mode</span>
+      } @else {
+        <span class="status-dot disconnected"></span>
+        <span class="status-label">Disconnected</span>
+      }
     </div>
-    <a class="top-save-btn" target="_blank" href="http://github.com/jtangelder/refuse">About</a>
+    @if (!service.connected() || service.isDemo()) {
+      <button
+        mat-flat-button
+        color="primary"
+        class="top-action-btn connect-btn-highlight"
+        [disabled]="!service.isSupported() || service.connecting()"
+        (click)="service.connect()"
+        matTooltip="Connect physical Fender Mustang amp via USB"
+      >
+        <mat-icon aria-hidden="true">usb</mat-icon>
+        <span>{{ service.connecting() ? 'Connecting...' : 'Connect Amp' }}</span>
+      </button>
+    }
     <button
-      type="button"
-      class="top-save-btn"
+      matButton="tonal"
+      class="top-action-btn"
+      (click)="openAboutDialog()"
+      matTooltip="About Fender FUSE"
+    >
+      About
+    </button>
+    <button
+      matButton="tonal"
+      class="top-action-btn"
       (click)="openPresetInfoDialog()"
-      title="Edit Preset Metadata (Author, Genres, Tags, Description)"
+      matTooltip="Edit Preset Metadata (Author, Genres, Tags, Description)"
     >
       Preset Info
     </button>
-    <button type="button" class="top-save-btn primary" (click)="openSaveAsDialog()">Save As</button>
+    <button
+      mat-flat-button
+      color="primary"
+      class="top-action-btn"
+      (click)="openSaveAsDialog()"
+    >
+      Save As
+    </button>
     <div class="preset-arrows-group">
       <button
-        type="button"
+        mat-icon-button
         class="arrow-btn"
         aria-label="Previous Preset"
-        title="Previous Preset"
+        matTooltip="Previous Preset"
         (click)="onPrevPreset()"
       >
         <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
       </button>
-      <button type="button" class="arrow-btn" aria-label="Next Preset" title="Next Preset" (click)="onNextPreset()">
+      <button
+        mat-icon-button
+        class="arrow-btn"
+        aria-label="Next Preset"
+        matTooltip="Next Preset"
+        (click)="onNextPreset()"
+      >
         <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
       </button>
     </div>
-    <button
-      type="button"
-      class="disconnect-btn"
-      [title]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
-      [attr.aria-label]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
-      (click)="onDisconnect()"
-    >
-      <mat-icon aria-hidden="true">power_settings_new</mat-icon>
-    </button>
+    @if (service.connected()) {
+      <button
+        mat-icon-button
+        class="disconnect-btn"
+        [matTooltip]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
+        [attr.aria-label]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
+        (click)="onDisconnect()"
+      >
+        <mat-icon aria-hidden="true">power_settings_new</mat-icon>
+      </button>
+    }
   </div>
 </header>
 
@@ -99,137 +142,113 @@
   }
 </main>
 
-<!-- Native Save As Dialog -->
-<dialog #saveAsDialog class="fuse-dialog" aria-labelledby="save-as-dialog-title" (close)="onSaveAsDialogClosed()">
-  <form method="dialog" class="dialog-form">
-    <h3 id="save-as-dialog-title">Save Active Preset</h3>
+<!-- Material Save As Dialog Template -->
+<ng-template #saveAsDialogTpl>
+  <h2 mat-dialog-title>Save Active Preset</h2>
+  <mat-dialog-content>
     <p class="dialog-subtitle">Choose a target slot and name on your amplifier</p>
-    <label class="dialog-label" for="save-as-slot-select">Target Slot</label>
-    <select
-      id="save-as-slot-select"
-      class="dialog-input"
-      [value]="saveAsTargetSlot()"
-      (change)="onSaveAsSlotChange($event)"
-    >
-      @for (slot of presetService.allSlots(); track slot) {
-      <option [value]="slot" [selected]="slot === saveAsTargetSlot()">
-        {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
-      </option>
-      }
-    </select>
-    <label class="dialog-label" for="save-as-name-input">Preset Name</label>
-    <input
-      id="save-as-name-input"
-      type="text"
-      class="dialog-input"
-      maxlength="31"
-      [value]="saveAsDraftName()"
-      (input)="onSaveAsNameInput($event)"
-      autofocus
-    />
-    <div class="dialog-actions">
-      <button type="submit" value="cancel" class="dialog-btn cancel">Cancel</button>
-      <button type="submit" value="confirm" class="dialog-btn confirm">Save Preset</button>
-    </div>
-  </form>
-</dialog>
+    <div class="dialog-form-stack">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Target Slot</mat-label>
+        <mat-select [value]="saveAsTargetSlot()" (selectionChange)="saveAsTargetSlot.set($event.value)">
+          @for (slot of presetService.allSlots(); track slot) {
+          <mat-option [value]="slot">
+            {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
+          </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
 
-<!-- Native Preset Info Dialog (Fender FUSE Manual p.6) -->
-<dialog
-  #presetInfoDialog
-  class="fuse-dialog info-dialog"
-  aria-labelledby="preset-info-title"
-  (close)="onPresetInfoDialogClosed()"
->
-  <form method="dialog" class="dialog-form">
-    <h3 id="preset-info-title">Preset Information</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Preset Name</mat-label>
+        <input
+          matInput
+          type="text"
+          maxlength="31"
+          [value]="saveAsDraftName()"
+          (input)="onSaveAsNameInput($event)"
+        />
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" [mat-dialog-close]="'confirm'">Save Preset</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- Material Preset Info Dialog Template (Fender FUSE Manual p.6) -->
+<ng-template #presetInfoDialogTpl>
+  <h2 mat-dialog-title>Preset Information</h2>
+  <mat-dialog-content>
     <p class="dialog-subtitle">
       Edit FUSE metadata stored when exporting or sharing presets ({{ currentPresetName() }})
     </p>
 
     <div class="dialog-grid">
-      <div class="field-group">
-        <label class="dialog-label" for="info-author">Author</label>
+      <mat-form-field appearance="outline">
+        <mat-label>Author</mat-label>
         <input
-          id="info-author"
+          matInput
           type="text"
-          class="dialog-input"
           placeholder="e.g. Fender Audio"
           [value]="infoAuthor()"
           (input)="onInfoFieldInput('author', $event)"
         />
-      </div>
+      </mat-form-field>
 
-      <div class="field-group">
-        <label class="dialog-label" for="info-tags">Search Tags</label>
+      <mat-form-field appearance="outline">
+        <mat-label>Search Tags</mat-label>
         <input
-          id="info-tags"
+          matInput
           type="text"
-          class="dialog-input"
           placeholder="e.g. clean, vintage, slapback"
           [value]="infoTags()"
           (input)="onInfoFieldInput('tags', $event)"
         />
-      </div>
+      </mat-form-field>
 
-      <div class="field-group">
-        <label class="dialog-label" for="info-genre1">Main Genre</label>
-        <select
-          id="info-genre1"
-          class="dialog-input"
-          [value]="infoGenre1()"
-          (change)="onInfoFieldInput('genre1', $event)"
-        >
+      <mat-form-field appearance="outline">
+        <mat-label>Main Genre</mat-label>
+        <mat-select [value]="infoGenre1()" (selectionChange)="infoGenre1.set($event.value)">
           @for (g of genres; track g) {
-          <option [value]="g">{{ g || '-- None --' }}</option>
+          <mat-option [value]="g">{{ g || '-- None --' }}</mat-option>
           }
-        </select>
-      </div>
+        </mat-select>
+      </mat-form-field>
 
-      <div class="field-group">
-        <label class="dialog-label" for="info-genre2">Sub-Genre 1</label>
-        <select
-          id="info-genre2"
-          class="dialog-input"
-          [value]="infoGenre2()"
-          (change)="onInfoFieldInput('genre2', $event)"
-        >
+      <mat-form-field appearance="outline">
+        <mat-label>Sub-Genre 1</mat-label>
+        <mat-select [value]="infoGenre2()" (selectionChange)="infoGenre2.set($event.value)">
           @for (g of genres; track g) {
-          <option [value]="g">{{ g || '-- None --' }}</option>
+          <mat-option [value]="g">{{ g || '-- None --' }}</mat-option>
           }
-        </select>
-      </div>
+        </mat-select>
+      </mat-form-field>
 
-      <div class="field-group full-width">
-        <label class="dialog-label" for="info-genre3">Sub-Genre 2</label>
-        <select
-          id="info-genre3"
-          class="dialog-input"
-          [value]="infoGenre3()"
-          (change)="onInfoFieldInput('genre3', $event)"
-        >
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Sub-Genre 2</mat-label>
+        <mat-select [value]="infoGenre3()" (selectionChange)="infoGenre3.set($event.value)">
           @for (g of genres; track g) {
-          <option [value]="g">{{ g || '-- None --' }}</option>
+          <mat-option [value]="g">{{ g || '-- None --' }}</mat-option>
           }
-        </select>
-      </div>
+        </mat-select>
+      </mat-form-field>
 
-      <div class="field-group full-width">
-        <label class="dialog-label" for="info-description">Description / Notes</label>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description / Notes</mat-label>
         <textarea
-          id="info-description"
-          class="dialog-input dialog-textarea"
+          matInput
           rows="3"
           placeholder="Describe pickup position, guitar type, or performance notes..."
           [value]="infoDescription()"
           (input)="onInfoFieldInput('description', $event)"
         ></textarea>
-      </div>
+      </mat-form-field>
     </div>
-
-    <div class="dialog-actions">
-      <button type="submit" value="cancel" class="dialog-btn cancel">Cancel</button>
-      <button type="submit" value="confirm" class="dialog-btn confirm">Apply Info</button>
-    </div>
-  </form>
-</dialog>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" [mat-dialog-close]="'confirm'">Apply Info</button>
+  </mat-dialog-actions>
+</ng-template>

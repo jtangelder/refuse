@@ -51,20 +51,6 @@
   align-items: center;
 }
 
-.status-indicator {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--mat-sys-error);
-  margin-right: 6px;
-  vertical-align: middle;
-}
-
-.status-indicator.active {
-  background: #34d399;
-}
-
 .model-selector {
   flex: 1;
   min-width: 200px;
@@ -107,25 +93,9 @@
 /* M3 Tonal Action Pills */
 .pos-switch-btn {
   height: 34px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-  border: none;
   padding: 0 14px;
   border-radius: var(--md-corner-full);
   font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
-    color 0.15s cubic-bezier(0.2, 0, 0, 1);
-
-  &:hover {
-    background: var(--mat-sys-primary-container);
-    color: var(--mat-sys-on-primary-container);
-  }
 
   mat-icon {
     font-size: 16px;
@@ -136,25 +106,10 @@
 
 .clear-btn {
   height: 34px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-error);
-  border: none;
   padding: 0 14px;
   border-radius: var(--md-corner-full);
   font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
-    color 0.15s cubic-bezier(0.2, 0, 0, 1);
-
-  &:hover {
-    background: var(--mat-sys-error-container);
-    color: var(--mat-sys-on-error-container);
-  }
+  color: var(--mat-sys-error) !important;
 
   mat-icon {
     font-size: 16px;
@@ -212,39 +167,18 @@
   margin: 0 auto;
 }
 
-/* M3 Elevated / Tonal Assist Chip: 32px height, 8px corner radius, borderless tonal container */
+/* M3 Assist Chip: 32px height, 8px corner radius */
 .model-chip {
   height: 32px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--mat-sys-surface-container-high);
-  border: none;
-  color: var(--mat-sys-on-surface);
   padding: 0 12px 0 8px;
   border-radius: var(--md-corner-sm);
   font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
-    color 0.15s cubic-bezier(0.2, 0, 0, 1);
-
-  &:hover {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
-
-    .chip-icon {
-      color: var(--mat-sys-on-secondary-container);
-    }
-  }
 
   .chip-icon {
     font-size: 16px;
     width: 16px;
     height: 16px;
     color: var(--mat-sys-primary);
-    transition: color 0.15s;
   }
 }
 

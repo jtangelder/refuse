@@ -42,14 +42,29 @@ export class FuseService {
   async connect(): Promise<boolean> {
     if (this.connecting()) return false;
     this.connecting.set(true);
+    const wasDemo = this.isDemo();
     try {
-      if (this.isDemo()) {
-        await this.api.disconnect();
-        this.protocol = new Protocol();
-        this.api = this.createApi(this.protocol);
-        this.isDemo.set(false);
+      const physicalProtocol = new Protocol();
+      const physicalApi = this.createApi(physicalProtocol);
+      const connected = await physicalApi.connect();
+
+      if (!connected) {
+        // User canceled or no device selected.
+        // If we were in Demo mode, keep Demo mode active!
+        return false;
       }
-      return await this.api.connect();
+
+      // Real physical amp connected successfully!
+      if (wasDemo) {
+        await this.api.disconnect();
+      }
+      this.protocol = physicalProtocol;
+      this.api = physicalApi;
+      this.isDemo.set(false);
+      return true;
+    } catch (err) {
+      console.error('[FuseService] Connection failed:', err);
+      return false;
     } finally {
       this.connecting.set(false);
     }

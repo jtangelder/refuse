@@ -2,12 +2,13 @@ import { Component, ChangeDetectionStrategy, input, output, computed, signal } f
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { KnobComponent } from './knob';
 import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } from '../lib';
 
 @Component({
   selector: 'fuse-amp-editor',
-  imports: [MatMenuModule, MatButtonModule, MatIconModule, KnobComponent],
+  imports: [MatMenuModule, MatButtonModule, MatIconModule, MatTooltipModule, KnobComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './amp_editor.ng.html',
   styleUrl: './amp_editor.scss',

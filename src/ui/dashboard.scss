@@ -95,8 +95,13 @@
     background: #34d399;
   }
 
-  &.connected.demo {
+  &.connected.demo,
+  &.demo {
     background: var(--mat-sys-primary);
+  }
+
+  &.disconnected {
+    background: var(--mat-sys-error);
   }
 }
 
@@ -106,79 +111,59 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* M3 Filled Tonal & Primary Pill Buttons */
-.top-save-btn {
+.top-action-btn {
   height: 36px;
-  line-height: 36px;
-  background: var(--mat-sys-secondary-container);
-  border: none;
-  color: var(--mat-sys-on-secondary-container);
   font-size: 0.8125rem;
-  font-weight: 500;
-  text-decoration: none;
-  padding: 0 16px;
   border-radius: var(--md-corner-full);
-  cursor: pointer;
-  transition:
-    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
-    color 0.15s cubic-bezier(0.2, 0, 0, 1);
-
-  &:hover {
-    background: var(--mat-sys-surface-container-highest);
-    color: var(--mat-sys-on-surface);
-  }
-
-  &.primary {
-    background: var(--mat-sys-primary);
-    color: var(--mat-sys-on-primary);
-    font-weight: 600;
-
-    &:hover {
-      filter: brightness(1.08);
-    }
-  }
-}
-
-.preset-arrows-group {
   display: inline-flex;
-  gap: 4px;
-  background: var(--mat-sys-surface-container-low);
-  padding: 2px;
-  border-radius: var(--md-corner-full);
-}
-
-.arrow-btn,
-.disconnect-btn {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  background: var(--mat-sys-surface-container-high);
-  border: none;
-  border-radius: 50%;
-  color: var(--mat-sys-on-surface-variant);
-  display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
-    color 0.15s cubic-bezier(0.2, 0, 0, 1);
+  gap: 6px;
 
   mat-icon {
     font-size: 18px;
     width: 18px;
     height: 18px;
   }
+}
 
-  &:hover {
-    color: var(--mat-sys-on-surface);
-    background: var(--mat-sys-surface-container-highest);
+.preset-arrows-group {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--mat-sys-surface-container-low);
+  padding: 2px;
+  border-radius: var(--md-corner-full);
+
+  .arrow-btn {
+    --mdc-icon-button-state-layer-size: 34px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--mat-sys-on-surface-variant);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
   }
 }
 
-.disconnect-btn:hover {
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
+.disconnect-btn {
+  --mdc-icon-button-state-layer-size: 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--mat-sys-on-surface-variant);
+
+  &:hover {
+    color: var(--mat-sys-error);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .editor-container {
@@ -190,116 +175,27 @@
   flex-shrink: 0;
 }
 
-/* M3 Dialogs (28px Extra-Large Radius, Tonal Surface Container High, Borderless) */
-.fuse-dialog {
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface);
-  border: none;
-  border-radius: var(--md-corner-2xl);
-  padding: 24px;
-  width: min(400px, 90vw);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
-  overscroll-behavior: contain;
-
-  &.info-dialog {
-    width: min(540px, 92vw);
-  }
-
-  &::backdrop {
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(3px);
-  }
-}
-
-.dialog-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-
-  h3 {
-    margin: 0;
-    font-size: 1.375rem;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-}
-
 .dialog-subtitle {
-  margin: 0;
+  margin: 0 0 16px;
   font-size: 0.875rem;
   color: var(--mat-sys-on-surface-variant);
+}
+
+.dialog-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 .dialog-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
+  padding-top: 4px;
 }
 
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  &.full-width {
-    grid-column: 1 / -1;
-  }
-}
-
-.dialog-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.dialog-input {
-  background: var(--mat-sys-surface-container-highest);
-  border: none;
-  border-radius: var(--md-corner-md);
-  padding: 10px 14px;
-  color: var(--mat-sys-on-surface);
-  font-size: 0.875rem;
-  font-family: inherit;
-}
-
-.dialog-textarea {
-  resize: vertical;
-  min-height: 72px;
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.dialog-btn {
-  height: 40px;
-  padding: 0 20px;
-  border-radius: var(--md-corner-full);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
-
-  &.cancel {
-    background: transparent;
-    color: var(--mat-sys-primary);
-
-    &:hover {
-      background: rgba(140, 207, 249, 0.08);
-    }
-  }
-
-  &.confirm {
-    background: var(--mat-sys-primary);
-    color: var(--mat-sys-on-primary);
-    font-weight: 600;
-
-    &:hover {
-      filter: brightness(1.08);
-    }
-  }
+.full-width {
+  grid-column: 1 / -1;
+  width: 100%;
 }

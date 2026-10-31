@@ -15,7 +15,16 @@ import { DragDropModule, type CdkDrag, type CdkDragDrop } from '@angular/cdk/dra
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DspType, getDelayTimeKnobIndex, type EffectSettings, type AmpSettings, type CabinetDef } from '../lib';
+import {
+  DspType,
+  getDelayTimeKnobIndex,
+  isWideEffect,
+  isRackUnit,
+  getEffectFormFactor,
+  type EffectSettings,
+  type AmpSettings,
+  type CabinetDef,
+} from '../lib';
 
 export interface ChainEffectItem {
   slot: number;
@@ -78,38 +87,41 @@ export class SignalChainComponent {
 
     const preTotal = preCount + preEmpty;
     const postTotal = postCount + postEmpty;
-    const totalGaps = Math.max(0, preTotal - 1) + Math.max(0, postTotal - 1);
 
     // Base horizontal width calculation taking into account wide pedals & rack units
     let preOccupiedW = 0;
     for (const eff of this.preEffects()) {
-      preOccupiedW += this.isRackUnit(eff.modelId) ? 185 : this.isWideEffect(eff.modelId) ? 165 : 125;
+      const formFactor = getEffectFormFactor(eff.modelId);
+      preOccupiedW += formFactor === 'rack' ? 210 : formFactor === 'wide' ? 176 : 136;
     }
     let postOccupiedW = 0;
     for (const eff of this.postEffects()) {
-      postOccupiedW += this.isRackUnit(eff.modelId) ? 185 : this.isWideEffect(eff.modelId) ? 165 : 125;
+      const formFactor = getEffectFormFactor(eff.modelId);
+      postOccupiedW += formFactor === 'rack' ? 210 : formFactor === 'wide' ? 176 : 136;
     }
-    const baseOccupiedW = preOccupiedW + 250 + postOccupiedW;
-    const baseEmptyW = (preEmpty + postEmpty) * 72 * 0.78;
-    const baseSpacingW = totalGaps * 24 + 80;
+    const baseOccupiedW = preOccupiedW + 220 + postOccupiedW;
+    const baseEmptyW = (preEmpty + postEmpty) * 80 * 0.85;
+    const totalSlots = preTotal + 1 + postTotal;
+    const totalGaps = Math.max(0, totalSlots - 1);
+    const baseSpacingW = totalGaps * 28;
     const totalBaseW = baseOccupiedW + baseEmptyW + baseSpacingW;
 
     const availW = Math.max(320, w - 48);
     const availH = Math.max(210, h - 50); // subtract bottom dock height + padding
 
     const scaleW = availW / totalBaseW;
-    const scaleH = availH / 260; // 24px status rail + 180px frame + 48px info + 8px margin
+    const scaleH = availH / 228; // 170px frame + 48px info + 10px margin
 
     const fitScale = Math.min(scaleW, scaleH);
     // Keep pedals & amp prominently sized on desktop viewports
     const minScale = w >= 720 ? Math.min(scaleH, 1.15) : 0.95;
-    const clamped = Math.min(1.75, Math.max(minScale, fitScale));
+    const clamped = Math.min(1.6, Math.max(minScale, fitScale));
     return Math.round(clamped * 100) / 100;
   });
 
   emptyScale = computed<number>(() => {
     const s = this.chainScale();
-    return Math.round(Math.min(1.3, Math.max(0.9, s * 0.78)) * 100) / 100;
+    return Math.round(Math.min(1.2, Math.max(0.9, s * 0.82)) * 100) / 100;
   });
 
   // Interactive Tap Tempo BPM
@@ -165,17 +177,8 @@ export class SignalChainComponent {
     return cab ? cab.name : 'Cabinet Off';
   });
 
-  isWideEffect(modelId?: number): boolean {
-    if (!modelId) return false;
-    // 0x2D00 (Vibratone Leslie), 0x2100 ('63 Spring Reverb Tank), 0x4300 (DL4), 0x4800 (DL4 Stereo), 0x4500 (TimeFactor)
-    return [0x2d00, 0x2100, 0x4300, 0x4800, 0x4500].includes(modelId);
-  }
-
-  isRackUnit(modelId?: number): boolean {
-    if (!modelId) return false;
-    // 0x1500 (TC 2290 Ducking Delay), 0x4400 (Lexicon Multitap Delay)
-    return [0x1500, 0x4400].includes(modelId);
-  }
+  protected readonly isWideEffect = isWideEffect;
+  protected readonly isRackUnit = isRackUnit;
 
   // Active Pre-Amp effects ordered by slot index (slots 0..3)
   preEffects = computed<ChainEffectItem[]>(() => {
@@ -383,40 +386,6 @@ export class SignalChainComponent {
       slot: item.slot,
       enabled: !item.enabled,
     });
-  }
-
-  onClearEffect(event: Event, slot: number) {
-    event.stopPropagation();
-    this.clearEffect.emit(slot);
-  }
-
-  canMoveToPartner(item: ChainEffectItem): boolean {
-    if (item.type === DspType.STOMP) return false;
-    return item.position === 'pre' ? this.postEffects().length < 4 : this.preEffects().length < 4;
-  }
-
-  onMoveToPartner(event: Event, item: ChainEffectItem) {
-    event.stopPropagation();
-    const effs = this.effects();
-    if (item.position === 'pre') {
-      let target = 4;
-      for (let s = 4; s < 8; s++) {
-        if (effs[s] === null) {
-          target = s;
-          break;
-        }
-      }
-      this.movePosition.emit({ fromSlot: item.slot, toSlot: target });
-    } else {
-      let target = 0;
-      for (let s = 0; s < 4; s++) {
-        if (effs[s] === null) {
-          target = s;
-          break;
-        }
-      }
-      this.movePosition.emit({ fromSlot: item.slot, toSlot: target });
-    }
   }
 
   onQuickAddBlock() {

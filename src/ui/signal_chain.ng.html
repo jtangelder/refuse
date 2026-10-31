@@ -28,10 +28,13 @@
         [class.rack-device]="isRackUnit(item.modelId)"
         tabindex="0"
         role="button"
-        [attr.aria-label]="item.typeTitle + ': ' + item.model"
+        [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
+        [matTooltip]="'Double-click to ' + (item.enabled ? 'bypass' : 'enable')"
         (click)="onSelectSlot(item.slot)"
+        (dblclick)="onToggleBypass($event, item)"
         (keydown.enter)="onSelectSlot(item.slot)"
         (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
+        (keydown.b)="onToggleBypass($event, item)"
       >
         <!-- Drag Placeholder on Wire -->
         <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
@@ -49,51 +52,15 @@
           <span class="preview-title">{{ item.model }}</span>
         </div>
 
-        <!-- Bypass LED button (Top Rail) -->
-        <button
-          type="button"
-          class="pedal-led-btn"
-          [attr.aria-pressed]="item.enabled"
-          [attr.aria-label]="(item.enabled ? 'Bypass ' : 'Enable ') + item.model"
-          [matTooltip]="item.enabled ? 'Click to bypass' : 'Click to enable'"
-          (click)="onToggleBypass($event, item)"
-        >
-          <span class="led-dot" [class.active]="item.enabled" aria-hidden="true"></span>
-        </button>
-
         <!-- Pedal Sprite Frame (Centered on Audio Wire) -->
         <div class="pedal-sprite-frame" aria-hidden="true">
           <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
         </div>
 
-        <!-- Pedal Label & Actions Bar (Bottom Rail) -->
+        <!-- Pedal Label Bar (Bottom Rail) -->
         <div class="pedal-info-bar">
           <span class="pedal-title" [title]="item.model">{{ item.model }}</span>
-          <span class="pedal-tag">{{ item.typeTitle }}</span>
-
-          <!-- Hover Action Buttons -->
-          <div class="pedal-hover-actions">
-            @if (canMoveToPartner(item)) {
-            <button
-              type="button"
-              class="action-btn"
-              [attr.aria-label]="'Move ' + item.model + ' to Post-Amp Loop'"
-              matTooltip="Move to Post-Amp Loop"
-              (click)="onMoveToPartner($event, item)"
-            >
-              <mat-icon aria-hidden="true">arrow_forward</mat-icon>
-            </button>
-            }
-            <button
-              type="button"
-              class="action-btn remove-btn"
-              [attr.aria-label]="'Remove ' + item.model"
-              matTooltip="Remove pedal"
-              (click)="onClearEffect($event, item.slot)"
-            >
-              <mat-icon aria-hidden="true">close</mat-icon>
-            </button>
-          </div>
+          <span class="pedal-tag">{{ !item.enabled ? 'Bypassed' : item.typeTitle }}</span>
         </div>
       </div>
       }
@@ -107,10 +74,7 @@
         [attr.aria-label]="'Add ' + empty.label"
         (click)="onSelectEmpty(empty.targetSlot, empty.category)"
       >
-        <span class="empty-status-spacer" aria-hidden="true"></span>
         <span class="empty-slot-card">
-          <span class="jack-socket jack-in" aria-hidden="true"></span>
-          <span class="jack-socket jack-out" aria-hidden="true"></span>
           <span class="empty-plus" aria-hidden="true">+</span>
           <span class="empty-label">{{ empty.label }}</span>
         </span>
@@ -130,15 +94,8 @@
       (keydown.enter)="onSelectAmp()"
       (keydown.space)="$event.preventDefault(); onSelectAmp()"
     >
-      <!-- Amp Status Indicator (Top Rail) -->
-      <div class="amp-status-rail" aria-hidden="true">
-        <span class="amp-pilot-lamp active" title="Amplifier Active"></span>
-      </div>
-
       <!-- Amp Sprite Frame (Centered on Audio Wire) -->
       <div class="amp-sprite-frame" aria-hidden="true">
-        <div class="jack-socket jack-in"></div>
-        <div class="jack-socket jack-out"></div>
         <div class="amp-icon {{ getAmpClass(ampModelName(), ampSettings()?.modelId) }}"></div>
       </div>
 
@@ -171,10 +128,13 @@
         [class.rack-device]="isRackUnit(item.modelId)"
         tabindex="0"
         role="button"
-        [attr.aria-label]="item.typeTitle + ': ' + item.model"
+        [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
+        [matTooltip]="'Double-click to ' + (item.enabled ? 'bypass' : 'enable')"
         (click)="onSelectSlot(item.slot)"
+        (dblclick)="onToggleBypass($event, item)"
         (keydown.enter)="onSelectSlot(item.slot)"
         (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
+        (keydown.b)="onToggleBypass($event, item)"
       >
         <!-- Drag Placeholder on Wire -->
         <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
@@ -192,52 +152,15 @@
           <span class="preview-title">{{ item.model }}</span>
         </div>
 
-        <!-- Bypass LED button (Top Rail) -->
-        <button
-          type="button"
-          class="pedal-led-btn"
-          [attr.aria-pressed]="item.enabled"
-          [attr.aria-label]="(item.enabled ? 'Bypass ' : 'Enable ') + item.model"
-          [matTooltip]="item.enabled ? 'Click to bypass' : 'Click to enable'"
-          (click)="onToggleBypass($event, item)"
-        >
-          <span class="led-dot" [class.active]="item.enabled" aria-hidden="true"></span>
-        </button>
-
         <!-- Pedal Sprite Frame (Centered on Audio Wire) -->
         <div class="pedal-sprite-frame" aria-hidden="true">
-          <div class="jack-socket jack-in"></div>
-          <div class="jack-socket jack-out"></div>
           <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
         </div>
 
         <!-- Pedal Info Bar (Bottom Rail) -->
         <div class="pedal-info-bar">
           <span class="pedal-title" [title]="item.model">{{ item.model }}</span>
-          <span class="pedal-tag">{{ item.typeTitle }}</span>
-
-          <div class="pedal-hover-actions">
-            @if (canMoveToPartner(item)) {
-            <button
-              type="button"
-              class="action-btn"
-              [attr.aria-label]="'Move ' + item.model + ' to Pre-Amp'"
-              matTooltip="Move to Pre-Amp"
-              (click)="onMoveToPartner($event, item)"
-            >
-              <mat-icon aria-hidden="true">arrow_back</mat-icon>
-            </button>
-            }
-            <button
-              type="button"
-              class="action-btn remove-btn"
-              [attr.aria-label]="'Remove ' + item.model"
-              matTooltip="Remove effect"
-              (click)="onClearEffect($event, item.slot)"
-            >
-              <mat-icon aria-hidden="true">close</mat-icon>
-            </button>
-          </div>
+          <span class="pedal-tag">{{ !item.enabled ? 'Bypassed' : item.typeTitle }}</span>
         </div>
       </div>
       }
@@ -251,10 +174,7 @@
         [attr.aria-label]="'Add ' + empty.label"
         (click)="onSelectEmpty(empty.targetSlot, empty.category)"
       >
-        <span class="empty-status-spacer" aria-hidden="true"></span>
         <span class="empty-slot-card">
-          <span class="jack-socket jack-in" aria-hidden="true"></span>
-          <span class="jack-socket jack-out" aria-hidden="true"></span>
           <span class="empty-plus" aria-hidden="true">+</span>
           <span class="empty-label">{{ empty.label }}</span>
         </span>
@@ -266,21 +186,22 @@
 
   <!-- Bottom Dock Bar -->
   <div class="tone-dock">
-    <button type="button" class="dock-btn" (click)="onOpenPresetInfo()">
+    <button mat-button class="dock-btn" (click)="onOpenPresetInfo()">
       <mat-icon aria-hidden="true">info_outline</mat-icon>
       <span>Preset Info</span>
     </button>
-    <button type="button" class="dock-btn add-btn" (click)="onQuickAddBlock()">
+    <button matButton="tonal" class="dock-btn add-btn" (click)="onQuickAddBlock()">
       <mat-icon aria-hidden="true">add_circle_outline</mat-icon>
       <span>Add Block</span>
     </button>
     <div class="dock-spacer"></div>
     <div class="dock-tap">
       <button
-        type="button"
+        matButton="tonal"
         class="tap-pill"
         (click)="onTapTempo()"
         aria-label="Tap tempo to synchronize active delay time"
+        matTooltip="Click repeatedly to tap tempo"
       >
         <span class="bpm-value">{{ displayBpm() }} BPM</span>
         <span class="tap-badge">Tap</span>

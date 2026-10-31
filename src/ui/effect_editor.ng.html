@@ -9,18 +9,16 @@
         <h2 class="slot-title">{{ slotCategoryName() }}</h2>
       </div>
 
-      <!-- Bypass Checkbox with indicator -->
+      <!-- Bypass Slide Toggle -->
       <div class="bypass-control">
         @if (effect()) {
-          <mat-checkbox
+          <mat-slide-toggle
             [checked]="effect()!.enabled"
             (change)="onToggleEffect($event.checked)"
             color="primary"
-            class="bypass-checkbox"
           >
-            <span class="status-indicator" [class.active]="effect()!.enabled"></span>
             <span>{{ effect()!.enabled ? 'Active' : 'Bypassed' }}</span>
-          </mat-checkbox>
+          </mat-slide-toggle>
         }
       </div>
 
@@ -57,10 +55,10 @@
       <div class="header-actions">
         @if (canMovePosition()) {
           <button
-            type="button"
+            matButton="tonal"
             class="pos-switch-btn"
             (click)="onMovePosition()"
-            [title]="isPostAmp() ? 'Move this effect to Pre-Amp Pedalboard' : 'Move this effect to Post-Amp Rack'"
+            [matTooltip]="isPostAmp() ? 'Move this effect to Pre-Amp Pedalboard' : 'Move this effect to Post-Amp Rack'"
           >
             <mat-icon aria-hidden="true">{{ isPostAmp() ? 'reply' : 'forward' }}</mat-icon>
             <span>{{ isPostAmp() ? 'Move to Pedals' : 'Move to Rack' }}</span>
@@ -68,7 +66,12 @@
         }
 
         @if (effect()) {
-          <button type="button" class="clear-btn" (click)="onClearSlot()" title="Remove this effect from the slot">
+          <button
+            mat-button
+            class="clear-btn"
+            (click)="onClearSlot()"
+            matTooltip="Remove this effect from the slot"
+          >
             <mat-icon aria-hidden="true">delete_outline</mat-icon>
             <span>Remove</span>
           </button>
@@ -99,7 +102,7 @@
         <div class="model-chip-grid">
           @for (m of categoryModels(); track m.id) {
             <button
-              type="button"
+              matButton="tonal"
               class="model-chip"
               (click)="onAssignEffect(m.id)"
               [attr.aria-label]="'Assign ' + m.name"

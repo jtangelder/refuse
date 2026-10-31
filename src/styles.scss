@@ -132,6 +132,50 @@ textarea {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
 }
 
+/* M3 Dialog Surface Elevation & Pop */
+.mat-mdc-dialog-panel {
+  --mat-dialog-container-shape: 28px;
+  --mat-dialog-container-color: var(--mat-sys-surface-container-highest);
+}
+
+.mat-mdc-dialog-surface {
+  background: var(--mat-sys-surface-container-highest) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 28px !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.75),
+    0 4px 18px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  overflow: hidden;
+}
+
+.mat-mdc-dialog-title {
+  font-size: 1.35rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--mat-sys-on-surface) !important;
+  padding: 24px 24px 8px !important;
+}
+
+.mat-mdc-dialog-content {
+  padding: 0 24px 16px !important;
+  color: var(--mat-sys-on-surface) !important;
+}
+
+.mat-mdc-dialog-actions {
+  padding: 14px 24px 20px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
+  gap: 8px;
+}
+
+/* Dark Backdrop with Blur to give dialogs crisp separation */
+.cdk-overlay-dark-backdrop {
+  background: rgba(4, 7, 11, 0.72) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

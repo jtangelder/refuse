@@ -2,13 +2,14 @@ import { Component, ChangeDetectionStrategy, computed, input, output } from '@an
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { KnobComponent } from './knob';
 import { DspType, type EffectSettings, type ModelDef } from '../lib';
 
 @Component({
   selector: 'fuse-effect-editor',
-  imports: [MatMenuModule, MatButtonModule, MatIconModule, MatCheckboxModule, KnobComponent],
+  imports: [MatMenuModule, MatButtonModule, MatIconModule, MatSlideToggleModule, MatTooltipModule, KnobComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './effect_editor.ng.html',
   styleUrl: './effect_editor.scss',

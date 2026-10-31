@@ -177,3 +177,52 @@ export function getDelayTimeKnobIndex(modelId: number): number | null {
   const idx = model.knobs.indexOf('Time');
   return idx !== -1 ? idx : null;
 }
+
+// -----------------------------------------------------------------------------
+// Hardware Form Factors (Signal Chain & Graphic Layout)
+// -----------------------------------------------------------------------------
+
+export type EffectFormFactor = 'standard' | 'wide' | 'rack';
+
+/**
+ * Effects with a wide chassis or cabinet footprint:
+ * - Fender Vibratone (Leslie rotary cabinet)
+ * - Fender '63 Spring Reverb (standalone outboard reverb tank)
+ * - Line 6 DL4 & DL4 Stereo (Mono & Stereo Echo Filter dual-footswitch stompboxes)
+ * - Eventide TimeFactor (Ping Pong Delay dual stompbox)
+ */
+export const WIDE_EFFECT_MODELS: readonly ModelDef[] = [
+  EFFECT_MODELS.VIBRATONE,
+  EFFECT_MODELS.SPRING_63,
+  EFFECT_MODELS.MONO_ECHO_FILTER,
+  EFFECT_MODELS.STEREO_ECHO_FILTER,
+  EFFECT_MODELS.PING_PONG_DELAY,
+];
+
+/**
+ * 1U 19-inch rackmount units:
+ * - TC Electronic 2290 Dynamic Digital Delay (Ducking Delay)
+ * - Lexicon PCM-42 / Multitap Delay
+ */
+export const RACK_EFFECT_MODELS: readonly ModelDef[] = [EFFECT_MODELS.DUCKING_DELAY, EFFECT_MODELS.MULTITAP_DELAY];
+
+const wideEffectIds = new Set<number>(WIDE_EFFECT_MODELS.map(m => m.id));
+const rackEffectIds = new Set<number>(RACK_EFFECT_MODELS.map(m => m.id));
+
+export function isWideEffect(model?: number | ModelDef | null): boolean {
+  if (model === null || model === undefined) return false;
+  const id = typeof model === 'number' ? model : model.id;
+  return wideEffectIds.has(id);
+}
+
+export function isRackUnit(model?: number | ModelDef | null): boolean {
+  if (model === null || model === undefined) return false;
+  const id = typeof model === 'number' ? model : model.id;
+  return rackEffectIds.has(id);
+}
+
+export function getEffectFormFactor(model?: number | ModelDef | null): EffectFormFactor {
+  if (isRackUnit(model)) return 'rack';
+  if (isWideEffect(model)) return 'wide';
+  return 'standard';
+}

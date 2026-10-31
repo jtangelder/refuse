@@ -1,15 +1,26 @@
-import { Component, ChangeDetectionStrategy, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, viewChild, type TemplateRef } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { FuseService } from '../services/fuse.service';
 import { PresetService } from '../services/preset.service';
 import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'fuse-sidebar',
-  imports: [DecimalPipe, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [
+    DecimalPipe,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.ng.html',
   styleUrl: './sidebar.scss',
@@ -18,31 +29,13 @@ export class SidebarComponent {
   protected readonly service = inject(FuseService);
   protected readonly presetService = inject(PresetService);
   private readonly notifications = inject(NotificationService);
+  private readonly dialog = inject(MatDialog);
 
-  private readonly saveDialog = viewChild<ElementRef<HTMLDialogElement>>('saveDialog');
+  private readonly saveDialogTpl = viewChild.required<TemplateRef<unknown>>('saveDialogTpl');
 
-  protected readonly searchQuery = signal('');
   protected readonly draftName = signal('');
-
   protected readonly allPresetSlots = this.presetService.allSlots;
-
-  protected readonly filteredSlots = computed(() => {
-    const query = this.searchQuery().trim().toLowerCase();
-    const slots = this.allPresetSlots();
-    if (!query) return slots;
-    const presets = this.service.presets();
-    return slots.filter(slot => {
-      const name = (presets.get(slot)?.name || `Preset ${slot + 1}`).toLowerCase();
-      const num = String(slot + 1).padStart(2, '0');
-      return name.includes(query) || num.includes(query);
-    });
-  });
-
   private readonly presetSaveName = this.presetService.currentPresetName;
-
-  onSearchInput(event: Event) {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
-  }
 
   onDraftNameInput(event: Event) {
     this.draftName.set((event.target as HTMLInputElement).value);
@@ -54,7 +47,7 @@ export class SidebarComponent {
 
   async onListKeyDown(event: KeyboardEvent) {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-    const slots = this.filteredSlots();
+    const slots = this.allPresetSlots();
     if (slots.length === 0) return;
 
     event.preventDefault();
@@ -80,27 +73,18 @@ export class SidebarComponent {
     const slot = this.service.currentPresetSlot();
     if (slot === null || slot === undefined) return;
     this.draftName.set(this.presetSaveName());
-    const dialog = this.saveDialog()?.nativeElement;
-    if (dialog) {
-      dialog.returnValue = '';
-      dialog.showModal();
-    }
-  }
-
-  async onDialogClose() {
-    const dialog = this.saveDialog()?.nativeElement;
-    if (!dialog) return;
-    const returnValue = dialog.returnValue;
-    dialog.returnValue = '';
-
-    if (returnValue === 'save') {
-      const slot = this.service.currentPresetSlot();
-      const name = this.draftName().trim();
-      if (slot !== null && slot !== undefined && name) {
-        await this.presetService.savePreset(slot, name);
-        this.notifications.info(`Saved preset "${name}" to slot ${slot + 1}`);
+    const dialogRef = this.dialog.open(this.saveDialogTpl(), {
+      width: '380px',
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result === 'save') {
+        const name = this.draftName().trim();
+        if (slot !== null && slot !== undefined && name) {
+          await this.presetService.savePreset(slot, name);
+          this.notifications.info(`Saved preset "${name}" to slot ${slot + 1}`);
+        }
       }
-    }
+    });
   }
 
   async importFusePreset(event: Event) {

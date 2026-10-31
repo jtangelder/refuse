@@ -132,16 +132,11 @@
 }
 
 .advanced-knob-toggle {
+  --mdc-icon-button-state-layer-size: 54px;
   width: 54px;
   height: 54px;
-  border-radius: 50%;
-  border: none;
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition:
     background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
     color 0.15s cubic-bezier(0.2, 0, 0, 1),

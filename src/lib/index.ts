@@ -14,14 +14,20 @@ export {
   DspType,
   type CabinetDef,
   type ModelDef,
+  type EffectFormFactor,
   AMP_MODELS,
   CABINET_MODELS,
   EFFECT_MODELS,
+  WIDE_EFFECT_MODELS,
+  RACK_EFFECT_MODELS,
   findAmpModel,
   findEffectModel,
   findCabinetModel,
   resolveFuseModelId,
   getDelayTimeKnobIndex,
+  isWideEffect,
+  isRackUnit,
+  getEffectFormFactor,
 } from './models';
 export { type PresetDetails } from './store';
 export {
