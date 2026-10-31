@@ -1,0 +1,415 @@
+{
+  "0x3C00": {
+    "sheet": "stomp",
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x4900": {
+    "sheet": "stomp",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x4A00": {
+    "sheet": "stomp",
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x1A00": {
+    "sheet": "stomp",
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x1C00": {
+    "sheet": "stomp",
+    "x": 2000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x8800": {
+    "sheet": "stomp",
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x0700": {
+    "sheet": "stomp",
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x0301": {
+    "sheet": "stomp",
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0xBA00": {
+    "sheet": "stomp",
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x0101": {
+    "sheet": "stomp",
+    "x": 2000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x1101": {
+    "sheet": "stomp",
+    "x": 0,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0x0F01": {
+    "sheet": "stomp",
+    "x": 500,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0x1200": {
+    "sheet": "mod",
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x1300": {
+    "sheet": "mod",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x1800": {
+    "sheet": "mod",
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x1900": {
+    "sheet": "mod",
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x2D00": {
+    "sheet": "mod",
+    "x": 2000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x4000": {
+    "sheet": "mod",
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4100": {
+    "sheet": "mod",
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x2200": {
+    "sheet": "mod",
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x2900": {
+    "sheet": "mod",
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4F00": {
+    "sheet": "mod",
+    "x": 2000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x1F00": {
+    "sheet": "mod",
+    "x": 0,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0x1600": {
+    "sheet": "delay",
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x2B00": {
+    "sheet": "delay",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x2A00": {
+    "sheet": "delay",
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x4300": {
+    "sheet": "delay",
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x4800": {
+    "sheet": "delay",
+    "x": 2000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x1500": {
+    "sheet": "delay",
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4600": {
+    "sheet": "delay",
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4400": {
+    "sheet": "delay",
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4500": {
+    "sheet": "delay",
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x2100": {
+    "sheet": "reverb",
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x0B00": {
+    "sheet": "reverb",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x2400": {
+    "sheet": "reverb",
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x3A00": {
+    "sheet": "reverb",
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x2600": {
+    "sheet": "reverb",
+    "x": 2000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x3B00": {
+    "sheet": "reverb",
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4E00": {
+    "sheet": "reverb",
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4B00": {
+    "sheet": "reverb",
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4C00": {
+    "sheet": "reverb",
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x4D00": {
+    "sheet": "reverb",
+    "x": 2000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x6700": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x6400": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x7C00": {
+    "sheet": "amps",
+    "x": 1000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x5300": {
+    "sheet": "amps",
+    "x": 1500,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x6A00": {
+    "sheet": "amps",
+    "x": 2000,
+    "y": 0,
+    "width": 500,
+    "height": 500
+  },
+  "0x7500": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x7200": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x6100": {
+    "sheet": "amps",
+    "x": 1000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x7900": {
+    "sheet": "amps",
+    "x": 1500,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x5E00": {
+    "sheet": "amps",
+    "x": 2000,
+    "y": 500,
+    "width": 500,
+    "height": 500
+  },
+  "0x5D00": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0x6D00": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xF100": {
+    "sheet": "amps",
+    "x": 1000,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xF600": {
+    "sheet": "amps",
+    "x": 1500,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xF900": {
+    "sheet": "amps",
+    "x": 2000,
+    "y": 1000,
+    "width": 500,
+    "height": 500
+  },
+  "0xFF00": {
+    "sheet": "amps",
+    "x": 0,
+    "y": 1500,
+    "width": 500,
+    "height": 500
+  },
+  "0xFC00": {
+    "sheet": "amps",
+    "x": 500,
+    "y": 1500,
+    "width": 500,
+    "height": 500
+  }
+}
