@@ -196,7 +196,6 @@
     <!-- PRE-AMP SECTION -->
     <div class="mobile-zone-section">
       <div class="mobile-zone-header">
-        <span class="mobile-zone-title">Pre-Amp Pedals</span>
         <div class="mobile-empty-pills">
           @for (empty of preEmptySlots(); track empty.category) {
           <button
@@ -265,8 +264,6 @@
             ></mat-slide-toggle>
           </div>
         </div>
-        } @empty {
-        <div class="mobile-empty-drop-hint">No pre-amp pedals active</div>
         }
       </div>
     </div>
@@ -292,13 +289,11 @@
         <span class="mobile-row-title">{{ ampModelName() }}</span>
         <span class="mobile-row-subtitle">Amplifier • {{ currentCabName() }}</span>
       </div>
-      <span class="mobile-amp-pill">AMP</span>
     </div>
 
     <!-- POST-AMP SECTION -->
     <div class="mobile-zone-section">
       <div class="mobile-zone-header">
-        <span class="mobile-zone-title">Post-Amp Rack</span>
         <div class="mobile-empty-pills">
           @for (empty of postEmptySlots(); track empty.category) {
           <button
@@ -368,8 +363,6 @@
             ></mat-slide-toggle>
           </div>
         </div>
-        } @empty {
-        <div class="mobile-empty-drop-hint">No post-amp effects active</div>
         }
       </div>
     </div>
