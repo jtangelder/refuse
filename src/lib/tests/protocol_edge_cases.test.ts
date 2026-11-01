@@ -184,6 +184,38 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
       // All updates must have been transmitted in FIFO order (no messages dropped/throttled)
       expect(sentValues).toEqual([10, 20, 30, 40, 50]);
     });
+
+    it('paces consecutive packet writes to protect hardware from buffer overruns', async () => {
+      const timestamps: number[] = [];
+      const mockProtocol: IProtocol = {
+        isConnected: true,
+        isSupported: true,
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        getNextSequenceId: vi.fn().mockReturnValue(1),
+        sendPacket: vi.fn().mockImplementation(async () => {
+          timestamps.push(Date.now());
+        }),
+      };
+
+      // Send 3 packets
+      await enqueueCoalescedWrite(
+        mockProtocol,
+        'amp',
+        () => new Uint8Array([1]),
+        () => new Uint8Array([2]),
+        () => new Uint8Array([3]),
+      );
+
+      expect(timestamps.length).toBe(3);
+      // Pacing should introduce at least ~15ms between consecutive packets
+      const diff1 = timestamps[1] - timestamps[0];
+      const diff2 = timestamps[2] - timestamps[1];
+      expect(diff1).toBeGreaterThanOrEqual(14);
+      expect(diff2).toBeGreaterThanOrEqual(14);
+    });
   });
 
   describe('Defensive Preset XML Import', () => {

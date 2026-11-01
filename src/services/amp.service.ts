@@ -20,8 +20,8 @@ export class AmpService {
     return this.controller.getAmpKnobs();
   });
 
-  setAmpModelById(modelId: number) {
-    return this.controller.setAmpModelById(modelId);
+  setAmpModelById(modelId: number, knobOverrides?: ReadonlyArray<{ index: number; value: number }>) {
+    return this.controller.setAmpModelById(modelId, knobOverrides);
   }
 
   setAmpKnob(index: number, value: number) {

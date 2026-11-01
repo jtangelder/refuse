@@ -119,6 +119,19 @@ describe('AmpController', () => {
       expect(bass?.index).toBe(6);
     });
 
+    it('should set amp model by ID with knob overrides in a single transmit', async () => {
+      const model = AMP_MODELS.F57_DELUXE;
+      await controller.setAmpModelById(model.id, [
+        { index: 0, value: 175 },
+        { index: 4, value: 200 },
+      ]);
+
+      expect(store.getState().amp.modelId).toBe(model.id);
+      expect(store.getState().amp.knobs[0]).toBe(175);
+      expect(store.getState().amp.knobs[4]).toBe(200);
+      expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(2); // exactly 1 state packet + 1 apply packet
+    });
+
     it('should get settings correctly', async () => {
       await controller.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
       await controller.setAmpKnob(0, 10); // Vol

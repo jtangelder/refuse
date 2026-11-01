@@ -10,6 +10,7 @@ import { PacketBuilder } from './protocol/packet_builder';
 import { PresetImporter } from './preset_importer';
 import { enqueueWrite } from './protocol/write_queue';
 
+export { getModelDefault } from './defaults';
 export {
   DspType,
   type CabinetDef,
@@ -35,9 +36,12 @@ export {
   enqueueCoalescedWrite,
   cancelCoalescedWrite,
   flushWrites,
+  setInterPacketDelay,
+  resetInterPacketDelay,
+  DEFAULT_PACKET_DELAY_MS,
   type PacketFactory,
 } from './protocol/write_queue';
-export { LIMITS, AMP_KNOB_INDEX, type AdvancedAmpParam } from './protocol/constants';
+export { LIMITS, OFFSETS, AMP_KNOB_INDEX, type AdvancedAmpParam } from './protocol/constants';
 export { type SetEffectOptions } from './controllers/effect_controller';
 
 export interface PresetMetadata {

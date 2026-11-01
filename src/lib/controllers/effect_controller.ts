@@ -42,16 +42,16 @@ export class EffectController extends BaseController {
     if (!isValidSlot(slot)) return false;
 
     this.store.batch(() => {
+      if (modelId === 0) {
+        this.store.clearSlot(slot);
+        return;
+      }
+
       // Hardware allows one effect per DSP type; if it moved, drop the stale copy.
       this.forEachOtherSlotOfType(slot, dspType, i => {
         debug(`[EffectController] ${DspType[dspType]} moved ${i} -> ${slot}`);
         this.store.clearSlot(i);
       });
-
-      if (modelId === 0) {
-        this.store.clearSlot(slot);
-        return;
-      }
 
       this.store.updateSlotState(slot, { slot, type: dspType, modelId, enabled, knobs: normalizeKnobs(knobs) });
     });
@@ -239,6 +239,47 @@ export class EffectController extends BaseController {
     await this.syncSlots(before, slots);
   }
 
+  /**
+   * Replace all effect slots in a single atomic transaction.
+   * Clears slots that are no longer present, and writes new or updated effects
+   * directly without redundant intermediate clears or race conditions.
+   */
+  async replaceAllEffects(
+    effects: ReadonlyArray<{
+      slot: number;
+      modelId: number;
+      enabled?: boolean;
+      knobs?: ReadonlyArray<{ index: number; value: number }>;
+    }>,
+  ): Promise<void> {
+    const before = this.store.getState().slots;
+    const after: Array<EffectState | null> = new Array(LIMITS.SLOT_COUNT).fill(null);
+
+    for (const item of effects) {
+      this.assertSlot(item.slot);
+      const model = findEffectModel(item.modelId);
+      if (!model) {
+        throw new Error(`Unknown effect model ID: 0x${item.modelId.toString(16).padStart(4, '0')}`);
+      }
+      const defaults = getModelDefault(item.modelId) ?? new Uint8Array(64);
+      const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)));
+      if (item.knobs) {
+        for (const k of item.knobs) {
+          if (isValidKnobIndex(k.index)) knobs[k.index] = toByte(k.value);
+        }
+      }
+      after[item.slot] = {
+        slot: item.slot,
+        type: model.type,
+        modelId: item.modelId,
+        enabled: item.enabled ?? true,
+        knobs,
+      };
+    }
+
+    await this.syncSlots(before, after);
+  }
+
   async clearEffect(slot: number): Promise<void> {
     this.assertSlot(slot);
     const type = this.store.getState().slots[slot]?.type ?? DspType.STOMP;
@@ -252,8 +293,35 @@ export class EffectController extends BaseController {
 
   private async syncSlots(before: ReadonlyArray<EffectState | null>, after: ReadonlyArray<EffectState | null>) {
     const packets: PacketFactory[] = [];
+    const snapshotBefore = [...before];
 
-    // 1. Synchronize in-memory store state in a single atomic batch
+    // 1. Clear any active effect whose slot is now empty OR whose slot is replaced by a different DSP type.
+    // Each DSP type (Stomp, Mod, Delay, Reverb) is an independent hardware DSP unit.
+    // Overwriting a slot with a different DSP type does not disable the old DSP unit on the Mustang.
+    // An explicit clear packet must be sent for the vacated or replaced DSP block.
+    for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+      const oldEff = snapshotBefore[i];
+      if (!oldEff) continue;
+
+      const newEff = after[i];
+      if (!newEff || newEff.type !== oldEff.type) {
+        packets.push(...this.buildClearPackets(i, oldEff.type));
+      }
+    }
+
+    // 2. Transmit state updates for all new or changed effects in the target chain
+    for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+      const newEff = after[i];
+      if (!newEff) continue;
+
+      const oldEff = snapshotBefore[i];
+      if (isSameEffect(oldEff, newEff, i)) continue;
+
+      const placed: EffectState = { ...newEff, slot: i };
+      packets.push(...this.buildEffectStatePackets(placed));
+    }
+
+    // 3. Synchronize in-memory store state in a single atomic batch
     this.store.batch(() => {
       for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
         const newEffect = after[i];
@@ -262,20 +330,7 @@ export class EffectController extends BaseController {
       }
     });
 
-    // 2. Collect delta packets across all changed slots and transmit as one atomic transaction
-    for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
-      const oldEffect = before[i];
-      const newEffect = after[i];
-      if (newEffect === oldEffect && (!newEffect || newEffect.slot === i)) continue;
-
-      if (newEffect) {
-        const placed: EffectState = { ...newEffect, slot: i };
-        packets.push(...this.buildEffectStatePackets(placed));
-      } else if (oldEffect) {
-        packets.push(...this.buildClearPackets(i, oldEffect.type));
-      }
-    }
-
+    // 4. Transmit all packets as one atomic FIFO transaction
     if (packets.length > 0) {
       await this.transmit(...packets);
     }
@@ -320,4 +375,21 @@ function groupStart(slot: number): number {
 
 export function normalizeKnobs(knobs: ArrayLike<number>): number[] {
   return Array.from({ length: LIMITS.KNOB_COUNT }, (_, i) => toByte(knobs[i] ?? 0));
+}
+
+function isSameEffect(oldEff: EffectState | null, newEff: EffectState, targetSlot: number): boolean {
+  if (!oldEff) return false;
+  if (
+    oldEff.slot !== targetSlot ||
+    oldEff.type !== newEff.type ||
+    oldEff.modelId !== newEff.modelId ||
+    oldEff.enabled !== newEff.enabled
+  ) {
+    return false;
+  }
+  if (oldEff.knobs.length !== newEff.knobs.length) return false;
+  for (let i = 0; i < oldEff.knobs.length; i++) {
+    if (oldEff.knobs[i] !== newEff.knobs[i]) return false;
+  }
+  return true;
 }

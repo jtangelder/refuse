@@ -6,6 +6,22 @@ import type { IProtocol } from './protocol_interface';
  */
 export type PacketFactory = () => Uint8Array;
 
+/**
+ * Pacing delay (ms) between consecutive USB HID packets.
+ * Gives the Mustang microcontroller time to process each packet and reply without buffer overrun.
+ */
+export const DEFAULT_PACKET_DELAY_MS = 20;
+
+let currentPacketDelayMs = DEFAULT_PACKET_DELAY_MS;
+
+export function setInterPacketDelay(ms: number): void {
+  currentPacketDelayMs = ms;
+}
+
+export function resetInterPacketDelay(): void {
+  currentPacketDelayMs = DEFAULT_PACKET_DELAY_MS;
+}
+
 interface Waiter {
   resolve: () => void;
   reject: (err: unknown) => void;
@@ -20,11 +36,12 @@ interface QueuedTransaction {
  * Serialized FIFO transaction queue for Mustang USB HID communication.
  *
  * Ensures all transactions and packets are sent to the amplifier in exact sequential order
- * without interleaving, throttling, or dropping messages.
+ * without interleaving or dropped messages, paced to avoid hardware buffer overflows.
  */
 class ProtocolWriteQueue {
   private readonly queue: QueuedTransaction[] = [];
   private inFlight = false;
+  private hasSentBefore = false;
   private idleWaiters: Array<() => void> = [];
 
   constructor(private readonly protocol: IProtocol) {}
@@ -68,8 +85,12 @@ class ProtocolWriteQueue {
       while (this.queue.length > 0) {
         const entry = this.queue.shift()!;
         try {
-          for (const build of entry.packets) {
-            await this.protocol.sendPacket(build());
+          for (let i = 0; i < entry.packets.length; i++) {
+            if (currentPacketDelayMs > 0 && (i > 0 || this.hasSentBefore)) {
+              await new Promise(resolve => setTimeout(resolve, currentPacketDelayMs));
+            }
+            await this.protocol.sendPacket(entry.packets[i]());
+            this.hasSentBefore = true;
           }
           entry.waiters.forEach(w => w.resolve());
         } catch (err) {
@@ -78,6 +99,7 @@ class ProtocolWriteQueue {
       }
     } finally {
       this.inFlight = false;
+      this.hasSentBefore = false;
       const waiters = this.idleWaiters.splice(0);
       waiters.forEach(resolve => resolve());
     }

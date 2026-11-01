@@ -231,6 +231,31 @@ describe('EffectController', () => {
       // F (Large Hall) should be gone
     });
 
+    it('should not clear other slots when receiving EFFECT_UPDATE with modelId 0', () => {
+      // Slot 0 has Overdrive (STOMP)
+      store.updateSlotState(0, {
+        type: DspType.STOMP,
+        slot: 0,
+        modelId: EFFECT_MODELS.OVERDRIVE.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+
+      // Amp sends clear / empty report for slot 1 with dspType STOMP
+      controller.handleEffectUpdate({
+        type: 'EFFECT_UPDATE',
+        slot: 1,
+        dspType: DspType.STOMP,
+        modelId: 0,
+        enabled: false,
+        knobs: new Array(32).fill(0),
+      });
+
+      // Slot 0 must remain intact
+      expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+      expect(store.getState().slots[1]).toBeNull();
+    });
+
     it('should sync active Delay Time knob via setDelayTempoBpm', async () => {
       await controller.setEffectById(2, EFFECT_MODELS.MONO_DELAY.id);
 
@@ -238,6 +263,54 @@ describe('EffectController', () => {
       expect(updated).toBe(true);
       // Mono Delay 'Delay Time' is knob index 1
       expect(store.getState().slots[2]?.knobs[1]).toBe(85);
+    });
+    it('should replace all effects in one atomic transaction', async () => {
+      // Setup existing effect in slot 1 and slot 4
+      await controller.setEffectById(1, EFFECT_MODELS.SINE_CHORUS.id);
+      await controller.setEffectById(4, EFFECT_MODELS.SMALL_HALL.id);
+      vi.mocked(mockProtocol.sendPacket).mockClear();
+
+      // Replace with new effects in slot 0 (Overdrive) and slot 4 (Mono Delay)
+      await controller.replaceAllEffects([
+        { slot: 0, modelId: EFFECT_MODELS.OVERDRIVE.id },
+        { slot: 4, modelId: EFFECT_MODELS.MONO_DELAY.id },
+      ]);
+
+      const slots = store.getState().slots;
+      expect(slots[0]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+      expect(slots[1]).toBeNull(); // Slot 1 cleared
+      expect(slots[4]?.modelId).toBe(EFFECT_MODELS.MONO_DELAY.id); // Slot 4 overwritten with Delay
+
+      // Should have sent packets:
+      // - Clear slot 1 (Sine Chorus MOD vacated) + apply (2)
+      // - Clear slot 4 (Small Hall REVERB replaced by DELAY) + apply (2)
+      // - Overdrive state + apply into slot 0 (2)
+      // - Delay state + apply into slot 4 (2)
+      // Total 8 packets
+      expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(8);
+    });
+
+    it('should clear unused effects when randomizing from chain with delay to chain without delay', async () => {
+      // Setup chain A with Delay at slot 4 and Stomp at slot 0
+      await controller.replaceAllEffects([
+        { slot: 0, modelId: EFFECT_MODELS.OVERDRIVE.id },
+        { slot: 4, modelId: EFFECT_MODELS.MONO_DELAY.id },
+      ]);
+      vi.mocked(mockProtocol.sendPacket).mockClear();
+
+      // Replace with chain B without Delay (only Fuzz in slot 0)
+      await controller.replaceAllEffects([
+        { slot: 0, modelId: EFFECT_MODELS.FUZZ.id },
+      ]);
+
+      const slots = store.getState().slots;
+      expect(slots[0]?.modelId).toBe(EFFECT_MODELS.FUZZ.id);
+      expect(slots[4]).toBeNull(); // Slot 4 delay vacated
+
+      // - Clear slot 4 (Delay vacated) + apply (2)
+      // - Fuzz state + apply into slot 0 (same DSP type STOMP overwrites slot 0) (2)
+      // Total 4 packets
+      expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(4);
     });
   });
 });

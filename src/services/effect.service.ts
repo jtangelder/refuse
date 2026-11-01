@@ -35,6 +35,17 @@ export class EffectService {
     return this.controller.swapEffects(slotA, slotB);
   }
 
+  replaceAllEffects(
+    effects: ReadonlyArray<{
+      slot: number;
+      modelId: number;
+      enabled?: boolean;
+      knobs?: ReadonlyArray<{ index: number; value: number }>;
+    }>,
+  ) {
+    return this.controller.replaceAllEffects(effects);
+  }
+
   clearEffect(slot: number) {
     return this.controller.clearEffect(slot);
   }

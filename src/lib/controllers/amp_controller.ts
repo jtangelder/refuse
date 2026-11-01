@@ -46,18 +46,30 @@ export class AmpController extends BaseController {
   // Outbound (UI -> store -> hardware)
   // ---------------------------------------------------------------------------
 
-  async setAmpModelById(modelId: number): Promise<void> {
+  async setAmpModelById(
+    modelId: number,
+    knobOverrides?: ReadonlyArray<{ index: number; value: number }>,
+  ): Promise<void> {
     debug(`[AmpController] setAmpModelById(0x${modelId.toString(16)})`);
     if (!findAmpModel(modelId)) {
       throw new Error(`Unknown amp model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
     }
 
     const defaults = getModelDefault(modelId) ?? new Uint8Array(64);
+    const knobs = Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END));
+    if (knobOverrides) {
+      for (const override of knobOverrides) {
+        if (isValidKnobIndex(override.index)) {
+          knobs[override.index] = toByte(override.value);
+        }
+      }
+    }
+
     const newState = normalizeAmpState({
       modelId,
       enabled: true,
       cabinetId: defaults[OFFSETS.CABINET_ID],
-      knobs: Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)),
+      knobs,
     });
 
     this.commit(newState);
