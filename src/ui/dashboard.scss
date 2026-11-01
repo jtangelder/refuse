@@ -56,23 +56,6 @@
   color: var(--mat-sys-on-surface);
 }
 
-.preset-play-badge {
-  width: 36px;
-  height: 36px;
-  background: var(--mat-sys-secondary-container);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--mat-sys-on-secondary-container);
-
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
-}
-
 .top-preset-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -213,33 +196,4 @@
   @media (max-width: 850px) {
     padding: 10px 12px 20px;
   }
-}
-
-.dialog-subtitle {
-  margin: 0 0 16px;
-  font-size: 0.875rem;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.dialog-form-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 4px;
-}
-
-.dialog-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding-top: 4px;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.full-width {
-  grid-column: 1 / -1;
-  width: 100%;
 }

@@ -69,24 +69,38 @@
 </nav>
 
 <ng-template #saveDialogTpl>
-  <h2 mat-dialog-title>Save Preset</h2>
+  <h2 mat-dialog-title>Save Active Preset</h2>
   <mat-dialog-content>
-    <mat-form-field appearance="outline" class="dialog-full-width">
-      <mat-label>Preset Name</mat-label>
-      <input
-        #presetNameInput
-        matInput
-        type="text"
-        maxlength="32"
-        required
-        [value]="draftName()"
-        (input)="onDraftNameInput($event)"
-      />
-    </mat-form-field>
+    <p class="dialog-subtitle">Choose a target slot and name on your amplifier</p>
+    <div class="dialog-form-stack">
+      <mat-form-field appearance="outline" class="dialog-full-width">
+        <mat-label>Target Slot</mat-label>
+        <mat-select [value]="targetSlot()" (selectionChange)="targetSlot.set($event.value)">
+          @for (slot of allPresetSlots(); track slot) {
+            <mat-option [value]="slot">
+              {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="dialog-full-width">
+        <mat-label>Preset Name</mat-label>
+        <input
+          #presetNameInput
+          matInput
+          type="text"
+          maxlength="31"
+          required
+          [value]="draftName()"
+          (input)="onDraftNameInput($event)"
+        />
+      </mat-form-field>
+    </div>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button mat-dialog-close>Cancel</button>
-    <button mat-flat-button color="primary" [mat-dialog-close]="'save'">Save</button>
+    <button mat-flat-button color="primary" [mat-dialog-close]="'save'">Save Preset</button>
   </mat-dialog-actions>
 </ng-template>
 

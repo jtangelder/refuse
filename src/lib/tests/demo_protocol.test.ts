@@ -2,6 +2,8 @@ import { test, expect } from 'vitest';
 import { DemoProtocol } from '../protocol/demo_protocol';
 import { FuseAPI } from '../index';
 import { Store } from '../store';
+import { getModelDefault } from '../defaults';
+import { OFFSETS } from '../protocol/constants';
 
 test('DemoProtocol should connect and emit random configuration', async () => {
   const protocol = new DemoProtocol();
@@ -33,6 +35,11 @@ test('DemoProtocol should connect and emit random configuration', async () => {
   const ampPacket = packets[1];
   expect(ampPacket[0]).toBe(0x1c);
   expect(ampPacket[2]).toBe(0x05); // AMP
+
+  const ampModelId = (ampPacket[16] << 8) | ampPacket[17];
+  const defaults = getModelDefault(ampModelId);
+  const expectedCabId = defaults ? (defaults[OFFSETS.CABINET_ID] !== 0 ? defaults[OFFSETS.CABINET_ID] : 0x08) : 0x01;
+  expect(ampPacket[OFFSETS.CABINET_ID]).toBe(expectedCabId);
 
   // Verify Effect Updates and Preset Info packets
   const effectPackets = packets.slice(2).filter(p => p[2] !== 0x04);

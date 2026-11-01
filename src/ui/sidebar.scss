@@ -96,7 +96,6 @@
   }
 
   .slot-num {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     font-size: 0.75rem;
     font-weight: 600;
@@ -136,7 +135,19 @@
   }
 }
 
+.dialog-subtitle {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.dialog-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
 .dialog-full-width {
   width: 100%;
-  margin-top: 8px;
 }

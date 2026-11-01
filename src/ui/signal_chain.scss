@@ -552,10 +552,33 @@
   border-top: none;
 }
 
-.dock-btn {
+.dock-spacer {
+  flex: 1;
+}
+
+.dock-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dice-btn {
+  --mdc-icon-button-state-layer-size: 32px;
+  width: 32px;
   height: 32px;
-  font-size: 0.8125rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--md-corner-sm);
+  cursor: pointer;
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   mat-icon {
     font-size: 18px;
@@ -563,35 +586,28 @@
     height: 18px;
     color: var(--mat-sys-primary);
   }
-}
 
-.dock-spacer {
-  flex: 1;
-}
+  &:hover {
+    background: var(--mat-sys-surface-container-highest);
+    border-color: var(--mat-sys-outline);
+    transform: rotate(20deg) scale(1.08);
+  }
 
-.dock-tap {
-  display: flex;
-  align-items: center;
+  &:active {
+    transform: rotate(72deg) scale(0.92);
+  }
 }
 
 .tap-pill {
   height: 32px;
   border-radius: var(--md-corner-sm);
-  padding: 0 10px 0 12px;
-  font-family: var(--font-mono);
+  padding: 0 12px;
   font-variant-numeric: tabular-nums;
   font-size: 0.75rem;
   font-weight: 600;
-
-  .tap-badge {
-    background: var(--mat-sys-secondary-container);
-    color: var(--mat-sys-on-secondary-container);
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-family: var(--font-sans);
-    font-size: 0.6875rem;
-    font-weight: 600;
-  }
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ==========================================================================

@@ -1,22 +1,9 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  computed,
-  inject,
-  input,
-  output,
-  signal,
-  viewChild,
-  type TemplateRef,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { AMP_MODELS, CABINET_MODELS, EFFECT_MODELS, DspType, type AdvancedAmpParam } from '../lib';
 import { SignalChainComponent } from './signal_chain';
 import { AmpEditorComponent } from './amp_editor';
@@ -29,26 +16,6 @@ import { EffectService } from '../services/effect.service';
 import { PresetService } from '../services/preset.service';
 import { NotificationService } from '../services/notification.service';
 
-const FUSE_GENRES: readonly string[] = [
-  '',
-  'Alternative',
-  'Blues',
-  'Classic Rock',
-  'Country',
-  'Folk',
-  'Funk / R&B',
-  'Grunge',
-  'Heavy Metal',
-  'Indie',
-  'Jazz',
-  'Pop',
-  'Punk',
-  'Reggae',
-  'Rock',
-  'Surf',
-  'Worship',
-];
-
 @Component({
   selector: 'fuse-dashboard',
   imports: [
@@ -57,9 +24,6 @@ const FUSE_GENRES: readonly string[] = [
     MatMenuModule,
     MatTooltipModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     SignalChainComponent,
     AmpEditorComponent,
     EffectEditorComponent,
@@ -78,20 +42,6 @@ export class DashboardComponent {
 
   isMobile = input<boolean>(false);
   toggleSidebar = output<void>();
-
-  private readonly saveAsDialogTpl = viewChild.required<TemplateRef<unknown>>('saveAsDialogTpl');
-  private readonly presetInfoDialogTpl = viewChild.required<TemplateRef<unknown>>('presetInfoDialogTpl');
-
-  protected readonly genres = FUSE_GENRES;
-
-  protected readonly saveAsDraftName = signal('');
-  protected readonly saveAsTargetSlot = signal(0);
-  protected readonly infoAuthor = signal('');
-  protected readonly infoDescription = signal('');
-  protected readonly infoTags = signal('');
-  protected readonly infoGenre1 = signal('');
-  protected readonly infoGenre2 = signal('');
-  protected readonly infoGenre3 = signal('');
 
   protected readonly currentPresetName = this.presetService.currentPresetName;
 
@@ -195,30 +145,6 @@ export class DashboardComponent {
     await this.effectService.moveEffect(fromSlot, toSlot);
   }
 
-  openSaveAsDialog() {
-    const slot = this.service.currentPresetSlot() ?? 0;
-    this.saveAsTargetSlot.set(slot);
-    this.saveAsDraftName.set(this.currentPresetName());
-    const dialogRef = this.dialog.open(this.saveAsDialogTpl(), {
-      width: '420px',
-      maxWidth: '94dvw',
-    });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result === 'confirm') {
-        const targetSlot = this.saveAsTargetSlot();
-        const name = this.saveAsDraftName().trim();
-        if (!name) return;
-        await this.presetService.savePreset(targetSlot, name);
-        this.notifications.info(`Saved preset "${name}" to slot ${targetSlot + 1}.`);
-      }
-    });
-  }
-
-  onSaveAsNameInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.saveAsDraftName.set(input.value);
-  }
-
   openAboutDialog() {
     this.dialog.open(WelcomeComponent, {
       width: '460px',
@@ -227,47 +153,66 @@ export class DashboardComponent {
     });
   }
 
-  openPresetInfoDialog() {
-    const details = this.service.presetDetails();
-    this.infoAuthor.set(details.author ?? '');
-    this.infoDescription.set(details.description ?? '');
-    this.infoTags.set(details.tags ?? '');
-    this.infoGenre1.set(details.genre1 ?? '');
-    this.infoGenre2.set(details.genre2 ?? '');
-    this.infoGenre3.set(details.genre3 ?? '');
+  private isRandomizing = false;
 
-    const dialogRef = this.dialog.open(this.presetInfoDialogTpl(), {
-      width: '560px',
-      maxWidth: '94dvw',
-    });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'confirm') {
-        this.presetService.updatePresetDetails({
-          author: this.infoAuthor().trim(),
-          description: this.infoDescription().trim(),
-          tags: this.infoTags().trim(),
-          genre1: this.infoGenre1(),
-          genre2: this.infoGenre2(),
-          genre3: this.infoGenre3(),
-        });
-        this.notifications.info('Updated preset information.');
+  async randomizeSetup() {
+    if (this.isRandomizing) return;
+    this.isRandomizing = true;
+    try {
+      // 1. Pick a random amplifier model
+      const amps = Object.values(AMP_MODELS);
+      const randomAmp = amps[Math.floor(Math.random() * amps.length)];
+      await this.ampService.setAmpModelById(randomAmp.id);
+
+      // Musically randomize active amp knobs (between ~3.5 and 7.5 on 1-10 dial)
+      for (let i = 0; i < randomAmp.knobs.length; i++) {
+        if (randomAmp.knobs[i]) {
+          const value = Math.floor(90 + Math.random() * 100);
+          await this.ampService.setAmpKnob(i, value);
+        }
       }
-    });
-  }
 
-  onInfoFieldInput(field: 'author' | 'description' | 'tags', event: Event) {
-    const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-    const val = target.value;
-    switch (field) {
-      case 'author':
-        this.infoAuthor.set(val);
-        break;
-      case 'description':
-        this.infoDescription.set(val);
-        break;
-      case 'tags':
-        this.infoTags.set(val);
-        break;
+      // 2. Clear any currently active effect slots
+      const currentEffects = this.effectService.allSettings();
+      for (const fx of currentEffects) {
+        if (fx && fx.modelId !== 0) {
+          await this.effectService.clearEffect(fx.slot);
+        }
+      }
+
+      // 3. Select 1 to 3 random effects adhering to Mustang hardware slot rules
+      const allTypes = [DspType.STOMP, DspType.MOD, DspType.DELAY, DspType.REVERB];
+      const shuffledTypes = [...allTypes].sort(() => Math.random() - 0.5);
+      const count = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3 effects
+      const chosenTypes = shuffledTypes.slice(0, count);
+
+      const chosenEffectNames: string[] = [];
+
+      for (const type of chosenTypes) {
+        let slot: number;
+        if (type === DspType.STOMP) {
+          slot = 0;
+        } else if (type === DspType.MOD) {
+          slot = Math.random() > 0.4 ? 4 : 1;
+        } else if (type === DspType.DELAY) {
+          slot = Math.random() > 0.2 ? 5 : 2;
+        } else {
+          slot = Math.random() > 0.1 ? 6 : 3;
+        }
+
+        const matching = Object.values(EFFECT_MODELS).filter(m => m.type === type);
+        if (matching.length === 0) continue;
+        const effect = matching[Math.floor(Math.random() * matching.length)];
+
+        await this.effectService.setEffect(slot, effect.id);
+        chosenEffectNames.push(effect.name);
+      }
+
+      this.activeSlot.set('amp');
+      const fxSummary = chosenEffectNames.length > 0 ? ` + ${chosenEffectNames.join(', ')}` : '';
+      this.notifications.info(`Rolled new sound: ${randomAmp.name}${fxSummary}`);
+    } finally {
+      this.isRandomizing = false;
     }
   }
 

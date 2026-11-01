@@ -6,395 +6,398 @@
   [style.--empty-scale]="emptyScale()"
 >
   @if (!isMobile()) {
-    <!-- DESKTOP: Main Audio Cable Track with Horizontal Drag & Drop Group -->
-    <div class="chain-track" cdkDropListGroup>
-      <!-- Continuous Audio Cable running through center -->
-      <div class="audio-cable-line" aria-hidden="true">
-        <div class="cable-start-arrow"></div>
-        <div class="cable-end-dot"></div>
+  <!-- DESKTOP: Main Audio Cable Track with Horizontal Drag & Drop Group -->
+  <div class="chain-track" cdkDropListGroup>
+    <!-- Continuous Audio Cable running through center -->
+    <div class="audio-cable-line" aria-hidden="true">
+      <div class="cable-start-arrow"></div>
+      <div class="cable-end-dot"></div>
+    </div>
+
+    <!-- PRE-AMP DROP LIST -->
+    <div
+      class="zone-drop-list pre-drop-list"
+      cdkDropList
+      id="pre-drop-list"
+      cdkDropListOrientation="horizontal"
+      [cdkDropListData]="preEffects()"
+      (cdkDropListDropped)="onDropPre($event)"
+    >
+      @for (item of preEffects(); track item.type) {
+      <!-- Occupied Pedal on Wire (Draggable) -->
+      <div
+        class="pedal-node"
+        cdkDrag
+        [cdkDragData]="item"
+        [class.selected]="activeSlot() === item.slot"
+        [class.bypassed]="!item.enabled"
+        [class.wide-device]="isWideEffect(item.modelId)"
+        [class.rack-device]="isRackUnit(item.modelId)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
+        [matTooltip]="'Double-click to ' + (item.enabled ? 'bypass' : 'enable')"
+        (click)="onSelectSlot(item.slot)"
+        (dblclick)="onToggleBypass($event, item)"
+        (keydown.enter)="onSelectSlot(item.slot)"
+        (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
+        (keydown.b)="onToggleBypass($event, item)"
+      >
+        <!-- Drag Placeholder on Wire -->
+        <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
+          <div class="placeholder-wire-circle">
+            <mat-icon aria-hidden="true">add</mat-icon>
+          </div>
+          <span class="placeholder-label">{{ item.typeTitle }}</span>
+        </div>
+
+        <!-- Drag Preview (Floating pedal with aura) -->
+        <div class="pedal-drag-preview" *cdkDragPreview [style.--chain-scale]="chainScale()">
+          <div class="pedal-sprite-frame">
+            <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
+          </div>
+          <span class="preview-title">{{ item.model }}</span>
+        </div>
+
+        <!-- Pedal Sprite Frame (Centered on Audio Wire) -->
+        <div class="pedal-sprite-frame" aria-hidden="true">
+          <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
+        </div>
+
+        <!-- Pedal Label Bar (Bottom Rail) -->
+        <div class="pedal-info-bar">
+          <span class="pedal-title" [title]="item.model">{{ item.model }}</span>
+          <span class="pedal-tag">{{ !item.enabled ? 'Bypassed' : item.typeTitle }}</span>
+        </div>
+      </div>
+      }
+
+      <!-- Empty Slot Nodes on Wire (+ CATEGORY) -->
+      @for (empty of preEmptySlots(); track empty.category) {
+      <button
+        type="button"
+        class="wire-empty-node"
+        [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
+        [attr.aria-label]="'Add ' + empty.label"
+        (click)="onSelectEmpty(empty.targetSlot, empty.category)"
+      >
+        <span class="empty-slot-card">
+          <span class="empty-plus" aria-hidden="true">+</span>
+          <span class="empty-label">{{ empty.label }}</span>
+        </span>
+        <span class="empty-info-spacer" aria-hidden="true"></span>
+      </button>
+      }
+    </div>
+
+    <!-- CENTER: AMPLIFIER (Directly on wire) -->
+    <div
+      class="amp-node"
+      [class.selected]="activeSlot() === 'amp'"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="'Amplifier: ' + ampModelName() + ', ' + currentCabName()"
+      (click)="onSelectAmp()"
+      (keydown.enter)="onSelectAmp()"
+      (keydown.space)="$event.preventDefault(); onSelectAmp()"
+    >
+      <!-- Amp Sprite Frame (Centered on Audio Wire) -->
+      <div class="amp-sprite-frame" aria-hidden="true">
+        <div class="amp-icon {{ getAmpClass(ampModelName(), ampSettings()?.modelId) }}"></div>
       </div>
 
-      <!-- PRE-AMP DROP LIST -->
+      <!-- Amp Info Bar (Bottom Rail) -->
+      <div class="amp-info-bar">
+        <span class="amp-title">{{ ampModelName() }}</span>
+        <span class="cab-title">{{ currentCabName() }}</span>
+      </div>
+    </div>
+
+    <!-- POST-AMP DROP LIST -->
+    <div
+      class="zone-drop-list post-drop-list"
+      cdkDropList
+      id="post-drop-list"
+      cdkDropListOrientation="horizontal"
+      [cdkDropListData]="postEffects()"
+      [cdkDropListEnterPredicate]="canDropInPost"
+      (cdkDropListDropped)="onDropPost($event)"
+    >
+      @for (item of postEffects(); track item.type) {
+      <!-- Occupied Post Pedal / Rack on Wire (Draggable) -->
       <div
-        class="zone-drop-list pre-drop-list"
+        class="pedal-node post-node"
+        cdkDrag
+        [cdkDragData]="item"
+        [class.selected]="activeSlot() === item.slot"
+        [class.bypassed]="!item.enabled"
+        [class.wide-device]="isWideEffect(item.modelId)"
+        [class.rack-device]="isRackUnit(item.modelId)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
+        [matTooltip]="'Double-click to ' + (item.enabled ? 'bypass' : 'enable')"
+        (click)="onSelectSlot(item.slot)"
+        (dblclick)="onToggleBypass($event, item)"
+        (keydown.enter)="onSelectSlot(item.slot)"
+        (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
+        (keydown.b)="onToggleBypass($event, item)"
+      >
+        <!-- Drag Placeholder on Wire -->
+        <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
+          <div class="placeholder-wire-circle">
+            <mat-icon aria-hidden="true">add</mat-icon>
+          </div>
+          <span class="placeholder-label">{{ item.typeTitle }}</span>
+        </div>
+
+        <!-- Drag Preview -->
+        <div class="pedal-drag-preview" *cdkDragPreview [style.--chain-scale]="chainScale()">
+          <div class="pedal-sprite-frame">
+            <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
+          </div>
+          <span class="preview-title">{{ item.model }}</span>
+        </div>
+
+        <!-- Pedal Sprite Frame (Centered on Audio Wire) -->
+        <div class="pedal-sprite-frame" aria-hidden="true">
+          <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
+        </div>
+
+        <!-- Pedal Info Bar (Bottom Rail) -->
+        <div class="pedal-info-bar">
+          <span class="pedal-title" [title]="item.model">{{ item.model }}</span>
+          <span class="pedal-tag">{{ !item.enabled ? 'Bypassed' : item.typeTitle }}</span>
+        </div>
+      </div>
+      }
+
+      <!-- Empty Slot Nodes on Wire (+ CATEGORY) -->
+      @for (empty of postEmptySlots(); track empty.category) {
+      <button
+        type="button"
+        class="wire-empty-node"
+        [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
+        [attr.aria-label]="'Add ' + empty.label"
+        (click)="onSelectEmpty(empty.targetSlot, empty.category)"
+      >
+        <span class="empty-slot-card">
+          <span class="empty-plus" aria-hidden="true">+</span>
+          <span class="empty-label">{{ empty.label }}</span>
+        </span>
+        <span class="empty-info-spacer" aria-hidden="true"></span>
+      </button>
+      }
+    </div>
+  </div>
+  } @else {
+  <!-- MOBILE (Option A): Vertical Touch-Friendly Signal Chain List -->
+  <div class="mobile-chain-track" cdkDropListGroup>
+    <!-- PRE-AMP SECTION -->
+    <div class="mobile-zone-section">
+      <div class="mobile-zone-header">
+        <span class="mobile-zone-title">Pre-Amp Pedals</span>
+        <div class="mobile-empty-pills">
+          @for (empty of preEmptySlots(); track empty.category) {
+          <button
+            type="button"
+            class="mobile-empty-pill"
+            [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
+            [attr.aria-label]="'Add ' + empty.label + ' to Pre-Amp'"
+            (click)="onSelectEmpty(empty.targetSlot, empty.category)"
+          >
+            <mat-icon aria-hidden="true">add</mat-icon>
+            <span>{{ empty.label }}</span>
+          </button>
+          }
+        </div>
+      </div>
+
+      <div
+        class="mobile-drop-list"
         cdkDropList
-        id="pre-drop-list"
-        cdkDropListOrientation="horizontal"
+        id="mobile-pre-drop-list"
+        cdkDropListOrientation="vertical"
         [cdkDropListData]="preEffects()"
         (cdkDropListDropped)="onDropPre($event)"
       >
         @for (item of preEffects(); track item.type) {
-          <!-- Occupied Pedal on Wire (Draggable) -->
-          <div
-            class="pedal-node"
-            cdkDrag
-            [cdkDragData]="item"
-            [class.selected]="activeSlot() === item.slot"
-            [class.bypassed]="!item.enabled"
-            [class.wide-device]="isWideEffect(item.modelId)"
-            [class.rack-device]="isRackUnit(item.modelId)"
-            tabindex="0"
-            role="button"
-            [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
-            [matTooltip]="'Double-click to ' + (item.enabled ? 'bypass' : 'enable')"
-            (click)="onSelectSlot(item.slot)"
-            (dblclick)="onToggleBypass($event, item)"
-            (keydown.enter)="onSelectSlot(item.slot)"
-            (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
-            (keydown.b)="onToggleBypass($event, item)"
-          >
-            <!-- Drag Placeholder on Wire -->
-            <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
-              <div class="placeholder-wire-circle">
-                <mat-icon aria-hidden="true">add</mat-icon>
-              </div>
-              <span class="placeholder-label">{{ item.typeTitle }}</span>
-            </div>
+        <div
+          class="mobile-chain-row"
+          cdkDrag
+          [cdkDragData]="item"
+          [class.selected]="activeSlot() === item.slot"
+          [class.bypassed]="!item.enabled"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
+          (click)="onSelectSlot(item.slot)"
+          (keydown.enter)="onSelectSlot(item.slot)"
+          (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
+        >
+          <div class="mobile-drag-placeholder" *cdkDragPlaceholder></div>
 
-            <!-- Drag Preview (Floating pedal with aura) -->
-            <div class="pedal-drag-preview" *cdkDragPreview [style.--chain-scale]="chainScale()">
-              <div class="pedal-sprite-frame">
-                <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
-              </div>
-              <span class="preview-title">{{ item.model }}</span>
-            </div>
-
-            <!-- Pedal Sprite Frame (Centered on Audio Wire) -->
-            <div class="pedal-sprite-frame" aria-hidden="true">
-              <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
-            </div>
-
-            <!-- Pedal Label Bar (Bottom Rail) -->
-            <div class="pedal-info-bar">
-              <span class="pedal-title" [title]="item.model">{{ item.model }}</span>
-              <span class="pedal-tag">{{ !item.enabled ? 'Bypassed' : item.typeTitle }}</span>
-            </div>
-          </div>
-        }
-
-        <!-- Empty Slot Nodes on Wire (+ CATEGORY) -->
-        @for (empty of preEmptySlots(); track empty.category) {
           <button
             type="button"
-            class="wire-empty-node"
-            [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
-            [attr.aria-label]="'Add ' + empty.label"
-            (click)="onSelectEmpty(empty.targetSlot, empty.category)"
+            class="mobile-drag-handle"
+            cdkDragHandle
+            [attr.aria-label]="'Drag handle to reorder ' + item.model"
+            (click)="$event.stopPropagation()"
           >
-            <span class="empty-slot-card">
-              <span class="empty-plus" aria-hidden="true">+</span>
-              <span class="empty-label">{{ empty.label }}</span>
-            </span>
-            <span class="empty-info-spacer" aria-hidden="true"></span>
+            <mat-icon aria-hidden="true">drag_indicator</mat-icon>
           </button>
+
+          <div class="mobile-sprite-thumb" [class.rack-thumb]="isRackUnit(item.modelId)" aria-hidden="true">
+            <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
+          </div>
+
+          <div class="mobile-row-text">
+            <span class="mobile-row-title">{{ item.model }}</span>
+            <span class="mobile-row-subtitle">{{ item.typeTitle }}{{ !item.enabled ? ' • Bypassed' : '' }}</span>
+          </div>
+
+          <div class="mobile-row-toggle" (click)="$event.stopPropagation()">
+            <mat-slide-toggle
+              color="primary"
+              [checked]="item.enabled"
+              [attr.aria-label]="'Toggle ' + item.model"
+              (change)="onToggleBypassSlide(item, $event.checked)"
+            ></mat-slide-toggle>
+          </div>
+        </div>
+        } @empty {
+        <div class="mobile-empty-drop-hint">No pre-amp pedals active</div>
         }
       </div>
+    </div>
 
-      <!-- CENTER: AMPLIFIER (Directly on wire) -->
-      <div
-        class="amp-node"
-        [class.selected]="activeSlot() === 'amp'"
-        tabindex="0"
-        role="button"
-        [attr.aria-label]="'Amplifier: ' + ampModelName() + ', ' + currentCabName()"
-        (click)="onSelectAmp()"
-        (keydown.enter)="onSelectAmp()"
-        (keydown.space)="$event.preventDefault(); onSelectAmp()"
-      >
-        <!-- Amp Sprite Frame (Centered on Audio Wire) -->
-        <div class="amp-sprite-frame" aria-hidden="true">
-          <div class="amp-icon {{ getAmpClass(ampModelName(), ampSettings()?.modelId) }}"></div>
-        </div>
+    <!-- AMPLIFIER ROW -->
+    <div
+      class="mobile-amp-row"
+      [class.selected]="activeSlot() === 'amp'"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="'Amplifier: ' + ampModelName() + ', ' + currentCabName()"
+      (click)="onSelectAmp()"
+      (keydown.enter)="onSelectAmp()"
+      (keydown.space)="$event.preventDefault(); onSelectAmp()"
+    >
+      <div class="mobile-amp-lead" aria-hidden="true">
+        <mat-icon aria-hidden="true">speaker</mat-icon>
+      </div>
+      <div class="mobile-amp-thumb" aria-hidden="true">
+        <div class="amp-icon {{ getAmpClass(ampModelName(), ampSettings()?.modelId) }}"></div>
+      </div>
+      <div class="mobile-row-text">
+        <span class="mobile-row-title">{{ ampModelName() }}</span>
+        <span class="mobile-row-subtitle">Amplifier • {{ currentCabName() }}</span>
+      </div>
+      <span class="mobile-amp-pill">AMP</span>
+    </div>
 
-        <!-- Amp Info Bar (Bottom Rail) -->
-        <div class="amp-info-bar">
-          <span class="amp-title">{{ ampModelName() }}</span>
-          <span class="cab-title">{{ currentCabName() }}</span>
+    <!-- POST-AMP SECTION -->
+    <div class="mobile-zone-section">
+      <div class="mobile-zone-header">
+        <span class="mobile-zone-title">Post-Amp Rack</span>
+        <div class="mobile-empty-pills">
+          @for (empty of postEmptySlots(); track empty.category) {
+          <button
+            type="button"
+            class="mobile-empty-pill"
+            [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
+            [attr.aria-label]="'Add ' + empty.label + ' to Post-Amp'"
+            (click)="onSelectEmpty(empty.targetSlot, empty.category)"
+          >
+            <mat-icon aria-hidden="true">add</mat-icon>
+            <span>{{ empty.label }}</span>
+          </button>
+          }
         </div>
       </div>
 
-      <!-- POST-AMP DROP LIST -->
       <div
-        class="zone-drop-list post-drop-list"
+        class="mobile-drop-list"
         cdkDropList
-        id="post-drop-list"
-        cdkDropListOrientation="horizontal"
+        id="mobile-post-drop-list"
+        cdkDropListOrientation="vertical"
         [cdkDropListData]="postEffects()"
         [cdkDropListEnterPredicate]="canDropInPost"
         (cdkDropListDropped)="onDropPost($event)"
       >
         @for (item of postEffects(); track item.type) {
-          <!-- Occupied Post Pedal / Rack on Wire (Draggable) -->
-          <div
-            class="pedal-node post-node"
-            cdkDrag
-            [cdkDragData]="item"
-            [class.selected]="activeSlot() === item.slot"
-            [class.bypassed]="!item.enabled"
-            [class.wide-device]="isWideEffect(item.modelId)"
-            [class.rack-device]="isRackUnit(item.modelId)"
-            tabindex="0"
-            role="button"
-            [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
-            [matTooltip]="'Double-click to ' + (item.enabled ? 'bypass' : 'enable')"
-            (click)="onSelectSlot(item.slot)"
-            (dblclick)="onToggleBypass($event, item)"
-            (keydown.enter)="onSelectSlot(item.slot)"
-            (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
-            (keydown.b)="onToggleBypass($event, item)"
-          >
-            <!-- Drag Placeholder on Wire -->
-            <div class="pedal-drag-placeholder" *cdkDragPlaceholder>
-              <div class="placeholder-wire-circle">
-                <mat-icon aria-hidden="true">add</mat-icon>
-              </div>
-              <span class="placeholder-label">{{ item.typeTitle }}</span>
-            </div>
+        <div
+          class="mobile-chain-row"
+          cdkDrag
+          [cdkDragData]="item"
+          [class.selected]="activeSlot() === item.slot"
+          [class.bypassed]="!item.enabled"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
+          (click)="onSelectSlot(item.slot)"
+          (keydown.enter)="onSelectSlot(item.slot)"
+          (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
+        >
+          <div class="mobile-drag-placeholder" *cdkDragPlaceholder></div>
 
-            <!-- Drag Preview -->
-            <div class="pedal-drag-preview" *cdkDragPreview [style.--chain-scale]="chainScale()">
-              <div class="pedal-sprite-frame">
-                <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
-              </div>
-              <span class="preview-title">{{ item.model }}</span>
-            </div>
-
-            <!-- Pedal Sprite Frame (Centered on Audio Wire) -->
-            <div class="pedal-sprite-frame" aria-hidden="true">
-              <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
-            </div>
-
-            <!-- Pedal Info Bar (Bottom Rail) -->
-            <div class="pedal-info-bar">
-              <span class="pedal-title" [title]="item.model">{{ item.model }}</span>
-              <span class="pedal-tag">{{ !item.enabled ? 'Bypassed' : item.typeTitle }}</span>
-            </div>
-          </div>
-        }
-
-        <!-- Empty Slot Nodes on Wire (+ CATEGORY) -->
-        @for (empty of postEmptySlots(); track empty.category) {
           <button
             type="button"
-            class="wire-empty-node"
-            [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
-            [attr.aria-label]="'Add ' + empty.label"
-            (click)="onSelectEmpty(empty.targetSlot, empty.category)"
+            class="mobile-drag-handle"
+            cdkDragHandle
+            [attr.aria-label]="'Drag handle to reorder ' + item.model"
+            (click)="$event.stopPropagation()"
           >
-            <span class="empty-slot-card">
-              <span class="empty-plus" aria-hidden="true">+</span>
-              <span class="empty-label">{{ empty.label }}</span>
-            </span>
-            <span class="empty-info-spacer" aria-hidden="true"></span>
+            <mat-icon aria-hidden="true">drag_indicator</mat-icon>
           </button>
+
+          <div class="mobile-sprite-thumb" [class.rack-thumb]="isRackUnit(item.modelId)" aria-hidden="true">
+            <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
+          </div>
+
+          <div class="mobile-row-text">
+            <span class="mobile-row-title">{{ item.model }}</span>
+            <span class="mobile-row-subtitle">{{ item.typeTitle }}{{ !item.enabled ? ' • Bypassed' : '' }}</span>
+          </div>
+
+          <div class="mobile-row-toggle" (click)="$event.stopPropagation()">
+            <mat-slide-toggle
+              color="primary"
+              [checked]="item.enabled"
+              [attr.aria-label]="'Toggle ' + item.model"
+              (change)="onToggleBypassSlide(item, $event.checked)"
+            ></mat-slide-toggle>
+          </div>
+        </div>
+        } @empty {
+        <div class="mobile-empty-drop-hint">No post-amp effects active</div>
         }
       </div>
     </div>
-  } @else {
-    <!-- MOBILE (Option A): Vertical Touch-Friendly Signal Chain List -->
-    <div class="mobile-chain-track" cdkDropListGroup>
-      <!-- PRE-AMP SECTION -->
-      <div class="mobile-zone-section">
-        <div class="mobile-zone-header">
-          <span class="mobile-zone-title">Pre-Amp Pedals</span>
-          <div class="mobile-empty-pills">
-            @for (empty of preEmptySlots(); track empty.category) {
-              <button
-                type="button"
-                class="mobile-empty-pill"
-                [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
-                [attr.aria-label]="'Add ' + empty.label + ' to Pre-Amp'"
-                (click)="onSelectEmpty(empty.targetSlot, empty.category)"
-              >
-                <mat-icon aria-hidden="true">add</mat-icon>
-                <span>{{ empty.label }}</span>
-              </button>
-            }
-          </div>
-        </div>
-
-        <div
-          class="mobile-drop-list"
-          cdkDropList
-          id="mobile-pre-drop-list"
-          cdkDropListOrientation="vertical"
-          [cdkDropListData]="preEffects()"
-          (cdkDropListDropped)="onDropPre($event)"
-        >
-          @for (item of preEffects(); track item.type) {
-            <div
-              class="mobile-chain-row"
-              cdkDrag
-              [cdkDragData]="item"
-              [class.selected]="activeSlot() === item.slot"
-              [class.bypassed]="!item.enabled"
-              tabindex="0"
-              role="button"
-              [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
-              (click)="onSelectSlot(item.slot)"
-              (keydown.enter)="onSelectSlot(item.slot)"
-              (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
-            >
-              <div class="mobile-drag-placeholder" *cdkDragPlaceholder></div>
-
-              <button
-                type="button"
-                class="mobile-drag-handle"
-                cdkDragHandle
-                [attr.aria-label]="'Drag handle to reorder ' + item.model"
-                (click)="$event.stopPropagation()"
-              >
-                <mat-icon aria-hidden="true">drag_indicator</mat-icon>
-              </button>
-
-              <div class="mobile-sprite-thumb" [class.rack-thumb]="isRackUnit(item.modelId)" aria-hidden="true">
-                <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
-              </div>
-
-              <div class="mobile-row-text">
-                <span class="mobile-row-title">{{ item.model }}</span>
-                <span class="mobile-row-subtitle">{{ item.typeTitle }}{{ !item.enabled ? ' • Bypassed' : '' }}</span>
-              </div>
-
-              <div class="mobile-row-toggle" (click)="$event.stopPropagation()">
-                <mat-slide-toggle
-                  color="primary"
-                  [checked]="item.enabled"
-                  [attr.aria-label]="'Toggle ' + item.model"
-                  (change)="onToggleBypassSlide(item, $event.checked)"
-                ></mat-slide-toggle>
-              </div>
-            </div>
-          } @empty {
-            <div class="mobile-empty-drop-hint">No pre-amp pedals active</div>
-          }
-        </div>
-      </div>
-
-      <!-- AMPLIFIER ROW -->
-      <div
-        class="mobile-amp-row"
-        [class.selected]="activeSlot() === 'amp'"
-        tabindex="0"
-        role="button"
-        [attr.aria-label]="'Amplifier: ' + ampModelName() + ', ' + currentCabName()"
-        (click)="onSelectAmp()"
-        (keydown.enter)="onSelectAmp()"
-        (keydown.space)="$event.preventDefault(); onSelectAmp()"
-      >
-        <div class="mobile-amp-lead" aria-hidden="true">
-          <mat-icon aria-hidden="true">speaker</mat-icon>
-        </div>
-        <div class="mobile-amp-thumb" aria-hidden="true">
-          <div class="amp-icon {{ getAmpClass(ampModelName(), ampSettings()?.modelId) }}"></div>
-        </div>
-        <div class="mobile-row-text">
-          <span class="mobile-row-title">{{ ampModelName() }}</span>
-          <span class="mobile-row-subtitle">Amplifier • {{ currentCabName() }}</span>
-        </div>
-        <span class="mobile-amp-pill">AMP</span>
-      </div>
-
-      <!-- POST-AMP SECTION -->
-      <div class="mobile-zone-section">
-        <div class="mobile-zone-header">
-          <span class="mobile-zone-title">Post-Amp Rack</span>
-          <div class="mobile-empty-pills">
-            @for (empty of postEmptySlots(); track empty.category) {
-              <button
-                type="button"
-                class="mobile-empty-pill"
-                [class.selected]="activeSlot() === empty.targetSlot && selectedCategory() === empty.category"
-                [attr.aria-label]="'Add ' + empty.label + ' to Post-Amp'"
-                (click)="onSelectEmpty(empty.targetSlot, empty.category)"
-              >
-                <mat-icon aria-hidden="true">add</mat-icon>
-                <span>{{ empty.label }}</span>
-              </button>
-            }
-          </div>
-        </div>
-
-        <div
-          class="mobile-drop-list"
-          cdkDropList
-          id="mobile-post-drop-list"
-          cdkDropListOrientation="vertical"
-          [cdkDropListData]="postEffects()"
-          [cdkDropListEnterPredicate]="canDropInPost"
-          (cdkDropListDropped)="onDropPost($event)"
-        >
-          @for (item of postEffects(); track item.type) {
-            <div
-              class="mobile-chain-row"
-              cdkDrag
-              [cdkDragData]="item"
-              [class.selected]="activeSlot() === item.slot"
-              [class.bypassed]="!item.enabled"
-              tabindex="0"
-              role="button"
-              [attr.aria-label]="item.typeTitle + ': ' + item.model + (item.enabled ? '' : ' (Bypassed)')"
-              (click)="onSelectSlot(item.slot)"
-              (keydown.enter)="onSelectSlot(item.slot)"
-              (keydown.space)="$event.preventDefault(); onSelectSlot(item.slot)"
-            >
-              <div class="mobile-drag-placeholder" *cdkDragPlaceholder></div>
-
-              <button
-                type="button"
-                class="mobile-drag-handle"
-                cdkDragHandle
-                [attr.aria-label]="'Drag handle to reorder ' + item.model"
-                (click)="$event.stopPropagation()"
-              >
-                <mat-icon aria-hidden="true">drag_indicator</mat-icon>
-              </button>
-
-              <div class="mobile-sprite-thumb" [class.rack-thumb]="isRackUnit(item.modelId)" aria-hidden="true">
-                <div class="fx-icon {{ getEffectClass(item.model, item.modelId) }}"></div>
-              </div>
-
-              <div class="mobile-row-text">
-                <span class="mobile-row-title">{{ item.model }}</span>
-                <span class="mobile-row-subtitle">{{ item.typeTitle }}{{ !item.enabled ? ' • Bypassed' : '' }}</span>
-              </div>
-
-              <div class="mobile-row-toggle" (click)="$event.stopPropagation()">
-                <mat-slide-toggle
-                  color="primary"
-                  [checked]="item.enabled"
-                  [attr.aria-label]="'Toggle ' + item.model"
-                  (change)="onToggleBypassSlide(item, $event.checked)"
-                ></mat-slide-toggle>
-              </div>
-            </div>
-          } @empty {
-            <div class="mobile-empty-drop-hint">No post-amp effects active</div>
-          }
-        </div>
-      </div>
-    </div>
+  </div>
   }
 
   <!-- Bottom Dock Bar -->
   <div class="tone-dock">
-    @if (!isMobile()) {
-      <button mat-button class="dock-btn" (click)="onOpenPresetInfo()">
-        <mat-icon aria-hidden="true">info_outline</mat-icon>
-        <span>Preset Info</span>
-      </button>
-    }
     <div class="dock-spacer"></div>
-    <div class="dock-tap">
+    <div class="dock-actions">
       <button
         matButton="tonal"
         class="tap-pill"
-        (click)="onTapTempo()"
+        (pointerdown)="onTapTempo()"
         aria-label="Tap tempo to synchronize active delay time"
         matTooltip="Click repeatedly to tap tempo"
       >
-        <span class="bpm-value">{{ displayBpm() }} BPM</span>
-        <span class="tap-badge">Tap</span>
+        {{ displayBpm() }} BPM
+      </button>
+
+      <button
+        mat-icon-button
+        class="dice-btn"
+        (click)="onRandomizeSetup()"
+        aria-label="Randomize sound setup"
+        matTooltip="Roll the dice: Generate a random sound setup"
+      >
+        <mat-icon aria-hidden="true">casino</mat-icon>
       </button>
     </div>
   </div>

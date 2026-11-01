@@ -69,7 +69,7 @@ export class SignalChainComponent {
   clearEffect = output<number>();
   movePosition = output<{ fromSlot: number; toSlot: number }>();
   tapTempoBpm = output<number>();
-  openPresetInfo = output<void>();
+  randomizeSetup = output<void>();
 
   private readonly canvasWidth = signal<number>(0);
   private readonly canvasHeight = signal<number>(0);
@@ -412,10 +412,6 @@ export class SignalChainComponent {
     }
   }
 
-  onOpenPresetInfo() {
-    this.openPresetInfo.emit();
-  }
-
   onTapTempo() {
     const now = performance.now();
     if (this.lastTapTime > 0) {
@@ -427,6 +423,10 @@ export class SignalChainComponent {
       }
     }
     this.lastTapTime = now;
+  }
+
+  onRandomizeSetup() {
+    this.randomizeSetup.emit();
   }
 
   getAmpClass(_modelName?: string, modelId?: number): string {

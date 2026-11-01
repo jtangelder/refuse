@@ -11,10 +11,6 @@
       >
         <mat-icon aria-hidden="true">menu</mat-icon>
       </button>
-    } @else {
-      <div class="preset-play-badge" title="Active Preset">
-        <mat-icon aria-hidden="true">widgets</mat-icon>
-      </div>
     }
     <h1 class="top-preset-title">{{ currentPresetName() }}</h1>
     @if (!isMobile() && service.presetDetails().author) {
@@ -57,22 +53,6 @@
       >
         About
       </button>
-      <button
-        matButton="tonal"
-        class="top-action-btn"
-        (click)="openPresetInfoDialog()"
-        matTooltip="Edit Preset Metadata (Author, Genres, Tags, Description)"
-      >
-        Preset Info
-      </button>
-      <button
-        mat-flat-button
-        color="primary"
-        class="top-action-btn"
-        (click)="openSaveAsDialog()"
-      >
-        Save As
-      </button>
     }
     @if (!isMobile() && service.connected()) {
       <button
@@ -95,14 +75,6 @@
         <mat-icon aria-hidden="true">more_vert</mat-icon>
       </button>
       <mat-menu #mobileActionsMenu="matMenu">
-        <button mat-menu-item (click)="openSaveAsDialog()">
-          <mat-icon aria-hidden="true">save</mat-icon>
-          <span>Save As...</span>
-        </button>
-        <button mat-menu-item (click)="openPresetInfoDialog()">
-          <mat-icon aria-hidden="true">info_outline</mat-icon>
-          <span>Preset Info</span>
-        </button>
         <button mat-menu-item (click)="openAboutDialog()">
           <mat-icon aria-hidden="true">help_outline</mat-icon>
           <span>About ReFUSE</span>
@@ -131,8 +103,8 @@
   (toggleEffect)="toggleEffect($event.slot, $event.enabled)"
   (clearEffect)="clearSlot($event)"
   (movePosition)="moveEffectPosition($event.fromSlot, $event.toSlot)"
-  (openPresetInfo)="openPresetInfoDialog()"
   (tapTempoBpm)="onTapTempoBpm($event)"
+  (randomizeSetup)="randomizeSetup()"
 ></fuse-signal-chain>
 
 <main class="editor-container">
@@ -166,114 +138,3 @@
   ></fuse-effect-editor>
   }
 </main>
-
-<!-- Material Save As Dialog Template -->
-<ng-template #saveAsDialogTpl>
-  <h2 mat-dialog-title>Save Active Preset</h2>
-  <mat-dialog-content>
-    <p class="dialog-subtitle">Choose a target slot and name on your amplifier</p>
-    <div class="dialog-form-stack">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Target Slot</mat-label>
-        <mat-select [value]="saveAsTargetSlot()" (selectionChange)="saveAsTargetSlot.set($event.value)">
-          @for (slot of presetService.allSlots(); track slot) {
-          <mat-option [value]="slot">
-            {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
-          </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Preset Name</mat-label>
-        <input
-          matInput
-          type="text"
-          maxlength="31"
-          [value]="saveAsDraftName()"
-          (input)="onSaveAsNameInput($event)"
-        />
-      </mat-form-field>
-    </div>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Cancel</button>
-    <button mat-flat-button color="primary" [mat-dialog-close]="'confirm'">Save Preset</button>
-  </mat-dialog-actions>
-</ng-template>
-
-<!-- Material Preset Info Dialog Template (Fender FUSE Manual p.6) -->
-<ng-template #presetInfoDialogTpl>
-  <h2 mat-dialog-title>Preset Information</h2>
-  <mat-dialog-content>
-    <p class="dialog-subtitle">
-      Edit FUSE metadata stored when exporting or sharing presets ({{ currentPresetName() }})
-    </p>
-
-    <div class="dialog-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Author</mat-label>
-        <input
-          matInput
-          type="text"
-          placeholder="e.g. Fender Audio"
-          [value]="infoAuthor()"
-          (input)="onInfoFieldInput('author', $event)"
-        />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Search Tags</mat-label>
-        <input
-          matInput
-          type="text"
-          placeholder="e.g. clean, vintage, slapback"
-          [value]="infoTags()"
-          (input)="onInfoFieldInput('tags', $event)"
-        />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Main Genre</mat-label>
-        <mat-select [value]="infoGenre1()" (selectionChange)="infoGenre1.set($event.value)">
-          @for (g of genres; track g) {
-          <mat-option [value]="g">{{ g || '-- None --' }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Sub-Genre 1</mat-label>
-        <mat-select [value]="infoGenre2()" (selectionChange)="infoGenre2.set($event.value)">
-          @for (g of genres; track g) {
-          <mat-option [value]="g">{{ g || '-- None --' }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Sub-Genre 2</mat-label>
-        <mat-select [value]="infoGenre3()" (selectionChange)="infoGenre3.set($event.value)">
-          @for (g of genres; track g) {
-          <mat-option [value]="g">{{ g || '-- None --' }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Description / Notes</mat-label>
-        <textarea
-          matInput
-          rows="3"
-          placeholder="Describe pickup position, guitar type, or performance notes..."
-          [value]="infoDescription()"
-          (input)="onInfoFieldInput('description', $event)"
-        ></textarea>
-      </mat-form-field>
-    </div>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Cancel</button>
-    <button mat-flat-button color="primary" [mat-dialog-close]="'confirm'">Apply Info</button>
-  </mat-dialog-actions>
-</ng-template>

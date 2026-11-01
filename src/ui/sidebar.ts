@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { FuseService } from '../services/fuse.service';
 import { PresetService } from '../services/preset.service';
 import { NotificationService } from '../services/notification.service';
@@ -31,6 +32,7 @@ import { NotificationService } from '../services/notification.service';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.ng.html',
@@ -50,6 +52,7 @@ export class SidebarComponent {
   closeDrawer = output<void>();
 
   protected readonly draftName = signal('');
+  protected readonly targetSlot = signal(0);
   protected readonly allPresetSlots = this.presetService.allSlots;
   private readonly presetSaveName = this.presetService.currentPresetName;
 
@@ -111,18 +114,20 @@ export class SidebarComponent {
   }
 
   openSaveDialog() {
-    const slot = this.service.currentPresetSlot();
-    if (slot === null || slot === undefined) return;
+    const slot = this.service.currentPresetSlot() ?? 0;
+    this.targetSlot.set(slot);
     this.draftName.set(this.presetSaveName());
     const dialogRef = this.dialog.open(this.saveDialogTpl(), {
-      width: '380px',
+      width: '420px',
+      maxWidth: '94dvw',
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result === 'save') {
+        const targetSlot = this.targetSlot();
         const name = this.draftName().trim();
-        if (slot !== null && slot !== undefined && name) {
-          await this.presetService.savePreset(slot, name);
-          this.notifications.info(`Saved preset "${name}" to slot ${slot + 1}`);
+        if (name) {
+          await this.presetService.savePreset(targetSlot, name);
+          this.notifications.info(`Saved preset "${name}" to slot ${targetSlot + 1}.`);
         }
       }
     });

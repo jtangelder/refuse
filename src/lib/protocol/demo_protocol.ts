@@ -1,7 +1,8 @@
 import { debug } from '../helpers';
 import { type IProtocol, type ProtocolEventListenerFn } from './protocol_interface';
 import { ProtocolDecoder } from './protocol_decoder';
-import { AMP_MODELS, CABINET_MODELS, DspType, EFFECT_MODELS } from '../models';
+import { AMP_MODELS, DspType, EFFECT_MODELS } from '../models';
+import { getModelDefault } from '../defaults';
 import { OFFSETS } from './constants';
 
 const DEMO_PRESET_NAMES: readonly string[] = [
@@ -139,8 +140,8 @@ export class DemoProtocol implements IProtocol {
     // 2. Select Random Amp
     const amps = Object.values(AMP_MODELS);
     const randomAmp = amps[Math.floor(Math.random() * amps.length)];
-    const cabinets = CABINET_MODELS.filter(c => c.id !== 0);
-    const randomCab = cabinets[Math.floor(Math.random() * cabinets.length)];
+    const defaults = getModelDefault(randomAmp.id);
+    const defaultCabId = defaults ? defaults[OFFSETS.CABINET_ID] : 0x01;
 
     debug(`[Demo] Random Amp: ${randomAmp.name}`);
 
@@ -155,13 +156,13 @@ export class DemoProtocol implements IProtocol {
     ampPacket[16] = (randomAmp.id >> 8) & 0xff;
     ampPacket[17] = randomAmp.id & 0xff;
 
-    // Cabinet ID (offset 49)
-    ampPacket[49] = randomCab.id;
-
     // Random Knobs (offsets 32-64)
     for (let i = 32; i < 64; i++) {
       ampPacket[i] = Math.floor(Math.random() * 256);
     }
+
+    // Default Cabinet for this amp (set after the random knobs loop so offset 49 is preserved)
+    ampPacket[OFFSETS.CABINET_ID] = defaultCabId !== 0 ? defaultCabId : 0x08;
 
     this.emit(ampPacket);
 
