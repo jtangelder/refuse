@@ -37,7 +37,6 @@ export {
   flushWrites,
   type PacketFactory,
 } from './protocol/write_queue';
-export { ThrottledDispatcher } from './throttler';
 export { LIMITS, AMP_KNOB_INDEX, type AdvancedAmpParam } from './protocol/constants';
 export { type SetEffectOptions } from './controllers/effect_controller';
 

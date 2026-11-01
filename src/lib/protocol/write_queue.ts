@@ -12,21 +12,15 @@ interface Waiter {
 }
 
 interface QueuedTransaction {
-  key?: string;
   packets: PacketFactory[];
   waiters: Waiter[];
 }
 
 /**
- * Per-protocol serialized & coalescing transaction queue driven by USB HID backpressure.
+ * Serialized FIFO transaction queue for Mustang USB HID communication.
  *
- * - Every Mustang operation is an atomic transaction of one or more packets
- *   (e.g. DSP write + apply).
- * - When the wire is idle, the first transaction begins immediately (0ms latency).
- * - While a transaction is in flight (`await protocol.sendPacket`), incoming
- *   coalesced transactions with the same `key` (e.g. `'amp'` or `'fx-2'`)
- *   overwrite the pending unstarted transaction for that key in-place so only
- *   the latest parameter state is transmitted when the wire becomes free.
+ * Ensures all transactions and packets are sent to the amplifier in exact sequential order
+ * without interleaving, throttling, or dropping messages.
  */
 class ProtocolWriteQueue {
   private readonly queue: QueuedTransaction[] = [];
@@ -35,21 +29,11 @@ class ProtocolWriteQueue {
 
   constructor(private readonly protocol: IProtocol) {}
 
-  enqueue(key: string | undefined, packets: PacketFactory[]): Promise<void> {
+  enqueue(packets: PacketFactory[]): Promise<void> {
     if (packets.length === 0) return Promise.resolve();
 
     return new Promise<void>((resolve, reject) => {
-      if (key !== undefined) {
-        const existing = this.queue.find(entry => entry.key === key);
-        if (existing) {
-          existing.packets = packets;
-          existing.waiters.push({ resolve, reject });
-          return;
-        }
-      }
-
       this.queue.push({
-        key,
         packets,
         waiters: [{ resolve, reject }],
       });
@@ -61,18 +45,10 @@ class ProtocolWriteQueue {
   }
 
   /**
-   * Drop pending unstarted coalesced transactions matching `key` (or all
-   * coalesced transactions if `key` is omitted). Waiters resolve because their
-   * state was superseded by a newer operation (e.g. model change or slot clear).
+   * No-op: Dropping/cancelling writes is removed so all messages reach the amplifier.
    */
-  cancel(key?: string): void {
-    for (let i = this.queue.length - 1; i >= 0; i--) {
-      const entry = this.queue[i];
-      if (entry.key !== undefined && (key === undefined || entry.key === key)) {
-        this.queue.splice(i, 1);
-        entry.waiters.forEach(w => w.resolve());
-      }
-    }
+  cancel(_key?: string): void {
+    // No-op
   }
 
   flush(): Promise<void> {
@@ -123,26 +99,21 @@ function getQueue(protocol: IProtocol): ProtocolWriteQueue {
  * Enqueue an atomic FIFO transaction of one or more packets.
  */
 export function enqueueWrite(protocol: IProtocol, ...packets: PacketFactory[]): Promise<void> {
-  return getQueue(protocol).enqueue(undefined, packets);
+  return getQueue(protocol).enqueue(packets);
 }
 
 /**
- * Enqueue a backpressure-coalesced atomic transaction keyed by `key`.
- *
- * The first update in an idle period transmits immediately (leading edge).
- * Rapid updates arriving while the USB wire is busy replace the queued entry
- * for `key` in-place so only the most recent state is sent next.
+ * Enqueue a transaction directly without throttling or coalescing.
  */
-export function enqueueCoalescedWrite(protocol: IProtocol, key: string, ...packets: PacketFactory[]): Promise<void> {
-  return getQueue(protocol).enqueue(key, packets);
+export function enqueueCoalescedWrite(protocol: IProtocol, _key: string, ...packets: PacketFactory[]): Promise<void> {
+  return enqueueWrite(protocol, ...packets);
 }
 
 /**
- * Cancel any pending (not yet transmitted) coalesced write for `key`
- * (or all keys if omitted).
+ * No-op: Throttling / dropping writes is removed.
  */
-export function cancelCoalescedWrite(protocol: IProtocol, key?: string): void {
-  queues.get(protocol)?.cancel(key);
+export function cancelCoalescedWrite(_protocol: IProtocol, _key?: string): void {
+  // No-op
 }
 
 /** Resolves once every write queued so far has settled. */

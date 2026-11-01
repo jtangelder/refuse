@@ -2,8 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProtocolDecoder } from '../protocol/protocol_decoder';
 import { PacketBuilder } from '../protocol/packet_builder';
 import { DspType, AMP_MODELS, EFFECT_MODELS } from '../models';
-import { ThrottledDispatcher } from '../throttler';
-import { enqueueCoalescedWrite, cancelCoalescedWrite, flushWrites } from '../protocol/write_queue';
+import { enqueueCoalescedWrite, flushWrites } from '../protocol/write_queue';
 import { Store, type AmpState, type EffectState } from '../store';
 import { AmpController } from '../controllers/amp_controller';
 import { EffectController } from '../controllers/effect_controller';
@@ -157,33 +156,8 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
     });
   });
 
-  describe('ThrottledDispatcher & Backpressure Coalescing Queue', () => {
-    it('executes immediately on leading edge and coalesces rapid updates to trailing edge', async () => {
-      vi.useFakeTimers();
-      const dispatcher = new ThrottledDispatcher(40);
-      const executionLog: number[] = [];
-
-      // 5 rapid calls in 10ms
-      for (let i = 1; i <= 5; i++) {
-        const val = i;
-        dispatcher.dispatch('knob-gain', () => {
-          executionLog.push(val);
-        }, 40);
-      }
-
-      // First call executed immediately (leading edge)
-      expect(executionLog).toEqual([1]);
-
-      // Fast forward past throttle window
-      await vi.advanceTimersByTimeAsync(45);
-
-      // Trailing edge must have executed with the very latest value (5)
-      expect(executionLog).toEqual([1, 5]);
-
-      vi.useRealTimers();
-    });
-
-    it('coalesces rapid knob updates via USB backpressure without timers', async () => {
+  describe('Protocol Write Queue (Unthrottled Sequential Delivery)', () => {
+    it('transmits all rapid updates sequentially without throttling or dropping messages', async () => {
       const sentValues: number[] = [];
       const mockProtocol: IProtocol = {
         isConnected: true,
@@ -199,7 +173,7 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
         }),
       };
 
-      // Dispatch 5 rapid updates for the same key ('amp') without awaiting between them
+      // Dispatch 5 rapid updates without awaiting between them
       const promises = [10, 20, 30, 40, 50].map(val =>
         enqueueCoalescedWrite(mockProtocol, 'amp', () => new Uint8Array([val])),
       );
@@ -207,33 +181,8 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
       await Promise.all(promises);
       await flushWrites(mockProtocol);
 
-      // Leading edge (10) ran immediately; 20, 30, 40 were superseded in-queue by 50
-      expect(sentValues).toEqual([10, 50]);
-    });
-
-    it('drops superseded coalesced writes when cancelCoalescedWrite is called', async () => {
-      const sentValues: number[] = [];
-      const mockProtocol: IProtocol = {
-        isConnected: true,
-        isSupported: true,
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        getNextSequenceId: vi.fn().mockReturnValue(1),
-        sendPacket: vi.fn().mockImplementation(async (packet: Uint8Array) => {
-          await Promise.resolve();
-          sentValues.push(packet[0]);
-        }),
-      };
-
-      const p1 = enqueueCoalescedWrite(mockProtocol, 'amp', () => new Uint8Array([1]));
-      const p2 = enqueueCoalescedWrite(mockProtocol, 'amp', () => new Uint8Array([2]));
-      // Simulate a model change cancelling pending knob writes before p2 starts
-      cancelCoalescedWrite(mockProtocol, 'amp');
-
-      await Promise.all([p1, p2]);
-      expect(sentValues).toEqual([1]);
+      // All updates must have been transmitted in FIFO order (no messages dropped/throttled)
+      expect(sentValues).toEqual([10, 20, 30, 40, 50]);
     });
   });
 

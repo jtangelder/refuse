@@ -1,7 +1,7 @@
 import { DspType, resolveFuseModelId, findAmpModel, findEffectModel } from './models';
 import { PacketBuilder } from './protocol/packet_builder';
 import { type IProtocol } from './protocol/protocol_interface';
-import { cancelCoalescedWrite, enqueueWrite, type PacketFactory } from './protocol/write_queue';
+import { enqueueWrite, type PacketFactory } from './protocol/write_queue';
 import { AMP_KNOB_INDEX, LIMITS, toByte } from './protocol/constants';
 import { normalizeAmpState } from './controllers/amp_controller';
 import { normalizeKnobs } from './controllers/effect_controller';
@@ -31,9 +31,6 @@ export class PresetImporter {
     if (parserError) {
       throw new Error(`XML parsing failed: ${parserError.textContent?.slice(0, 100) || 'Malformed XML'}`);
     }
-
-    // Cancel any in-flight coalesced knob updates superseded by the imported preset
-    cancelCoalescedWrite(this.protocol);
 
     const packets: PacketFactory[] = [];
     const applyStoreAndCollectPackets = () => {

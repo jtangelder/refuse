@@ -132,11 +132,9 @@ export class EffectController extends BaseController {
     this.store.batch(() => {
       for (const i of duplicateSlots) {
         debug(`[EffectController] Auto-removing ${DspType[model.type]} from slot ${i}`);
-        this.cancelCoalesced(knobKey(i));
         this.store.clearSlot(i);
         packets.push(...this.buildClearPackets(i, model.type));
       }
-      this.cancelCoalesced(knobKey(slot));
       this.store.updateSlotState(slot, newState);
     });
 
@@ -161,14 +159,11 @@ export class EffectController extends BaseController {
 
     const knobs = [...effect.knobs];
     knobs[index] = toByte(value);
-    this.store.updateSlotState(slot, { ...effect, knobs });
+    const newState: EffectState = { ...effect, knobs };
+    this.store.updateSlotState(slot, newState);
 
-    return this.transmitCoalesced(
-      knobKey(slot),
-      () => {
-        const current = this.store.getState().slots[slot] ?? { ...effect, knobs };
-        return PacketBuilder.fromEffectState(current, this.protocol.getNextSequenceId()).build();
-      },
+    return this.transmit(
+      () => PacketBuilder.fromEffectState(newState, this.protocol.getNextSequenceId()).build(),
       this.applyPacket(effect.type),
     );
   }
@@ -247,7 +242,6 @@ export class EffectController extends BaseController {
   async clearEffect(slot: number): Promise<void> {
     this.assertSlot(slot);
     const type = this.store.getState().slots[slot]?.type ?? DspType.STOMP;
-    this.cancelCoalesced(knobKey(slot));
     this.store.clearSlot(slot);
     await this.transmit(...this.buildClearPackets(slot, type));
   }
@@ -274,7 +268,6 @@ export class EffectController extends BaseController {
       const newEffect = after[i];
       if (newEffect === oldEffect && (!newEffect || newEffect.slot === i)) continue;
 
-      this.cancelCoalesced(knobKey(i));
       if (newEffect) {
         const placed: EffectState = { ...newEffect, slot: i };
         packets.push(...this.buildEffectStatePackets(placed));
@@ -323,10 +316,6 @@ export class EffectController extends BaseController {
 
 function groupStart(slot: number): number {
   return slot < LIMITS.GROUP_SIZE ? 0 : LIMITS.GROUP_SIZE;
-}
-
-function knobKey(slot: number): string {
-  return `fx-${slot}`;
 }
 
 export function normalizeKnobs(knobs: ArrayLike<number>): number[] {

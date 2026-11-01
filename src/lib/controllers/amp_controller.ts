@@ -15,8 +15,6 @@ import {
   type AdvancedAmpParam,
 } from '../protocol/constants';
 
-const AMP_COALESCE_KEY = 'amp';
-
 export class AmpController extends BaseController {
   // ---------------------------------------------------------------------------
   // Inbound (hardware -> store). These never transmit, which prevents echo loops.
@@ -62,8 +60,6 @@ export class AmpController extends BaseController {
       knobs: Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)),
     });
 
-    // A model change supersedes any queued knob tweak for the old model.
-    this.cancelCoalesced(AMP_COALESCE_KEY);
     this.commit(newState);
     await this.sendAmpState(newState);
   }
@@ -73,7 +69,6 @@ export class AmpController extends BaseController {
    * preset so the in-memory store stays in sync with the hardware.
    */
   applyRawAmpState(modelId: number, cabinetId: number, knobs: ArrayLike<number>): void {
-    this.cancelCoalesced(AMP_COALESCE_KEY);
     this.commit(
       normalizeAmpState({
         modelId,
@@ -85,20 +80,15 @@ export class AmpController extends BaseController {
   }
 
   /**
-   * Update one amp parameter. The store updates synchronously (instant UI); the
-   * hardware write is coalesced via USB backpressure so the first update runs
-   * immediately and rapid intermediate updates collapse into the latest state.
+   * Update one amp parameter and transmit to the hardware.
    */
   setAmpKnob(index: number, value: number): Promise<void> {
     if (!isValidKnobIndex(index)) {
       return Promise.reject(new Error(`Invalid amp knob index: ${index}`));
     }
-    this.commit(this.withKnob(this.store.getState().amp, index, value));
-    return this.transmitCoalesced(
-      AMP_COALESCE_KEY,
-      () => PacketBuilder.fromAmpState(this.store.getState().amp, this.protocol.getNextSequenceId()).build(),
-      this.applyPacket(DspType.AMP),
-    );
+    const newState = this.withKnob(this.store.getState().amp, index, value);
+    this.commit(newState);
+    return this.sendAmpState(newState);
   }
 
   setAdvancedSetting(key: AdvancedAmpParam, value: number): Promise<void> {

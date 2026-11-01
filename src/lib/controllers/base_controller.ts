@@ -1,6 +1,6 @@
 import { Store } from '../store';
 import { type IProtocol } from '../protocol/protocol_interface';
-import { cancelCoalescedWrite, enqueueCoalescedWrite, enqueueWrite, type PacketFactory } from '../protocol/write_queue';
+import { enqueueWrite, type PacketFactory } from '../protocol/write_queue';
 import { PacketBuilder } from '../protocol/packet_builder';
 import { isValidSlot } from '../protocol/constants';
 import type { DspType } from '../models';
@@ -20,16 +20,15 @@ export abstract class BaseController {
   }
 
   /**
-   * Send packets as a backpressure-coalesced atomic transaction keyed by `key`.
-   * Executes immediately if the wire is idle; coalesces in-place if the wire is busy.
+   * Send packets sequentially through the FIFO queue without throttling or coalescing.
    */
-  protected transmitCoalesced(key: string, ...packets: PacketFactory[]): Promise<void> {
-    return enqueueCoalescedWrite(this.protocol, key, ...packets);
+  protected transmitCoalesced(_key: string, ...packets: PacketFactory[]): Promise<void> {
+    return this.transmit(...packets);
   }
 
-  /** Cancel any pending unstarted coalesced transaction for `key` (or all keys if omitted). */
-  protected cancelCoalesced(key?: string): void {
-    cancelCoalescedWrite(this.protocol, key);
+  /** No-op: Dropping/cancelling writes is removed. */
+  protected cancelCoalesced(_key?: string): void {
+    // No-op
   }
 
   /** Factory for the "apply/commit" packet that must follow every DSP write. */
