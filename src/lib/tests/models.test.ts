@@ -16,6 +16,7 @@ import {
   RACK_EFFECT_MODELS,
 } from '../models';
 import { getModelDefault } from '../defaults';
+import { OFFSETS } from '../protocol/constants';
 import { PACKET_SIZE } from '../protocol/packet_builder';
 
 describe('Model Registry & Hardware Defaults Integrity', () => {
@@ -81,6 +82,56 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
       expect(findCabinetModel(cab.id)).toEqual(cab);
     }
     expect(findCabinetModel(0xff)).toBeNull();
+  });
+
+  it('correctly maps hardware cabinet IDs to expected names and default amplifier pairings', () => {
+    // Specific hardware ID mappings
+    expect(findCabinetModel(0x01)?.name).toBe("1x12 '57 Deluxe");
+    expect(findCabinetModel(0x02)?.name).toBe("4x10 '59 Bassman");
+    expect(findCabinetModel(0x03)?.name).toBe("1x12 '65 Deluxe");
+    expect(findCabinetModel(0x04)?.name).toBe("1x10 '65 Princeton");
+    expect(findCabinetModel(0x05)?.name).toBe("1x8 '57 Champ");
+    expect(findCabinetModel(0x06)?.name).toBe("4x12 British '80s");
+    expect(findCabinetModel(0x07)?.name).toBe("2x12 British '60s");
+    expect(findCabinetModel(0x08)?.name).toBe("4x12 British '70s");
+    expect(findCabinetModel(0x09)?.name).toBe("2x12 '65 Twin");
+    expect(findCabinetModel(0x0a)?.name).toBe("4x12 American '90s");
+    expect(findCabinetModel(0x0b)?.name).toBe('2x12 Super-Sonic');
+    expect(findCabinetModel(0x0c)?.name).toBe('1x12 Super-Sonic');
+    expect(findCabinetModel(0x0d)?.name).toBe("2x12 '57 Twin");
+    expect(findCabinetModel(0x0e)?.name).toBe("2x12 '60s Thrift");
+    expect(findCabinetModel(0x0f)?.name).toBe('4x12 British Watts');
+    expect(findCabinetModel(0x10)?.name).toBe('4x12 British Colour');
+
+    // Default cabinet pairings for all amplifiers
+    const expectedPairings: Record<number, string> = {
+      [AMP_MODELS.F57_DELUXE.id]: "1x12 '57 Deluxe",
+      [AMP_MODELS.F59_BASSMAN.id]: "4x10 '59 Bassman",
+      [AMP_MODELS.F57_CHAMP.id]: "1x8 '57 Champ",
+      [AMP_MODELS.F65_DELUXE.id]: "1x12 '65 Deluxe",
+      [AMP_MODELS.F65_PRINCETON.id]: "1x10 '65 Princeton",
+      [AMP_MODELS.F65_TWIN.id]: "2x12 '65 Twin",
+      [AMP_MODELS.SUPER_SONIC.id]: '1x12 Super-Sonic',
+      [AMP_MODELS.BRIT_60S.id]: "2x12 British '60s",
+      [AMP_MODELS.BRIT_70S.id]: "4x12 British '70s",
+      [AMP_MODELS.BRIT_80S.id]: "4x12 British '80s",
+      [AMP_MODELS.US_90S.id]: "4x12 American '90s",
+      [AMP_MODELS.METAL_2000.id]: "4x12 British '70s",
+      [AMP_MODELS.STUDIO_PREAMP.id]: 'Off',
+      [AMP_MODELS.F57_TWIN.id]: "2x12 '57 Twin",
+      [AMP_MODELS.THRIFT_60S.id]: "2x12 '60s Thrift",
+      [AMP_MODELS.BRIT_WATTS.id]: '4x12 British Watts',
+      [AMP_MODELS.BRIT_COLOUR.id]: '4x12 British Colour',
+    };
+
+    for (const [ampIdStr, expectedCabName] of Object.entries(expectedPairings)) {
+      const ampId = Number(ampIdStr);
+      const defaults = getModelDefault(ampId);
+      expect(defaults).toBeDefined();
+      const cabId = defaults![OFFSETS.CABINET_ID];
+      const cab = findCabinetModel(cabId);
+      expect(cab?.name).toBe(expectedCabName);
+    }
   });
 
   it('correctly classifies hardware form factors from model references without magic bitcodes', () => {
