@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,7 +6,7 @@ import { FuseService } from '../services/fuse.service';
 
 @Component({
   selector: 'fuse-welcome-dialog',
-  imports: [NgOptimizedImage, MatButtonModule, MatDialogModule, MatIconModule],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './welcome.ng.html',
   styleUrl: './welcome.scss',

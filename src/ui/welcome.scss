@@ -2,18 +2,6 @@
   display: block;
 }
 
-.welcome-image-container {
-  display: flex;
-  justify-content: center;
-  margin: 4px 0 16px;
-}
-
-.welcome-amp-image {
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--md-corner-md);
-}
-
 .welcome-copy {
   margin: 0;
   font-size: 0.875rem;
