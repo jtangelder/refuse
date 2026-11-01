@@ -94,7 +94,6 @@ export class DashboardComponent {
   protected readonly infoGenre3 = signal('');
 
   protected readonly currentPresetName = this.presetService.currentPresetName;
-  protected readonly maxPresetSlot = this.presetService.maxSlot;
 
   // Default to 'amp' on load, just like Fender FUSE startup screen
   protected activeSlot = signal<number | 'amp'>('amp');
@@ -194,20 +193,6 @@ export class DashboardComponent {
     this.emptyCategorySelection.set(null);
     this.activeSlot.set(toSlot);
     await this.effectService.moveEffect(fromSlot, toSlot);
-  }
-
-  async onPrevPreset() {
-    const current = this.service.currentPresetSlot() ?? 0;
-    const maxSlot = this.maxPresetSlot();
-    const prev = current > 0 ? current - 1 : maxSlot;
-    await this.presetService.loadPreset(prev);
-  }
-
-  async onNextPreset() {
-    const current = this.service.currentPresetSlot() ?? 0;
-    const maxSlot = this.maxPresetSlot();
-    const next = current < maxSlot ? current + 1 : 0;
-    await this.presetService.loadPreset(next);
   }
 
   openSaveAsDialog() {

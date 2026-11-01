@@ -1,6 +1,8 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  type ElementRef,
+  effect,
   inject,
   input,
   output,
@@ -41,6 +43,7 @@ export class SidebarComponent {
   private readonly dialog = inject(MatDialog);
 
   private readonly saveDialogTpl = viewChild.required<TemplateRef<unknown>>('saveDialogTpl');
+  private readonly listScrollRef = viewChild<ElementRef<HTMLElement>>('listScroll');
 
   isMobile = input<boolean>(false);
   presetSelected = output<number>();
@@ -50,11 +53,35 @@ export class SidebarComponent {
   protected readonly allPresetSlots = this.presetService.allSlots;
   private readonly presetSaveName = this.presetService.currentPresetName;
 
+  constructor() {
+    effect(() => {
+      const slot = this.service.currentPresetSlot();
+      const slots = this.allPresetSlots();
+      if (slot !== null && slot !== undefined && slots.length > 0) {
+        queueMicrotask(() => this.scrollSlotIntoView(slot, 'smooth'));
+      }
+    });
+  }
+
+  scrollActivePresetIntoView(behavior: ScrollBehavior = 'smooth') {
+    const slot = this.service.currentPresetSlot();
+    if (slot !== null && slot !== undefined) {
+      this.scrollSlotIntoView(slot, behavior);
+    }
+  }
+
+  private scrollSlotIntoView(slot: number, behavior: ScrollBehavior) {
+    const container = this.listScrollRef()?.nativeElement;
+    const btn = container?.querySelector<HTMLElement>(`button[data-slot="${slot}"]`);
+    btn?.scrollIntoView({ block: 'nearest', behavior });
+  }
+
   onDraftNameInput(event: Event) {
     this.draftName.set((event.target as HTMLInputElement).value);
   }
 
   async changePreset(slot: number) {
+    this.scrollSlotIntoView(slot, 'smooth');
     await this.presetService.loadPreset(slot);
     this.presetSelected.emit(slot);
   }

@@ -74,26 +74,6 @@
         Save As
       </button>
     }
-    <div class="preset-arrows-group">
-      <button
-        mat-icon-button
-        class="arrow-btn"
-        aria-label="Previous Preset"
-        matTooltip="Previous Preset"
-        (click)="onPrevPreset()"
-      >
-        <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
-      </button>
-      <button
-        mat-icon-button
-        class="arrow-btn"
-        aria-label="Next Preset"
-        matTooltip="Next Preset"
-        (click)="onNextPreset()"
-      >
-        <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
-      </button>
-    </div>
     @if (!isMobile() && service.connected()) {
       <button
         mat-icon-button

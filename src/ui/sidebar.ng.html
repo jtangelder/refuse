@@ -12,7 +12,7 @@
       </button>
     </div>
   }
-  <div class="presets-list-scroll">
+  <div class="presets-list-scroll" #listScroll>
     <ul class="preset-items" role="list" (keydown)="onListKeyDown($event)">
       @for (slot of allPresetSlots(); track slot) {
         <li class="preset-row">

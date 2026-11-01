@@ -176,28 +176,6 @@
   }
 }
 
-.preset-arrows-group {
-  display: inline-flex;
-  gap: 2px;
-  background: var(--mat-sys-surface-container-low);
-  padding: 2px;
-  border-radius: var(--md-corner-full);
-
-  .arrow-btn {
-    --mdc-icon-button-state-layer-size: 34px;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    color: var(--mat-sys-on-surface-variant);
-
-    mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-    }
-  }
-}
-
 .disconnect-btn {
   --mdc-icon-button-state-layer-size: 34px;
   width: 34px;

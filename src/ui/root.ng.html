@@ -5,8 +5,14 @@
     [mode]="isMobile() ? 'over' : 'side'"
     [opened]="!isMobile()"
     [autoFocus]="isMobile() ? 'first-tabbable' : false"
+    (openedStart)="sidebar.scrollActivePresetIntoView('instant')"
   >
-    <fuse-sidebar [isMobile]="isMobile()" (presetSelected)="onPresetSelected()" (closeDrawer)="sidenav.close()"></fuse-sidebar>
+    <fuse-sidebar
+      #sidebar
+      [isMobile]="isMobile()"
+      (presetSelected)="onPresetSelected()"
+      (closeDrawer)="sidenav.close()"
+    ></fuse-sidebar>
   </mat-sidenav>
   <mat-sidenav-content class="dashboard-content">
     <fuse-dashboard [isMobile]="isMobile()" (toggleSidebar)="sidenav.toggle()"></fuse-dashboard>
