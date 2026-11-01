@@ -103,15 +103,29 @@ textarea {
 }
 
 .container {
-  display: flex;
-  flex-direction: row;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
-  background: var(--mat-sys-surface-dim);
+  height: 100dvh;
+  background: var(--mat-sys-surface-dim) !important;
+  border: none;
+}
 
-  @media (max-width: 850px) {
-    flex-direction: column-reverse;
-  }
+.presets-sidenav {
+  width: 300px !important;
+  max-width: 85vw;
+  max-width: 85dvw;
+  background: var(--mat-sys-surface-dim) !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.dashboard-content {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden !important;
+  background: var(--mat-sys-surface-dim) !important;
 }
 
 .grid {

@@ -1,26 +1,38 @@
 <!-- Top Bar -->
 <header class="fender-top-bar">
   <div class="top-bar-left">
-    <div class="preset-play-badge" title="Active Preset">
-      <mat-icon aria-hidden="true">widgets</mat-icon>
-    </div>
+    @if (isMobile()) {
+      <button
+        mat-icon-button
+        class="menu-toggle-btn"
+        aria-label="Open presets drawer"
+        matTooltip="Presets"
+        (click)="toggleSidebar.emit()"
+      >
+        <mat-icon aria-hidden="true">menu</mat-icon>
+      </button>
+    } @else {
+      <div class="preset-play-badge" title="Active Preset">
+        <mat-icon aria-hidden="true">widgets</mat-icon>
+      </div>
+    }
     <h1 class="top-preset-title">{{ currentPresetName() }}</h1>
-    @if (service.presetDetails().author) {
-    <span class="top-preset-author">by {{ service.presetDetails().author }}</span>
+    @if (!isMobile() && service.presetDetails().author) {
+      <span class="top-preset-author">by {{ service.presetDetails().author }}</span>
     }
   </div>
 
   <div class="top-bar-right">
-    <div class="top-connection">
+    <div class="top-connection" [class.compact]="isMobile()">
       @if (service.connected() && !service.isDemo()) {
         <span class="status-dot connected"></span>
         <span class="status-label">Connected</span>
       } @else if (service.isDemo()) {
         <span class="status-dot connected demo"></span>
-        <span class="status-label">Demo Mode</span>
+        <span class="status-label">{{ isMobile() ? 'Demo' : 'Demo Mode' }}</span>
       } @else {
         <span class="status-dot disconnected"></span>
-        <span class="status-label">Disconnected</span>
+        <span class="status-label">{{ isMobile() ? 'Offline' : 'Disconnected' }}</span>
       }
     </div>
     @if (!service.connected() || service.isDemo()) {
@@ -33,33 +45,35 @@
         matTooltip="Connect physical Fender Mustang amp via USB"
       >
         <mat-icon aria-hidden="true">usb</mat-icon>
-        <span>{{ service.connecting() ? 'Connecting...' : 'Connect Amp' }}</span>
+        <span>{{ service.connecting() ? 'Connecting...' : isMobile() ? 'Connect' : 'Connect Amp' }}</span>
       </button>
     }
-    <button
-      matButton="tonal"
-      class="top-action-btn"
-      (click)="openAboutDialog()"
-      matTooltip="About Fender FUSE"
-    >
-      About
-    </button>
-    <button
-      matButton="tonal"
-      class="top-action-btn"
-      (click)="openPresetInfoDialog()"
-      matTooltip="Edit Preset Metadata (Author, Genres, Tags, Description)"
-    >
-      Preset Info
-    </button>
-    <button
-      mat-flat-button
-      color="primary"
-      class="top-action-btn"
-      (click)="openSaveAsDialog()"
-    >
-      Save As
-    </button>
+    @if (!isMobile()) {
+      <button
+        matButton="tonal"
+        class="top-action-btn"
+        (click)="openAboutDialog()"
+        matTooltip="About Fender FUSE"
+      >
+        About
+      </button>
+      <button
+        matButton="tonal"
+        class="top-action-btn"
+        (click)="openPresetInfoDialog()"
+        matTooltip="Edit Preset Metadata (Author, Genres, Tags, Description)"
+      >
+        Preset Info
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        class="top-action-btn"
+        (click)="openSaveAsDialog()"
+      >
+        Save As
+      </button>
+    }
     <div class="preset-arrows-group">
       <button
         mat-icon-button
@@ -80,7 +94,7 @@
         <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
       </button>
     </div>
-    @if (service.connected()) {
+    @if (!isMobile() && service.connected()) {
       <button
         mat-icon-button
         class="disconnect-btn"
@@ -91,12 +105,44 @@
         <mat-icon aria-hidden="true">power_settings_new</mat-icon>
       </button>
     }
+    @if (isMobile()) {
+      <button
+        mat-icon-button
+        class="more-menu-btn"
+        [matMenuTriggerFor]="mobileActionsMenu"
+        aria-label="More actions"
+      >
+        <mat-icon aria-hidden="true">more_vert</mat-icon>
+      </button>
+      <mat-menu #mobileActionsMenu="matMenu">
+        <button mat-menu-item (click)="openSaveAsDialog()">
+          <mat-icon aria-hidden="true">save</mat-icon>
+          <span>Save As...</span>
+        </button>
+        <button mat-menu-item (click)="openPresetInfoDialog()">
+          <mat-icon aria-hidden="true">info_outline</mat-icon>
+          <span>Preset Info</span>
+        </button>
+        <button mat-menu-item (click)="openAboutDialog()">
+          <mat-icon aria-hidden="true">help_outline</mat-icon>
+          <span>About ReFUSE</span>
+        </button>
+        @if (service.connected()) {
+          <button mat-menu-item (click)="onDisconnect()">
+            <mat-icon aria-hidden="true">power_settings_new</mat-icon>
+            <span>{{ service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier' }}</span>
+          </button>
+        }
+      </mat-menu>
+    }
   </div>
 </header>
 
-<!-- Signal Chain on Audio Wire -->
+<!-- Signal Chain on Audio Wire / Mobile Vertical List -->
 <fuse-signal-chain
+  [isMobile]="isMobile()"
   [activeSlot]="activeSlot()"
+  [selectedCategory]="selectedSlotCategory()"
   [effects]="allEffectSettings()"
   [ampSettings]="ampSettings()"
   [cabinetModels]="cabModels"
@@ -105,7 +151,6 @@
   (toggleEffect)="toggleEffect($event.slot, $event.enabled)"
   (clearEffect)="clearSlot($event)"
   (movePosition)="moveEffectPosition($event.fromSlot, $event.toSlot)"
-  (quickAdd)="onQuickAdd()"
   (openPresetInfo)="openPresetInfoDialog()"
   (tapTempoBpm)="onTapTempoBpm($event)"
 ></fuse-signal-chain>

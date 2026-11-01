@@ -2,9 +2,10 @@
   display: flex;
   flex-direction: column;
   background: var(--mat-sys-surface-dim);
-  width: 300px;
+  width: 100%;
   height: 100%;
   overflow: hidden;
+  -webkit-user-select: none;
   user-select: none;
   flex-shrink: 0;
 }
@@ -14,6 +15,28 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.sidebar-mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 4px 20px;
+  flex-shrink: 0;
+}
+
+.sidebar-mobile-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+}
+
+.sidebar-close-btn {
+  --mdc-icon-button-state-layer-size: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .presets-list-scroll {
@@ -116,11 +139,4 @@
 .dialog-full-width {
   width: 100%;
   margin-top: 8px;
-}
-
-@media (max-width: 850px) {
-  :host {
-    width: 100%;
-    height: 190px;
-  }
 }

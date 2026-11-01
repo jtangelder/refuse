@@ -3,12 +3,15 @@ import {
   ChangeDetectionStrategy,
   computed,
   inject,
+  input,
+  output,
   signal,
   viewChild,
   type TemplateRef,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -51,6 +54,7 @@ const FUSE_GENRES: readonly string[] = [
   imports: [
     MatButtonModule,
     MatIconModule,
+    MatMenuModule,
     MatTooltipModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -71,6 +75,9 @@ export class DashboardComponent {
   protected readonly presetService = inject(PresetService);
   private readonly notifications = inject(NotificationService);
   private readonly dialog = inject(MatDialog);
+
+  isMobile = input<boolean>(false);
+  toggleSidebar = output<void>();
 
   private readonly saveAsDialogTpl = viewChild.required<TemplateRef<unknown>>('saveAsDialogTpl');
   private readonly presetInfoDialogTpl = viewChild.required<TemplateRef<unknown>>('presetInfoDialogTpl');
@@ -209,6 +216,7 @@ export class DashboardComponent {
     this.saveAsDraftName.set(this.currentPresetName());
     const dialogRef = this.dialog.open(this.saveAsDialogTpl(), {
       width: '420px',
+      maxWidth: '94dvw',
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result === 'confirm') {
@@ -229,6 +237,7 @@ export class DashboardComponent {
   openAboutDialog() {
     this.dialog.open(WelcomeComponent, {
       width: '460px',
+      maxWidth: '94dvw',
       autoFocus: 'first-tabbable',
     });
   }
@@ -244,6 +253,7 @@ export class DashboardComponent {
 
     const dialogRef = this.dialog.open(this.presetInfoDialogTpl(), {
       width: '560px',
+      maxWidth: '94dvw',
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result === 'confirm') {
@@ -285,15 +295,6 @@ export class DashboardComponent {
 
   async onDisconnect() {
     await this.service.disconnect();
-  }
-
-  onQuickAdd() {
-    // Open first empty slot
-    const effs = this.allEffectSettings();
-    const emptySlot = effs.findIndex(e => !e);
-    if (emptySlot !== -1) {
-      this.activeSlot.set(emptySlot);
-    }
   }
 
   protected isEffectSlot(slot: number | 'amp'): boolean {

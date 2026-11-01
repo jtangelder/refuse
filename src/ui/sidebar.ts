@@ -1,4 +1,13 @@
-import { Component, ChangeDetectionStrategy, inject, signal, viewChild, type TemplateRef } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+  type TemplateRef,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -33,6 +42,10 @@ export class SidebarComponent {
 
   private readonly saveDialogTpl = viewChild.required<TemplateRef<unknown>>('saveDialogTpl');
 
+  isMobile = input<boolean>(false);
+  presetSelected = output<number>();
+  closeDrawer = output<void>();
+
   protected readonly draftName = signal('');
   protected readonly allPresetSlots = this.presetService.allSlots;
   private readonly presetSaveName = this.presetService.currentPresetName;
@@ -43,6 +56,7 @@ export class SidebarComponent {
 
   async changePreset(slot: number) {
     await this.presetService.loadPreset(slot);
+    this.presetSelected.emit(slot);
   }
 
   async onListKeyDown(event: KeyboardEvent) {

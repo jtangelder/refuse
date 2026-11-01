@@ -1,4 +1,17 @@
 <nav class="sidebar-container" aria-label="Preset list">
+  @if (isMobile()) {
+    <div class="sidebar-mobile-header">
+      <span class="sidebar-mobile-title">Presets</span>
+      <button
+        mat-icon-button
+        class="sidebar-close-btn"
+        aria-label="Close preset drawer"
+        (click)="closeDrawer.emit()"
+      >
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+  }
   <div class="presets-list-scroll">
     <ul class="preset-items" role="list" (keydown)="onListKeyDown($event)">
       @for (slot of allPresetSlots(); track slot) {

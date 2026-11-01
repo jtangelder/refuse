@@ -4,6 +4,7 @@
   align-items: center;
   gap: 5px;
   width: 100%;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -16,7 +17,9 @@
   justify-content: center;
   border-radius: 50%;
   outline: none;
-  touch-action: pan-x;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .knob-container:focus-visible {

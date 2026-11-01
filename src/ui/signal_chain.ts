@@ -14,6 +14,7 @@ import {
 import { DragDropModule, type CdkDrag, type CdkDragDrop } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   DspType,
@@ -46,7 +47,7 @@ export interface EmptySlotPlaceholder {
 
 @Component({
   selector: 'fuse-signal-chain',
-  imports: [DragDropModule, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [DragDropModule, MatButtonModule, MatIconModule, MatSlideToggleModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './signal_chain.ng.html',
   styleUrls: ['./sprites.css', './signal_chain.scss'],
@@ -55,7 +56,9 @@ export class SignalChainComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly toneCanvasRef = viewChild<ElementRef<HTMLElement>>('toneCanvas');
 
+  isMobile = input<boolean>(false);
   activeSlot = input<number | 'amp' | null>(null);
+  selectedCategory = input<DspType | null>(null);
   effects = input<(EffectSettings | null)[]>([]);
   ampSettings = input<AmpSettings | null>(null);
   cabinetModels = input<CabinetDef[]>([]);
@@ -65,7 +68,6 @@ export class SignalChainComponent {
   toggleEffect = output<{ slot: number; enabled: boolean }>();
   clearEffect = output<number>();
   movePosition = output<{ fromSlot: number; toSlot: number }>();
-  quickAdd = output<void>();
   tapTempoBpm = output<number>();
   openPresetInfo = output<void>();
 
@@ -388,18 +390,11 @@ export class SignalChainComponent {
     });
   }
 
-  onQuickAddBlock() {
-    const preEmpty = this.preEmptySlots();
-    if (preEmpty.length > 0) {
-      this.onSelectEmpty(preEmpty[0].targetSlot, preEmpty[0].category);
-      return;
-    }
-    const postEmpty = this.postEmptySlots();
-    if (postEmpty.length > 0) {
-      this.onSelectEmpty(postEmpty[0].targetSlot, postEmpty[0].category);
-      return;
-    }
-    this.quickAdd.emit();
+  onToggleBypassSlide(item: ChainEffectItem, enabled: boolean) {
+    this.toggleEffect.emit({
+      slot: item.slot,
+      enabled,
+    });
   }
 
   getTypeTitle(type: DspType): string {
