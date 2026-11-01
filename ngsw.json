@@ -1,0 +1,162 @@
+{
+  "configVersion": 1,
+  "timestamp": 1793519079070,
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/favicon.ico",
+        "/favicon.png",
+        "/index.html",
+        "/main.891be2b8cf526dfc.js",
+        "/manifest.webmanifest",
+        "/polyfills.5f62635cf4d3396f.js",
+        "/runtime.d08bb8a19e08d2d0.js",
+        "/styles.4a7a72702b9dab49.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/amps.4729beb083c8a769.webp",
+        "/assets/generated_batches/amps_batch_1.jpg",
+        "/assets/generated_batches/amps_batch_2.jpg",
+        "/assets/generated_batches/amps_batch_3.jpg",
+        "/assets/generated_batches/amps_batch_4.jpg",
+        "/assets/generated_batches/amps_batch_a.jpg",
+        "/assets/generated_batches/amps_batch_b.jpg",
+        "/assets/generated_batches/amps_batch_c.jpg",
+        "/assets/generated_batches/amps_batch_d.jpg",
+        "/assets/generated_batches/amps_master.jpg",
+        "/assets/generated_batches/delay_batch_1.jpg",
+        "/assets/generated_batches/delay_batch_2.jpg",
+        "/assets/generated_batches/delay_master.jpg",
+        "/assets/generated_batches/mod_batch_1.jpg",
+        "/assets/generated_batches/mod_batch_2.jpg",
+        "/assets/generated_batches/mod_batch_3.jpg",
+        "/assets/generated_batches/mod_master.jpg",
+        "/assets/generated_batches/reverb_batch_1.jpg",
+        "/assets/generated_batches/reverb_master.jpg",
+        "/assets/generated_batches/stomp_batch_1.jpg",
+        "/assets/generated_batches/stomp_batch_2.jpg",
+        "/assets/generated_batches/stomp_master.jpg",
+        "/assets/mustang-intro.webp",
+        "/assets/sprites/amps.webp",
+        "/assets/sprites/delay.webp",
+        "/assets/sprites/mod.webp",
+        "/assets/sprites/reverb.webp",
+        "/assets/sprites/stomp.webp",
+        "/delay.77e78627f1160ece.webp",
+        "/icons/icon-128x128.png",
+        "/icons/icon-144x144.png",
+        "/icons/icon-152x152.png",
+        "/icons/icon-192x192.png",
+        "/icons/icon-384x384.png",
+        "/icons/icon-512x512.png",
+        "/icons/icon-72x72.png",
+        "/icons/icon-96x96.png",
+        "/icons/maskable-icon-512x512.png",
+        "/mod.6d0786c3200bcca1.webp",
+        "/reverb.505aa3ca76288bab.webp",
+        "/stomp.550a108ee345a6a4.webp"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "fonts",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [],
+      "patterns": [
+        "https:\\/\\/fonts\\.googleapis\\.com\\/.*",
+        "https:\\/\\/fonts\\.gstatic\\.com\\/.*"
+      ]
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/amps.4729beb083c8a769.webp": "ad0c511d0440de15e6cae10c8983703f16fc4779",
+    "/assets/generated_batches/amps_batch_1.jpg": "b0c0f2d02342a7ca58eb388471ca51c938d2e191",
+    "/assets/generated_batches/amps_batch_2.jpg": "89775d77878c8307e8dac9bd37e7eb643beae7c0",
+    "/assets/generated_batches/amps_batch_3.jpg": "4b2497adac5ab0367979cc466f7fd2886f7c1952",
+    "/assets/generated_batches/amps_batch_4.jpg": "ee15c3c7ab182b2276b46ff51607f7bfac3955a4",
+    "/assets/generated_batches/amps_batch_a.jpg": "40472a1769a8c831b0162e34aba0e588ae3792d0",
+    "/assets/generated_batches/amps_batch_b.jpg": "79f8a006002b66351076abdf1c84d406928fa2c7",
+    "/assets/generated_batches/amps_batch_c.jpg": "9f18baa212abed9feac2d2d5d67abf683437763a",
+    "/assets/generated_batches/amps_batch_d.jpg": "3f57d8d58cf4724bca24f2eaecfc8081243fff2f",
+    "/assets/generated_batches/amps_master.jpg": "d84d23f9a4b72b398af1d2b797f72bc1702f7aa0",
+    "/assets/generated_batches/delay_batch_1.jpg": "6ac8e29deabaf7eda7ec860125bc179c936699e2",
+    "/assets/generated_batches/delay_batch_2.jpg": "25e9b449ebbb15997be1e9173650d6f8c0a295f1",
+    "/assets/generated_batches/delay_master.jpg": "2746a3bb6825be763604186ad836759a1b055c6f",
+    "/assets/generated_batches/mod_batch_1.jpg": "9ea076530068c7141873259951ff52c5d118d4ab",
+    "/assets/generated_batches/mod_batch_2.jpg": "f5d0948d92f5a4e773c0fdce1ae7c6fb5c6b5442",
+    "/assets/generated_batches/mod_batch_3.jpg": "8e1240e3cb592e9954aab0c7229886de9b13ced5",
+    "/assets/generated_batches/mod_master.jpg": "2bbcf9324b3b832569d787e4b81ce14b5b91e3a1",
+    "/assets/generated_batches/reverb_batch_1.jpg": "ed2e4e1340e0cc5c3dd2f522644f94b076804504",
+    "/assets/generated_batches/reverb_master.jpg": "f0f20801d6bead37024af43fa03dff947f9a12f0",
+    "/assets/generated_batches/stomp_batch_1.jpg": "7dce9080570b043b390cfadb2e5fc35525c3aead",
+    "/assets/generated_batches/stomp_batch_2.jpg": "d40366b9d63b56c88c16074948182da84ab03f11",
+    "/assets/generated_batches/stomp_master.jpg": "4349e3c1db7c022822ab5160f74f16cccc9b3995",
+    "/assets/mustang-intro.webp": "878c647b92b3179729ac2ed53a45d1b2659896db",
+    "/assets/sprites/amps.webp": "ad0c511d0440de15e6cae10c8983703f16fc4779",
+    "/assets/sprites/delay.webp": "f370a52543e0f1c6895db27773a71500100d6d61",
+    "/assets/sprites/mod.webp": "70e3aca64e42d84a41bf313b072830584d60b578",
+    "/assets/sprites/reverb.webp": "e38d5019b34beb2430408f1437d038bd65d8d53c",
+    "/assets/sprites/stomp.webp": "06a5057b463eb539588ccb630a03bc075fd05a17",
+    "/delay.77e78627f1160ece.webp": "f370a52543e0f1c6895db27773a71500100d6d61",
+    "/favicon.ico": "8388c245ad4acee82ff45f5b8f5aaa539e81d6b1",
+    "/favicon.png": "8388c245ad4acee82ff45f5b8f5aaa539e81d6b1",
+    "/icons/icon-128x128.png": "57ee4c26ae53bbd7e3ae8a83885c2136493244a8",
+    "/icons/icon-144x144.png": "36092de73699e93498280099bfb0cc9d6bc8a3df",
+    "/icons/icon-152x152.png": "1b2088e26366b27965866a469e7a88eceeb702c4",
+    "/icons/icon-192x192.png": "9ae5c08c8ba908c22f5423fe30dcfd933be583e5",
+    "/icons/icon-384x384.png": "668ef2a0043e5732a083a91839dbd3968e36b3c7",
+    "/icons/icon-512x512.png": "9b3a9dd06fa1e9f5fade33eb1d56a6b40c98a01d",
+    "/icons/icon-72x72.png": "14f6c9e6813ee6168d04ac1984126bd48a6adf0b",
+    "/icons/icon-96x96.png": "cf4278123e2a8ac066eff01f018a6c13cbb22ffe",
+    "/icons/maskable-icon-512x512.png": "9b3a9dd06fa1e9f5fade33eb1d56a6b40c98a01d",
+    "/index.html": "d379528d5bf57b06df7770ef139c7897faadd51c",
+    "/main.891be2b8cf526dfc.js": "0585183b6fb708f90687b4101501ed005fa9da04",
+    "/manifest.webmanifest": "132a8655e5436e35e35acc9114332cf60bee5799",
+    "/mod.6d0786c3200bcca1.webp": "70e3aca64e42d84a41bf313b072830584d60b578",
+    "/polyfills.5f62635cf4d3396f.js": "dafd40149a9e1f5c4b7500b6e0581f97ce60d8c1",
+    "/reverb.505aa3ca76288bab.webp": "e38d5019b34beb2430408f1437d038bd65d8d53c",
+    "/runtime.d08bb8a19e08d2d0.js": "7649dd14ebe911bcb75e1f5d6b76cbee755fb0b0",
+    "/stomp.550a108ee345a6a4.webp": "06a5057b463eb539588ccb630a03bc075fd05a17",
+    "/styles.4a7a72702b9dab49.css": "9ac0cdfbf24d85b94cffe38a4aefdb67a71546a9"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
