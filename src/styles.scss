@@ -189,6 +189,11 @@ textarea {
   -webkit-backdrop-filter: blur(5px) !important;
 }
 
+/* Disable CDK drag drop animation to prevent glitchy reordering on drop */
+.cdk-drag-animating {
+  transition: none !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

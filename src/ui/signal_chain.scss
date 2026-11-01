@@ -202,15 +202,19 @@
   }
 }
 
-/* Smooth hover lift ONLY when not dragging in the list */
-:not(.cdk-drop-list-dragging) > .pedal-node:not(.cdk-drag-dragging):not(.cdk-drag-animating) {
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+/* Smooth hover lift on pedal chassis only, avoiding transform transitions on .pedal-node that glitch drag-drop */
+.pedal-node {
+  transition: none !important;
 
   @media (prefers-reduced-motion: no-preference) {
-    &:hover {
+    &:hover .pedal-sprite-frame {
       transform: translateY(-4px);
     }
   }
+}
+
+:not(.cdk-drop-list-dragging) > .pedal-node {
+  transition: none !important;
 }
 
 .pedal-node.cdk-drag-dragging {
@@ -235,6 +239,7 @@
   border-radius: 6px;
   filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.8));
   transition:
+    transform 0.2s cubic-bezier(0.2, 0, 0, 1),
     filter 0.2s,
     opacity 0.2s;
 }
@@ -302,7 +307,7 @@
 }
 
 .cdk-drag-animating {
-  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1) !important;
+  transition: none !important;
 }
 
 .pedal-drag-preview {
