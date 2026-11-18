@@ -41,6 +41,7 @@ export class KnobComponent {
   private activePointerId: number | null = null;
 
   onPointerDown(event: PointerEvent) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
     this.isDragging.set(true);
     this.startY = event.clientY;
     this.startValue = this.value();

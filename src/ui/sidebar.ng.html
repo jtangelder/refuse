@@ -1,4 +1,4 @@
-<nav class="sidebar-container" aria-label="Preset list">
+<nav class="sidebar-container" aria-label="Presets">
   @if (isMobile()) {
     <div class="sidebar-mobile-header">
       <span class="sidebar-mobile-title">Presets</span>
@@ -13,7 +13,7 @@
     </div>
   }
   <div class="presets-list-scroll" #listScroll>
-    <ul class="preset-items" role="list" (keydown)="onListKeyDown($event)">
+    <ul class="preset-items" (keydown)="onListKeyDown($event)">
       @for (slot of allPresetSlots(); track slot) {
         <li class="preset-row">
           <button
@@ -64,43 +64,58 @@
       <mat-icon aria-hidden="true">file_download</mat-icon>
       <span>Export</span>
     </button>
-    <input #fileInput type="file" accept=".fuse,.xml" (change)="importFusePreset($event)" style="display: none;" />
+    <input #fileInput type="file" accept=".fuse,.xml" hidden (change)="importFusePreset($event)" />
   </div>
 </nav>
 
 <ng-template #saveDialogTpl>
-  <h2 mat-dialog-title>Save Active Preset</h2>
-  <mat-dialog-content>
-    <p class="dialog-subtitle">Choose a target slot and name on your amplifier</p>
-    <div class="dialog-form-stack">
-      <mat-form-field appearance="outline" class="dialog-full-width">
-        <mat-label>Target Slot</mat-label>
-        <mat-select [value]="targetSlot()" (selectionChange)="targetSlot.set($event.value)">
-          @for (slot of allPresetSlots(); track slot) {
-            <mat-option [value]="slot">
-              {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+  <form novalidate (submit)="onSavePresetSubmit($event)">
+    <h2 mat-dialog-title>Save Active Preset</h2>
+    <mat-dialog-content>
+      <p class="dialog-subtitle">Choose a target slot and name on your amplifier</p>
+      <div class="dialog-form-stack">
+        <mat-form-field appearance="outline" class="dialog-full-width">
+          <mat-label>Target Slot</mat-label>
+          <mat-select [value]="targetSlot()" (selectionChange)="targetSlot.set($event.value)">
+            @for (slot of allPresetSlots(); track slot) {
+              <mat-option [value]="slot">
+                {{ (slot + 1).toString().padStart(2, '0') }} — {{ service.presets().get(slot)?.name || 'Preset ' + (slot + 1) }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="dialog-full-width">
-        <mat-label>Preset Name</mat-label>
-        <input
-          #presetNameInput
-          matInput
-          type="text"
-          maxlength="31"
-          required
-          [value]="draftName()"
-          (input)="onDraftNameInput($event)"
-        />
-      </mat-form-field>
-    </div>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Cancel</button>
-    <button mat-flat-button color="primary" [mat-dialog-close]="'save'">Save Preset</button>
-  </mat-dialog-actions>
+        <mat-form-field appearance="outline" class="dialog-full-width">
+          <mat-label>Preset Name</mat-label>
+          <input
+            #presetNameInput
+            matInput
+            name="presetName"
+            type="text"
+            maxlength="31"
+            enterkeyhint="done"
+            required
+            [value]="draftName()"
+            [attr.aria-invalid]="nameError() ? 'true' : null"
+            [attr.aria-describedby]="nameError() ? 'preset-name-error' : null"
+            (input)="onDraftNameInput($event)"
+            (blur)="onDraftNameBlur()"
+          />
+        </mat-form-field>
+        @if (nameError()) {
+          <p id="preset-name-error" class="field-error-msg" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            <span>{{ nameError() }}</span>
+          </p>
+        }
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button type="button" mat-button mat-dialog-close>Cancel</button>
+      <button type="submit" mat-flat-button color="primary" [disabled]="savingPreset()">
+        {{ savingPreset() ? 'Saving…' : 'Save Preset' }}
+      </button>
+    </mat-dialog-actions>
+  </form>
 </ng-template>
 

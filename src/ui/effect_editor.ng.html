@@ -3,7 +3,7 @@
   <header class="editor-header">
     <!-- Position & Category Tag -->
     <div class="slot-badge-group">
-      <h2 class="slot-title">{{ slotCategoryName() }}</h2>
+      <h2 id="effect-category-label" class="slot-title">{{ slotCategoryName() }}</h2>
     </div>
 
     <!-- Bypass Slide Toggle -->
@@ -17,8 +17,14 @@
 
     <!-- Model Dropdown -->
     <div class="model-selector">
-      <button mat-button [matMenuTriggerFor]="typeMenu" class="model-select-btn">
-        <span class="model-label">{{ currentModelName() }}</span>
+      <button
+        type="button"
+        mat-button
+        [matMenuTriggerFor]="typeMenu"
+        class="model-select-btn"
+        aria-labelledby="effect-category-label effect-model-value"
+      >
+        <span id="effect-model-value" class="model-label">{{ currentModelName() }}</span>
         <mat-icon class="dropdown-icon" aria-hidden="true">arrow_drop_down</mat-icon>
       </button>
 

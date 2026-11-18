@@ -7,16 +7,21 @@ export class NotificationService {
   private readonly zone = inject(NgZone);
 
   info(message: string): void {
-    this.open(message, 3000);
+    this.open(message, 3000, undefined, 'polite');
   }
 
   error(message: string): void {
-    this.open(message, 6000, 'Dismiss');
+    this.open(message, 6000, 'Dismiss', 'assertive');
   }
 
-  private open(message: string, duration: number, action?: string): void {
+  private open(
+    message: string,
+    duration: number,
+    action?: string,
+    politeness: 'polite' | 'assertive' = 'polite',
+  ): void {
     // Errors may originate outside Angular (e.g. WebHID callbacks).
-    this.zone.run(() => this.snackBar.open(message, action, { duration, politeness: 'assertive' }));
+    this.zone.run(() => this.snackBar.open(message, action, { duration, politeness }));
   }
 }
 

@@ -1,9 +1,10 @@
 import { test, expect } from 'vitest';
 import { DemoProtocol } from '../protocol/demo_protocol';
-import { FuseAPI } from '../index';
+import { FuseAPI, AMP_MODELS, EFFECT_MODELS } from '../index';
 import { Store } from '../store';
 import { getModelDefault } from '../defaults';
 import { OFFSETS } from '../protocol/constants';
+import { setInterPacketDelay, resetInterPacketDelay } from '../protocol/write_queue';
 
 test('DemoProtocol should connect and emit random configuration', async () => {
   const protocol = new DemoProtocol();
@@ -65,4 +66,36 @@ test('FuseAPI in demo mode should initialize', () => {
   expect(api).toBeDefined();
   // We can check internal state or properties if we want, but simple init check is good start
   expect(api.isSupported).toBe(true);
+});
+
+test('DemoProtocol should persist saved preset name and tone across preset switches', async () => {
+  setInterPacketDelay(0);
+  try {
+    const store = new Store();
+    const protocol = new DemoProtocol();
+    const api = new FuseAPI(store, protocol);
+    await api.connect();
+
+    await api.amp.setAmpModelById(AMP_MODELS.SUPER_SONIC.id);
+    await api.amp.setAmpKnob(0, 212);
+    await api.effects.replaceAllEffects([{ slot: 0, modelId: EFFECT_MODELS.ORANGE_BOX.id, enabled: false }]);
+    await api.presets.savePreset(5, 'Saved SuperSonic');
+
+    // Switch away to slot 1
+    await api.presets.loadPreset(1);
+    expect(api.state.currentPresetSlot).toBe(1);
+
+    // Reload saved slot 5 -> should restore Saved SuperSonic, Super-Sonic amp (Vol=212), and bypassed Orange Box
+    await api.presets.loadPreset(5);
+    expect(api.state.currentPresetSlot).toBe(5);
+    expect(api.presets.getPreset(5)?.name).toBe('Saved SuperSonic');
+    expect(api.amp.getAmpModel()?.id).toBe(AMP_MODELS.SUPER_SONIC.id);
+    expect(api.amp.getAmpKnobs().find(k => k.name === 'Vol')?.value).toBe(212);
+    expect(api.effects.getSettings(0)?.modelId).toBe(EFFECT_MODELS.ORANGE_BOX.id);
+    expect(api.effects.getSettings(0)?.enabled).toBe(false);
+
+    await api.disconnect();
+  } finally {
+    resetInterPacketDelay();
+  }
 });

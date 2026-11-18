@@ -67,7 +67,7 @@ export class SignalChainComponent {
   emptyCategorySelect = output<{ slot: number; category: DspType }>();
   toggleEffect = output<{ slot: number; enabled: boolean }>();
   clearEffect = output<number>();
-  movePosition = output<{ fromSlot: number; toSlot: number }>();
+  movePosition = output<{ fromSlot: number; toSlot: number; appendToGroup?: boolean }>();
   tapTempoBpm = output<number>();
   randomizeSetup = output<void>();
 
@@ -328,15 +328,13 @@ export class SignalChainComponent {
       if (!draggedItem) return;
       const preList = this.preEffects();
       if (preList.length >= 4) return;
-      let toSlot: number;
       if (preList.length === 0) {
-        toSlot = 0;
+        this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot: 0 });
       } else if (event.currentIndex < preList.length) {
-        toSlot = preList[event.currentIndex].slot;
+        this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot: preList[event.currentIndex].slot });
       } else {
-        toSlot = Math.min(preList.length, 3);
+        this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot: 3, appendToGroup: true });
       }
-      this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot });
     }
   }
 
@@ -358,15 +356,13 @@ export class SignalChainComponent {
       // Cross-container: Pre to Post
       const postList = this.postEffects();
       if (postList.length >= 4) return;
-      let toSlot: number;
       if (postList.length === 0) {
-        toSlot = 4;
+        this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot: 4 });
       } else if (event.currentIndex < postList.length) {
-        toSlot = postList[event.currentIndex].slot;
+        this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot: postList[event.currentIndex].slot });
       } else {
-        toSlot = Math.min(4 + postList.length, 7);
+        this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot: 7, appendToGroup: true });
       }
-      this.movePosition.emit({ fromSlot: draggedItem.slot, toSlot });
     }
   }
 
@@ -410,6 +406,16 @@ export class SignalChainComponent {
       default:
         return 'Effect';
     }
+  }
+
+  onTapTempoPointer(event: PointerEvent) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    this.onTapTempo();
+  }
+
+  onTapTempoKey(event: Event) {
+    if (event instanceof KeyboardEvent && event.repeat) return;
+    this.onTapTempo();
   }
 
   onTapTempo() {

@@ -14,10 +14,11 @@ import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, type MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { sanitizePresetName } from '../lib/controllers/preset_controller';
 import { FuseService } from '../services/fuse.service';
 import { PresetService } from '../services/preset.service';
 import { NotificationService } from '../services/notification.service';
@@ -45,13 +46,17 @@ export class SidebarComponent {
   private readonly dialog = inject(MatDialog);
 
   private readonly saveDialogTpl = viewChild.required<TemplateRef<unknown>>('saveDialogTpl');
+  private readonly presetNameInputRef = viewChild<ElementRef<HTMLInputElement>>('presetNameInput');
   private readonly listScrollRef = viewChild<ElementRef<HTMLElement>>('listScroll');
+  private activeSaveDialogRef: MatDialogRef<unknown> | null = null;
 
   isMobile = input<boolean>(false);
   presetSelected = output<number>();
   closeDrawer = output<void>();
 
   protected readonly draftName = signal('');
+  protected readonly nameError = signal<string | null>(null);
+  protected readonly savingPreset = signal(false);
   protected readonly targetSlot = signal(0);
   protected readonly allPresetSlots = this.presetService.allSlots;
   private readonly presetSaveName = this.presetService.currentPresetName;
@@ -74,13 +79,28 @@ export class SidebarComponent {
   }
 
   private scrollSlotIntoView(slot: number, behavior: ScrollBehavior) {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+    const resolvedBehavior: ScrollBehavior = behavior === 'smooth' && prefersReducedMotion ? 'instant' : behavior;
     const container = this.listScrollRef()?.nativeElement;
     const btn = container?.querySelector<HTMLElement>(`button[data-slot="${slot}"]`);
-    btn?.scrollIntoView({ block: 'nearest', behavior });
+    btn?.scrollIntoView({ block: 'nearest', behavior: resolvedBehavior });
   }
 
   onDraftNameInput(event: Event) {
-    this.draftName.set((event.target as HTMLInputElement).value);
+    const val = (event.target as HTMLInputElement).value;
+    this.draftName.set(val);
+    if (this.nameError() && sanitizePresetName(val)) {
+      this.nameError.set(null);
+    }
+  }
+
+  onDraftNameBlur() {
+    if (!sanitizePresetName(this.draftName())) {
+      this.nameError.set('Preset name is required.');
+    }
   }
 
   async changePreset(slot: number) {
@@ -117,20 +137,41 @@ export class SidebarComponent {
     const slot = this.service.currentPresetSlot() ?? 0;
     this.targetSlot.set(slot);
     this.draftName.set(this.presetSaveName());
-    const dialogRef = this.dialog.open(this.saveDialogTpl(), {
+    this.nameError.set(null);
+    this.savingPreset.set(false);
+    this.activeSaveDialogRef = this.dialog.open(this.saveDialogTpl(), {
       width: '420px',
       maxWidth: '94dvw',
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result === 'save') {
-        const targetSlot = this.targetSlot();
-        const name = this.draftName().trim();
-        if (name) {
-          await this.presetService.savePreset(targetSlot, name);
-          this.notifications.info(`Saved preset "${name}" to slot ${targetSlot + 1}.`);
-        }
-      }
+    this.activeSaveDialogRef.afterClosed().subscribe(() => {
+      this.activeSaveDialogRef = null;
+      this.savingPreset.set(false);
     });
+  }
+
+  async onSavePresetSubmit(event: Event) {
+    event.preventDefault();
+    if (this.savingPreset()) return;
+
+    const cleanName = sanitizePresetName(this.draftName());
+    if (!cleanName) {
+      this.nameError.set('Preset name is required.');
+      this.presetNameInputRef()?.nativeElement.focus();
+      return;
+    }
+
+    this.savingPreset.set(true);
+    try {
+      const targetSlot = this.targetSlot();
+      await this.presetService.savePreset(targetSlot, cleanName);
+      this.activeSaveDialogRef?.close('save');
+      this.notifications.info(`Saved preset "${cleanName}" to slot ${targetSlot + 1}.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.notifications.error(`Failed to save preset: ${msg}`);
+    } finally {
+      this.savingPreset.set(false);
+    }
   }
 
   async importFusePreset(event: Event) {

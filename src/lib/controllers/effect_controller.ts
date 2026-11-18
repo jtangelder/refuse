@@ -208,31 +208,59 @@ export class EffectController extends BaseController {
     return false;
   }
 
-  async moveEffect(fromSlot: number, toSlot: number): Promise<void> {
+  async moveEffect(fromSlot: number, toSlot: number, options?: { appendToGroup?: boolean }): Promise<number> {
     if (!isValidSlot(fromSlot) || !isValidSlot(toSlot)) {
       throw new Error(`Invalid slot indices: ${fromSlot}, ${toSlot}`);
     }
-    if (fromSlot === toSlot) return;
+    if (fromSlot === toSlot && !options?.appendToGroup) return toSlot;
 
     const before = this.store.getState().slots;
     const slots = [...before];
     const size = LIMITS.GROUP_SIZE;
     const fromStart = groupStart(fromSlot);
     const toStart = groupStart(toSlot);
+    let landedSlot = toSlot;
 
     if (fromStart === toStart) {
       const group = slots.slice(fromStart, fromStart + size);
       const [moved] = group.splice(fromSlot - fromStart, 1);
       group.splice(toSlot - fromStart, 0, moved);
       group.forEach((e, i) => (slots[fromStart + i] = e));
+      landedSlot = toSlot;
     } else {
       const source = slots.slice(fromStart, fromStart + size);
       const [moved] = source.splice(fromSlot - fromStart, 1);
       source.push(null);
 
       const target = slots.slice(toStart, toStart + size);
-      target.splice(toSlot - toStart, 0, moved);
-      target.pop(); // keep group size fixed
+      let insertIdx = toSlot - toStart;
+      if (options?.appendToGroup) {
+        let lastNonNullIdx = -1;
+        for (let i = size - 1; i >= 0; i--) {
+          if (target[i] !== null) {
+            lastNonNullIdx = i;
+            break;
+          }
+        }
+        insertIdx = lastNonNullIdx + 1;
+      }
+
+      target.splice(insertIdx, 0, moved);
+      // Remove an empty hole rather than evicting an occupied pedal whenever space exists
+      const nullAfter = target.indexOf(null, insertIdx + 1);
+      if (nullAfter !== -1) {
+        target.splice(nullAfter, 1);
+        landedSlot = toStart + insertIdx;
+      } else {
+        const nullBefore = insertIdx > 0 ? target.lastIndexOf(null, insertIdx - 1) : -1;
+        if (nullBefore !== -1) {
+          target.splice(nullBefore, 1);
+          landedSlot = toStart + insertIdx - 1;
+        } else {
+          target.pop();
+          landedSlot = toStart + Math.min(insertIdx, size - 1);
+        }
+      }
 
       for (let i = 0; i < size; i++) {
         slots[fromStart + i] = source[i];
@@ -241,6 +269,7 @@ export class EffectController extends BaseController {
     }
 
     await this.syncSlots(before, slots);
+    return landedSlot;
   }
 
   /** @deprecated Use moveEffect instead */

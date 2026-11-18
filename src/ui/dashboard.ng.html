@@ -137,7 +137,7 @@
   (emptyCategorySelect)="onSelectEmptyCategory($event)"
   (toggleEffect)="toggleEffect($event.slot, $event.enabled)"
   (clearEffect)="clearSlot($event)"
-  (movePosition)="moveEffectPosition($event.fromSlot, $event.toSlot)"
+  (movePosition)="moveEffectPosition($event.fromSlot, $event.toSlot, $event.appendToGroup)"
   (tapTempoBpm)="onTapTempoBpm($event)"
   (randomizeSetup)="randomizeSetup()"
 ></fuse-signal-chain>
@@ -169,7 +169,7 @@
     (toggleChange)="toggleEffect(asNumber(activeSlot())!, $event)"
     (knobChange)="changeEffectKnob(asNumber(activeSlot())!, $event.index, $event.value)"
     (clearRequest)="clearSlot(asNumber(activeSlot())!)"
-    (movePositionRequest)="moveEffectPosition($event.fromSlot, $event.toSlot)"
+    (movePositionRequest)="moveEffectPosition($event.fromSlot, $event.toSlot, $event.appendToGroup)"
   ></fuse-effect-editor>
   }
 </main>

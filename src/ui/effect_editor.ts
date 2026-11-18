@@ -25,7 +25,7 @@ export class EffectEditorComponent {
   toggleChange = output<boolean>();
   knobChange = output<{ index: number; value: number }>();
   clearRequest = output<void>();
-  movePositionRequest = output<{ fromSlot: number; toSlot: number }>();
+  movePositionRequest = output<{ fromSlot: number; toSlot: number; appendToGroup?: boolean }>();
 
   protected DspType = DspType;
 
@@ -90,15 +90,7 @@ export class EffectEditorComponent {
   onMovePosition() {
     const slot = this.activeSlot();
     if (slot === null) return;
-    const effs = this.allEffects();
     const toStart = slot < 4 ? 4 : 0;
-    let targetSlot = toStart;
-    for (let s = toStart; s < toStart + 4; s++) {
-      if (!effs[s]) {
-        targetSlot = s;
-        break;
-      }
-    }
-    this.movePositionRequest.emit({ fromSlot: slot, toSlot: targetSlot });
+    this.movePositionRequest.emit({ fromSlot: slot, toSlot: toStart, appendToGroup: true });
   }
 }

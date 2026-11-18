@@ -27,8 +27,8 @@ export class EffectService {
     return this.controller.setEffectEnabled(slot, enabled);
   }
 
-  moveEffect(fromSlot: number, toSlot: number) {
-    return this.controller.moveEffect(fromSlot, toSlot);
+  moveEffect(fromSlot: number, toSlot: number, options?: { appendToGroup?: boolean }) {
+    return this.controller.moveEffect(fromSlot, toSlot, options);
   }
 
   swapEffects(slotA: number, slotB: number) {

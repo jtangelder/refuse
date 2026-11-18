@@ -70,6 +70,27 @@ export class AmpEditorComponent {
     };
   });
 
+  activeAmpGroup = computed<'fender' | 'british' | 'other' | null>(() => {
+    const id = this.settings()?.modelId;
+    if (id === undefined) return null;
+    const groups = this.ampGroups();
+    if (groups.fender.some(m => m.id === id)) return 'fender';
+    if (groups.british.some(m => m.id === id)) return 'british';
+    if (groups.other.some(m => m.id === id)) return 'other';
+    return null;
+  });
+
+  activeCabGroup = computed<'off' | 'single' | 'double' | 'quad' | null>(() => {
+    const id = this.settings()?.cabinetId;
+    if (id === undefined) return null;
+    if (id === 0) return 'off';
+    const groups = this.cabGroups();
+    if (groups.single.some(c => c.id === id)) return 'single';
+    if (groups.double.some(c => c.id === id)) return 'double';
+    if (groups.quad.some(c => c.id === id)) return 'quad';
+    return null;
+  });
+
   onAmpChange(value: number | string) {
     this.ampChange.emit(Number(value));
   }

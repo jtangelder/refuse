@@ -111,4 +111,65 @@ describe('PresetImporter Integration via FuseAPI', () => {
     // Should still process same valid modules
     expect(protocol.sendPacket).toHaveBeenCalledTimes(4);
   });
+
+  it('should send hardware clear packets for previously active DSP blocks absent from imported XML', async () => {
+    await api.effects.setEffectById(5, EFFECT_MODELS.TAPE_DELAY.id);
+    await api.effects.setEffectById(6, EFFECT_MODELS.LARGE_HALL.id);
+    protocol.sendPacket.mockClear();
+
+    // mockPresetXml only has Amplifier + Stompbox (no Delay or Reverb)
+    await api.loadPresetFromXml(mockPresetXml);
+
+    expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+    expect(store.getState().slots[5]).toBeNull();
+    expect(store.getState().slots[6]).toBeNull();
+
+    // 2 clears (Delay + Reverb = 4 packets) + 2 modules (Amp + Stomp = 4 packets) = 8 packets
+    expect(protocol.sendPacket).toHaveBeenCalledTimes(8);
+  });
+
+  it('should clamp Stompbox POS to pre-amp and resolve duplicate POS collisions across imported effects', async () => {
+    const collidingXml = `
+      <Preset name="Collision Test">
+        <FX>
+          <Stompbox>
+            <Module ID="19" POS="6" BypassState="0" />
+          </Stompbox>
+          <Modulation>
+            <Module ID="26" POS="3" BypassState="0" />
+          </Modulation>
+        </FX>
+      </Preset>
+    `;
+
+    await api.loadPresetFromXml(collidingXml);
+    const slots = store.getState().slots;
+
+    // Stompbox POS=6 clamped to 3; Modulation POS=3 reassigned to next free pre-amp slot 0
+    expect(slots[3]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+    expect(slots[0]?.modelId).toBe(EFFECT_MODELS.SINE_CHORUS.id);
+  });
+
+  it('should clear stale presetDetails when importing XML without Info or switching presets', async () => {
+    await api.loadPresetFromXml(mockPresetXml);
+    expect(store.getState().presetDetails.author).toBe('Fender Audio');
+
+    const minimalXml = `
+      <Preset name="Bare">
+        <Amplifier>
+          <Module ID="0" POS="0" BypassState="0" />
+        </Amplifier>
+      </Preset>
+    `;
+    await api.loadPresetFromXml(minimalXml);
+    expect(store.getState().presetDetails.author).toBeUndefined();
+
+    // Re-import with author, select slot 0, then switch to slot 1 -> author should clear
+    await api.loadPresetFromXml(mockPresetXml);
+    store.setPresetActive(0, 'Slot 0');
+    expect(store.getState().presetDetails.author).toBe('Fender Audio');
+
+    store.setPresetActive(1, 'Slot 1');
+    expect(store.getState().presetDetails.author).toBeUndefined();
+  });
 });

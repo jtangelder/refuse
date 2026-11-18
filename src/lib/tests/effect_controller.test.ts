@@ -344,5 +344,72 @@ describe('EffectController', () => {
       // Total 4 packets
       expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(4);
     });
+
+    it('should preserve existing effects when moving cross-group into slots with null holes', async () => {
+      // Pre-amp has empty holes at 0, 1 and occupied pedals at 2 (MOD) and 3 (DELAY)
+      store.updateSlotState(2, {
+        slot: 2,
+        type: DspType.MOD,
+        modelId: EFFECT_MODELS.SINE_CHORUS.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(3, {
+        slot: 3,
+        type: DspType.DELAY,
+        modelId: EFFECT_MODELS.MONO_DELAY.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(4, {
+        slot: 4,
+        type: DspType.REVERB,
+        modelId: EFFECT_MODELS.SMALL_HALL.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+
+      const landed = await controller.moveEffect(4, 0);
+      const slots = store.getState().slots;
+
+      expect(landed).toBe(0);
+      expect(slots[0]?.modelId).toBe(EFFECT_MODELS.SMALL_HALL.id);
+      expect(slots[2]?.modelId).toBe(EFFECT_MODELS.SINE_CHORUS.id);
+      expect(slots[3]?.modelId).toBe(EFFECT_MODELS.MONO_DELAY.id);
+      expect(slots[4]).toBeNull();
+    });
+
+    it('should append after the last occupied slot when appendToGroup is set', async () => {
+      store.updateSlotState(1, {
+        slot: 1,
+        type: DspType.MOD,
+        modelId: EFFECT_MODELS.SINE_CHORUS.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(3, {
+        slot: 3,
+        type: DspType.DELAY,
+        modelId: EFFECT_MODELS.MONO_DELAY.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(4, {
+        slot: 4,
+        type: DspType.REVERB,
+        modelId: EFFECT_MODELS.SMALL_HALL.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+
+      const landed = await controller.moveEffect(4, 3, { appendToGroup: true });
+      const slots = store.getState().slots;
+
+      expect(landed).toBe(3);
+      expect(slots[1]?.modelId).toBe(EFFECT_MODELS.SINE_CHORUS.id);
+      expect(slots[2]?.modelId).toBe(EFFECT_MODELS.MONO_DELAY.id);
+      expect(slots[3]?.modelId).toBe(EFFECT_MODELS.SMALL_HALL.id);
+      expect(slots[4]).toBeNull();
+    });
   });
 });

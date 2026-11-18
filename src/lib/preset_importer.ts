@@ -2,7 +2,7 @@ import { DspType, resolveFuseModelId, findAmpModel, findEffectModel } from './mo
 import { PacketBuilder } from './protocol/packet_builder';
 import { type IProtocol } from './protocol/protocol_interface';
 import { enqueueWrite, type PacketFactory } from './protocol/write_queue';
-import { AMP_KNOB_INDEX, LIMITS, toByte } from './protocol/constants';
+import { AMP_KNOB_INDEX, LIMITS, OFFSETS, VALUES, toByte } from './protocol/constants';
 import { normalizeAmpState } from './controllers/amp_controller';
 import { normalizeKnobs } from './controllers/effect_controller';
 import { type Store, type PresetDetails } from './store';
@@ -32,30 +32,36 @@ export class PresetImporter {
       throw new Error(`XML parsing failed: ${parserError.textContent?.slice(0, 100) || 'Malformed XML'}`);
     }
 
-    const packets: PacketFactory[] = [];
+    const beforeSlots = this.store ? [...this.store.getState().slots] : [];
+    const importedTypes = new Set<DspType>();
+    const usedSlots = new Set<number>();
+    const modulePackets: PacketFactory[] = [];
+
     const applyStoreAndCollectPackets = () => {
       this.store?.clearAllSlots();
 
-      // Parse preset info / metadata if present in the FUSE XML
+      // Parse preset info / metadata if present in the FUSE XML (resetting stale metadata if absent)
       const infoNode = doc.querySelector('Info');
-      if (infoNode && this.store) {
-        const details: PresetDetails = {
-          author: infoNode.getAttribute('author') || undefined,
-          description: infoNode.textContent?.trim() || undefined,
-          tags: infoNode.getAttribute('tags') || undefined,
-          genre1: infoNode.getAttribute('genre1') || undefined,
-          genre2: infoNode.getAttribute('genre2') || undefined,
-          genre3: infoNode.getAttribute('genre3') || undefined,
-        };
-        this.store.updatePresetDetails(details);
+      if (this.store) {
+        const details: PresetDetails = infoNode
+          ? {
+              author: infoNode.getAttribute('author') || undefined,
+              description: infoNode.textContent?.trim() || undefined,
+              tags: infoNode.getAttribute('tags') || undefined,
+              genre1: infoNode.getAttribute('genre1') || undefined,
+              genre2: infoNode.getAttribute('genre2') || undefined,
+              genre3: infoNode.getAttribute('genre3') || undefined,
+            }
+          : {};
+        this.store.replacePresetDetails(details);
       }
 
-      packets.push(
-        ...this.collectModulePackets(doc, 'Amplifier', DspType.AMP),
-        ...this.collectModulePackets(doc, 'FX Stompbox', DspType.STOMP),
-        ...this.collectModulePackets(doc, 'FX Modulation', DspType.MOD),
-        ...this.collectModulePackets(doc, 'FX Delay', DspType.DELAY),
-        ...this.collectModulePackets(doc, 'FX Reverb', DspType.REVERB),
+      modulePackets.push(
+        ...this.collectModulePackets(doc, 'Amplifier', DspType.AMP, importedTypes, usedSlots),
+        ...this.collectModulePackets(doc, 'FX Stompbox', DspType.STOMP, importedTypes, usedSlots),
+        ...this.collectModulePackets(doc, 'FX Modulation', DspType.MOD, importedTypes, usedSlots),
+        ...this.collectModulePackets(doc, 'FX Delay', DspType.DELAY, importedTypes, usedSlots),
+        ...this.collectModulePackets(doc, 'FX Reverb', DspType.REVERB, importedTypes, usedSlots),
       );
     };
 
@@ -65,6 +71,20 @@ export class PresetImporter {
       applyStoreAndCollectPackets();
     }
 
+    const clearPackets: PacketFactory[] = [];
+    for (const oldEff of beforeSlots) {
+      if (!oldEff || importedTypes.has(oldEff.type)) continue;
+      clearPackets.push(
+        () =>
+          PacketBuilder.dspWrite(oldEff.type, this.protocol.getNextSequenceId())
+            .setByte(OFFSETS.SLOT_INDEX, oldEff.slot)
+            .setByte(OFFSETS.BYPASS, VALUES.BYPASSED)
+            .build(),
+        () => PacketBuilder.applyChange(oldEff.type, this.protocol.getNextSequenceId()).build(),
+      );
+    }
+
+    const packets = [...clearPackets, ...modulePackets];
     if (packets.length > 0) {
       await enqueueWrite(this.protocol, ...packets);
     }
@@ -141,7 +161,13 @@ export class PresetImporter {
     ].join('\n');
   }
 
-  private collectModulePackets(doc: Document, selector: string, type: DspType): PacketFactory[] {
+  private collectModulePackets(
+    doc: Document,
+    selector: string,
+    type: DspType,
+    importedTypes: Set<DspType>,
+    usedSlots: Set<number>,
+  ): PacketFactory[] {
     const container = doc.querySelector(selector);
     if (!container) return [];
 
@@ -150,11 +176,14 @@ export class PresetImporter {
     for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
       const m = modules[i];
       if (!m) continue;
+      if (importedTypes.has(type)) break;
+
       const parsedFuseId = parseInt(m.getAttribute('ID') || '0', 10);
       const fuseId = isNaN(parsedFuseId) ? 0 : parsedFuseId;
 
       const rawPos = parseInt(m.getAttribute('POS') || '0', 10);
-      const pos = isNaN(rawPos) ? 0 : Math.max(0, Math.min(7, rawPos));
+      const maxPos = type === DspType.STOMP ? LIMITS.GROUP_SIZE - 1 : LIMITS.SLOT_COUNT - 1;
+      let pos = isNaN(rawPos) ? 0 : Math.max(0, Math.min(maxPos, rawPos));
 
       const rawBypass = parseInt(m.getAttribute('BypassState') || '0', 10);
       const bypass = rawBypass === 1 ? 1 : 0; // 1=Off, 0=On
@@ -166,6 +195,21 @@ export class PresetImporter {
       } else {
         continue;
       }
+
+      if (type !== DspType.AMP) {
+        if (usedSlots.has(pos)) {
+          const groupBase = pos < LIMITS.GROUP_SIZE ? 0 : LIMITS.GROUP_SIZE;
+          for (let offset = 0; offset < LIMITS.GROUP_SIZE; offset++) {
+            const candidate = groupBase + offset;
+            if (!usedSlots.has(candidate)) {
+              pos = candidate;
+              break;
+            }
+          }
+        }
+        usedSlots.add(pos);
+      }
+      importedTypes.add(type);
 
       const buffer = new Uint8Array(64);
       buffer[16] = (modelId >> 8) & 0xff;

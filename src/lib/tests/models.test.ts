@@ -164,4 +164,19 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
     expect(isWideEffect(undefined)).toBe(false);
     expect(isRackUnit(undefined)).toBe(false);
   });
+
+  it('scopes FUSE ID resolution by DspType to prevent cross-category collisions', () => {
+    // 42 is Small Hall in REVERB, whereas 0x2a (42 decimal) is Stereo Tape Delay in DELAY
+    expect(resolveFuseModelId(42, DspType.REVERB)).toBe(EFFECT_MODELS.SMALL_HALL.id);
+    expect(resolveFuseModelId(42, DspType.DELAY)).toBe(EFFECT_MODELS.STEREO_TAPE_DELAY.id);
+
+    // Legacy FUSE IDs 67, 68, 69 resolve to Mono Echo Filter, Multitap Delay, Ping Pong Delay
+    expect(resolveFuseModelId(67, DspType.DELAY)).toBe(EFFECT_MODELS.MONO_ECHO_FILTER.id);
+    expect(resolveFuseModelId(68, DspType.DELAY)).toBe(EFFECT_MODELS.MULTITAP_DELAY.id);
+    expect(resolveFuseModelId(69, DspType.DELAY)).toBe(EFFECT_MODELS.PING_PONG_DELAY.id);
+
+    // Effect IDs must not resolve as AMP models (and vice-versa)
+    expect(resolveFuseModelId(19, DspType.AMP)).toBeNull();
+    expect(resolveFuseModelId(EFFECT_MODELS.OVERDRIVE.id, DspType.DELAY)).toBeNull();
+  });
 });

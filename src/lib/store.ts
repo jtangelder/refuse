@@ -125,11 +125,14 @@ export class Store {
     // 2. We aren't in a bulk refresh (dump)
     // 3. OR we don't have a selection yet
     const shouldUpdateSelection = force || !this.state.refreshing || this.state.currentPresetSlot === null;
+    const nextSlot = shouldUpdateSelection ? slot : this.state.currentPresetSlot;
+    const slotChanged = this.state.currentPresetSlot !== null && nextSlot !== this.state.currentPresetSlot;
 
     this.state = {
       ...this.state,
-      currentPresetSlot: shouldUpdateSelection ? slot : this.state.currentPresetSlot,
+      currentPresetSlot: nextSlot,
       presets: newPresets,
+      presetDetails: slotChanged ? {} : this.state.presetDetails,
     };
     this.notify();
   }
@@ -207,6 +210,14 @@ export class Store {
     this.state = {
       ...this.state,
       presetDetails: { ...this.state.presetDetails, ...details },
+    };
+    this.notify();
+  }
+
+  public replacePresetDetails(details: PresetDetails = {}) {
+    this.state = {
+      ...this.state,
+      presetDetails: { ...details },
     };
     this.notify();
   }

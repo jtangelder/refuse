@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -66,6 +66,18 @@ export class DashboardComponent {
   protected readonly ampKnobs = this.ampService.knobs;
   protected readonly allEffectSettings = this.effectService.allSettings;
 
+  constructor() {
+    // If an occupied slot becomes empty externally (preset switch, XML import, hardware clear)
+    // while the user wasn't explicitly browsing an empty category, snap selection back to the Amp.
+    effect(() => {
+      const slot = this.activeSlot();
+      const effs = this.allEffectSettings();
+      if (typeof slot === 'number' && !effs[slot] && this.emptyCategorySelection() === null) {
+        this.activeSlot.set('amp');
+      }
+    });
+  }
+
   selectedEffect = computed(() => {
     const slot = this.activeSlot();
     if (typeof slot !== 'number') return null;
@@ -110,8 +122,20 @@ export class DashboardComponent {
   }
 
   async clearSlot(slot: number) {
+    const clearedCategory = this.allEffectSettings()[slot]?.type ?? null;
     await this.effectService.clearEffect(slot);
-    this.activeSlot.set(slot);
+
+    const effs = this.allEffectSettings();
+    const groupBase = slot < 4 ? 0 : 4;
+    let firstEmpty = slot;
+    for (let s = groupBase; s < groupBase + 4; s++) {
+      if (!effs[s]) {
+        firstEmpty = s;
+        break;
+      }
+    }
+    this.emptyCategorySelection.set(clearedCategory);
+    this.activeSlot.set(firstEmpty);
   }
 
   async changeAmp(modelId: number) {
@@ -148,10 +172,10 @@ export class DashboardComponent {
     await this.effectService.setEffectKnob(slot, index, value);
   }
 
-  async moveEffectPosition(fromSlot: number, toSlot: number) {
+  async moveEffectPosition(fromSlot: number, toSlot: number, appendToGroup?: boolean) {
     this.emptyCategorySelection.set(null);
-    this.activeSlot.set(toSlot);
-    await this.effectService.moveEffect(fromSlot, toSlot);
+    const landedSlot = await this.effectService.moveEffect(fromSlot, toSlot, { appendToGroup });
+    this.activeSlot.set(landedSlot);
   }
 
   openAboutDialog() {

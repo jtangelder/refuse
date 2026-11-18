@@ -81,14 +81,14 @@ export const EFFECT_MODELS: Record<string, ModelDef> = {
   PITCH_SHIFTER: m(0x1f00, 'Pitch Shifter', DspType.MOD, ['Level', 'Pitch', 'Detune', 'Fdbk', 'PreDly', ''], [36]),
   // Delay (FX3)
   MONO_DELAY: m(0x1600, 'Mono Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Bright', 'Atten', ''], [37]),
-  MONO_ECHO_FILTER: m(0x4300, 'Mono Echo Filter', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Freq', 'Res', 'Input']),
+  MONO_ECHO_FILTER: m(0x4300, 'Mono Echo Filter', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Freq', 'Res', 'Input'], [67]),
   STEREO_ECHO_FILTER: m(0x4800, 'Stereo Echo Filter', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Freq', 'Res', 'Input'], [41]),
   TAPE_DELAY: m(0x2b00, 'Tape Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Flutter', 'Bright', 'Stereo'], [38]),
   STEREO_TAPE_DELAY: m(0x2a00, 'Stereo Tape Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Flutter', 'Sep', 'Bright']),
   DUCKING_DELAY: m(0x1500, 'Ducking Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Release', 'Thresh', ''], [39]),
   REVERSE_DELAY: m(0x4600, 'Reverse Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Bright', 'Atten', ''], [40]),
-  MULTITAP_DELAY: m(0x4400, 'Multitap Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Bright', 'Atten', '']),
-  PING_PONG_DELAY: m(0x4500, 'Ping Pong Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Bright', 'Atten', '']),
+  MULTITAP_DELAY: m(0x4400, 'Multitap Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Bright', 'Atten', ''], [68]),
+  PING_PONG_DELAY: m(0x4500, 'Ping Pong Delay', DspType.DELAY, ['Level', 'Time', 'Fdbk', 'Bright', 'Atten', ''], [69]),
   // Reverb (FX4)
   SMALL_HALL: m(0x2400, 'Small Hall', DspType.REVERB, ['Level', 'Decay', 'Dwell', 'Diff', 'Tone', ''], [42]),
   LARGE_HALL: m(0x3a00, 'Large Hall', DspType.REVERB, ['Level', 'Decay', 'Dwell', 'Diff', 'Tone', ''], [43]),
@@ -131,10 +131,15 @@ const ampById = new Map<number, ModelDef>(Object.values(AMP_MODELS).map(model =>
 const effectById = new Map<number, ModelDef>(Object.values(EFFECT_MODELS).map(model => [model.id, model]));
 const cabinetById = new Map<number, CabinetDef>(CABINET_MODELS.map(cab => [cab.id, cab]));
 
-const fuseIdToModelId = new Map<number, number>();
+const fuseIdByType = new Map<DspType, Map<number, number>>();
 for (const model of [...Object.values(AMP_MODELS), ...Object.values(EFFECT_MODELS)]) {
+  let typeMap = fuseIdByType.get(model.type);
+  if (!typeMap) {
+    typeMap = new Map<number, number>();
+    fuseIdByType.set(model.type, typeMap);
+  }
   for (const fuseId of model.fuseIds ?? []) {
-    fuseIdToModelId.set(fuseId, model.id);
+    typeMap.set(fuseId, model.id);
   }
 }
 
@@ -151,19 +156,21 @@ export function findCabinetModel(id: number): CabinetDef | null {
 }
 
 export function resolveFuseModelId(fuseId: number, type: DspType): number | null {
-  const mapped = fuseIdToModelId.get(fuseId);
+  const mapped = fuseIdByType.get(type)?.get(fuseId);
   if (mapped !== undefined) return mapped;
 
   const lookup = type === DspType.AMP ? ampById : effectById;
+  const matchesType = (candidateId: number): boolean => lookup.get(candidateId)?.type === type;
+
   const high = (fuseId & 0xff) << 8;
-  if (lookup.has(high)) return high;
+  if (matchesType(high)) return high;
 
   const lowByte = fuseId & 0xff;
   const highByte = (fuseId >> 8) & 0xff;
   const swapped = (lowByte << 8) | highByte;
-  if (lookup.has(swapped)) return swapped;
+  if (matchesType(swapped)) return swapped;
 
-  if (lookup.has(fuseId)) return fuseId;
+  if (matchesType(fuseId)) return fuseId;
   return null;
 }
 
