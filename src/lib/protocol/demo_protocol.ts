@@ -151,6 +151,7 @@ export class DemoProtocol implements IProtocol {
     ampPacket[1] = 0x01;
     ampPacket[2] = DspType.AMP; // 0x05
     ampPacket[3] = 0x00;
+    ampPacket[OFFSETS.PRESET_SLOT] = slot;
 
     // Model ID
     ampPacket[16] = (randomAmp.id >> 8) & 0xff;
@@ -213,6 +214,17 @@ export class DemoProtocol implements IProtocol {
       }
 
       this.emit(fxPacket);
+    }
+
+    // Clear unselected DSP effect types (modelId = 0) just like physical Mustang preset loads
+    for (let i = numEffects; i < shuffledTypes.length; i++) {
+      const emptyFxPacket = new Uint8Array(64);
+      emptyFxPacket[0] = 0x1c;
+      emptyFxPacket[1] = 0x01;
+      emptyFxPacket[2] = shuffledTypes[i];
+      emptyFxPacket[3] = 0x00;
+      emptyFxPacket[22] = 0x01; // Bypassed
+      this.emit(emptyFxPacket);
     }
   }
 

@@ -256,6 +256,38 @@ describe('EffectController', () => {
       expect(store.getState().slots[1]).toBeNull();
     });
 
+    it('should clear vacated DSP type without wiping slot 0 when hardware reports empty DSP (modelId 0, slot 0)', () => {
+      // Preset A has Stomp in slot 0 and Delay in slot 4
+      store.updateSlotState(0, {
+        type: DspType.STOMP,
+        slot: 0,
+        modelId: EFFECT_MODELS.OVERDRIVE.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(4, {
+        type: DspType.DELAY,
+        slot: 4,
+        modelId: EFFECT_MODELS.MONO_DELAY.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+
+      // Switching to Preset B on the amp where Delay is empty (modelId = 0, slot = 0)
+      controller.handleEffectUpdate({
+        type: 'EFFECT_UPDATE',
+        slot: 0,
+        dspType: DspType.DELAY,
+        modelId: 0,
+        enabled: false,
+        knobs: new Array(32).fill(0),
+      });
+
+      // Stomp in slot 0 must NOT be wiped, while Delay in slot 4 MUST be cleared
+      expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+      expect(store.getState().slots[4]).toBeNull();
+    });
+
     it('should sync active Delay Time knob via setDelayTempoBpm', async () => {
       await controller.setEffectById(2, EFFECT_MODELS.MONO_DELAY.id);
 

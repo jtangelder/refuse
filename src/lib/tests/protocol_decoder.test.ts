@@ -169,5 +169,67 @@ describe('ProtocolDecoder', () => {
         expect(command.enabled).toBe(true);
       }
     });
+
+    it('should decode live hardware KnobChange when byte 1 is non-zero (e.g. 0x01 or 0xc3)', () => {
+      const data = new Uint8Array(64);
+      data[0] = DspType.AMP; // 0x05
+      data[1] = 0xc3; // Non-zero hardware sub-byte
+      data[OFFSETS.LIVE_KNOB_INDEX] = 1; // Gain
+      data[OFFSETS.LIVE_KNOB_VALUE] = 180;
+
+      const command = ProtocolDecoder.decode(data);
+      expect(command.type).toBe('KNOB_CHANGE');
+      if (command.type === 'KNOB_CHANGE') {
+        expect(command.dspType).toBe(DspType.AMP);
+        expect(command.knobIndex).toBe(1);
+        expect(command.value).toBe(180);
+      }
+    });
+
+    it('should reject truncated live KnobChange packets safely as UNKNOWN', () => {
+      const data = new Uint8Array([DspType.AMP, 0xc3, 0x00, 0x00]);
+      const command = ProtocolDecoder.decode(data);
+      expect(command.type).toBe('UNKNOWN');
+    });
+
+    it('should decode 0x1c 0x03 hardware DSP write packets for Amp and Effects while ignoring 0x1c 0x03 0x00 apply echoes', () => {
+      const ampWrite = new Uint8Array(64);
+      ampWrite[0] = 0x1c;
+      ampWrite[1] = 0x03;
+      ampWrite[2] = DspType.AMP;
+      ampWrite[3] = 0x00;
+      ampWrite[OFFSETS.MODEL_ID_MSB] = 0x67;
+      ampWrite[OFFSETS.MODEL_ID_LSB] = 0x00;
+      ampWrite[OFFSETS.CABINET_ID] = 0x01;
+      ampWrite[OFFSETS.KNOB_START] = 140;
+
+      const ampCmd = ProtocolDecoder.decode(ampWrite);
+      expect(ampCmd.type).toBe('AMP_UPDATE');
+      if (ampCmd.type === 'AMP_UPDATE') {
+        expect(ampCmd.modelId).toBe(0x6700);
+        expect(ampCmd.presetSlot).toBeUndefined();
+      }
+
+      const applyEcho = new Uint8Array(64);
+      applyEcho[0] = 0x1c;
+      applyEcho[1] = 0x03;
+      applyEcho[2] = 0x00;
+      expect(ProtocolDecoder.decode(applyEcho).type).toBe('UNKNOWN');
+    });
+
+    it('should decode 0x1c 0x01 0x01 preset selection notification as PRESET_CHANGE', () => {
+      const data = new Uint8Array(64);
+      data[0] = 0x1c;
+      data[1] = 0x01;
+      data[2] = 0x01;
+      data[3] = 0x00;
+      data[OFFSETS.PRESET_SLOT] = 9;
+
+      const command = ProtocolDecoder.decode(data);
+      expect(command.type).toBe('PRESET_CHANGE');
+      if (command.type === 'PRESET_CHANGE') {
+        expect(command.slot).toBe(9);
+      }
+    });
   });
 });

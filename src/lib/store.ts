@@ -114,16 +114,17 @@ export class Store {
     }
   }
 
-  public setPresetActive(slot: number, name: string) {
+  public setPresetActive(slot: number, name: string, force = false) {
     const newPresets = new Map(this.state.presets);
     if (name) {
       newPresets.set(slot, { slot, name });
     }
 
     // Only update the active selection if:
-    // 1. We aren't in a bulk refresh (dump)
-    // 2. OR we don't have a selection yet
-    const shouldUpdateSelection = !this.state.refreshing || this.state.currentPresetSlot === null;
+    // 1. Caller explicitly forces it (e.g. active AMP_UPDATE state packet)
+    // 2. We aren't in a bulk refresh (dump)
+    // 3. OR we don't have a selection yet
+    const shouldUpdateSelection = force || !this.state.refreshing || this.state.currentPresetSlot === null;
 
     this.state = {
       ...this.state,

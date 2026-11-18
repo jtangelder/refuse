@@ -75,6 +75,16 @@ describe('Protocol', () => {
       expect(handshake1[0]).toBe(OPCODES.HANDSHAKE_1);
     });
 
+    it('should not call device.open() again if the selected HIDDevice is already opened', async () => {
+      const alreadyOpenDevice = { ...mockDevice, opened: true };
+      mockHid.requestDevice.mockResolvedValue([alreadyOpenDevice]);
+
+      const success = await protocol.connect();
+
+      expect(success).toBe(true);
+      expect(alreadyOpenDevice.open).not.toHaveBeenCalled();
+    });
+
     it('should fail connection if user cancels selection', async () => {
       mockHid.requestDevice.mockResolvedValue([]);
 

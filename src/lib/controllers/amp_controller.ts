@@ -31,14 +31,19 @@ export class AmpController extends BaseController {
   }
 
   handleAmpUpdate(command: AmpUpdateCommand): boolean {
-    this.store.updateAmpState(
-      normalizeAmpState({
-        modelId: command.modelId,
-        enabled: true,
-        cabinetId: command.cabinetId,
-        knobs: command.knobs,
-      }),
-    );
+    this.store.batch(() => {
+      this.store.updateAmpState(
+        normalizeAmpState({
+          modelId: command.modelId,
+          enabled: true,
+          cabinetId: command.cabinetId,
+          knobs: command.knobs,
+        }),
+      );
+      if (command.presetSlot !== undefined) {
+        this.store.setPresetActive(command.presetSlot, '', true);
+      }
+    });
     return true;
   }
 

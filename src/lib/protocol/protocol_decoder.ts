@@ -1,5 +1,5 @@
 import { DspType } from '../models';
-import { OFFSETS, VALUES } from './constants';
+import { OFFSETS, OPCODES, VALUES } from './constants';
 
 const UTF8_DECODER = new TextDecoder('utf-8');
 
@@ -29,6 +29,7 @@ export interface AmpUpdateCommand extends BaseCommand {
   modelId: number;
   cabinetId: number;
   knobs: number[];
+  presetSlot?: number;
 }
 
 export interface EffectUpdateCommand extends BaseCommand {
@@ -82,34 +83,35 @@ export class ProtocolDecoder {
     const subCommand = data[OFFSETS.SUB_COMMAND];
 
     // 1. Live Knob Change (Direct Type 0x05..0x09)
-    // The "sniffing" logic from legacy: data[0] is DspType, data[1] is 0x00
+    // On physical Mustang hardware, byte[0] is DspType (0x05..0x09) and byte[1] may be
+    // non-zero (e.g. 0x01 / 0xc3) or 0x00 depending on firmware.
     if (command >= DspType.AMP && command <= DspType.REVERB) {
-      if (subCommand === 0x00) {
-        // Logic from EffectController/AmpController
-        const slot = data[OFFSETS.LIVE_SLOT_INDEX] || 0;
-        const paramIndex = data[OFFSETS.LIVE_KNOB_INDEX];
-        const paramValue = data[OFFSETS.LIVE_KNOB_VALUE];
-
-        return {
-          type: 'KNOB_CHANGE',
-          dspType: command,
-          slot,
-          knobIndex: paramIndex,
-          value: paramValue,
-        };
+      if (data.length <= OFFSETS.LIVE_SLOT_INDEX) {
+        return { type: 'UNKNOWN', raw: data };
       }
+
+      const slot = data[OFFSETS.LIVE_SLOT_INDEX] || 0;
+      const paramIndex = data[OFFSETS.LIVE_KNOB_INDEX];
+      const paramValue = data[OFFSETS.LIVE_KNOB_VALUE];
+
+      return {
+        type: 'KNOB_CHANGE',
+        dspType: command,
+        slot,
+        knobIndex: paramIndex,
+        value: paramValue,
+      };
     }
 
-    // 2. Data Packet (0x1c)
-    if (command === 0x1c && subCommand === 0x01) {
+    // 2. Data Packet (0x1c: 0x01 = Read/Dump/Notification, 0x03 = Write/Hardware Edit)
+    if (command === OPCODES.DATA_PACKET && (subCommand === OPCODES.DATA_READ || subCommand === OPCODES.DATA_WRITE)) {
       const type = data[OFFSETS.TYPE];
 
-      // Preset Info / Change
+      // Preset Info / Change (only valid on DATA_READ 0x01; 0x1c 0x03 0x00 is an Apply echo)
       // Type 0x04 = Preset Info (when requesting list)
-      // Type 0x00 = Preset Change (when selecting preset, also sent by amp)
-      if (type === 0x04 || type === 0x00) {
-        // PresetController checks data[3] === 0x00.
-        // If data[3] !== 0x00, we ignore/treat as unknown to match legacy behavior
+      // Type 0x00 / 0x01 = Preset Change (when selecting preset on amp)
+      if (subCommand === OPCODES.DATA_READ && (type === OPCODES.PRESET_INFO || type === 0x00 || type === 0x01)) {
+        // data[3] === 0x00 indicates main amp preset (non-zero is Mod/Delay knob bank metadata)
         if (data[3] !== 0x00) return { type: 'UNKNOWN', raw: data };
 
         const slot = data[OFFSETS.PRESET_SLOT];
@@ -120,10 +122,10 @@ export class ProtocolDecoder {
         const slicedNameBytes = nullIndex !== -1 ? nameBytes.slice(0, nullIndex) : nameBytes;
         const name = UTF8_DECODER.decode(slicedNameBytes);
 
-        if (type === 0x00) {
-          return { type: 'PRESET_CHANGE', slot, name };
-        } else {
+        if (type === OPCODES.PRESET_INFO) {
           return { type: 'PRESET_INFO', slot, name };
+        } else {
+          return { type: 'PRESET_CHANGE', slot, name };
         }
       }
 
@@ -136,18 +138,20 @@ export class ProtocolDecoder {
         const modelId = (data[OFFSETS.MODEL_ID_MSB] << 8) | data[OFFSETS.MODEL_ID_LSB];
         const cabinetId = data[OFFSETS.CABINET_ID];
         const knobs = Array.from(data.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END));
+        const presetSlot = subCommand === OPCODES.DATA_READ ? data[OFFSETS.PRESET_SLOT] : undefined;
         return {
           type: 'AMP_UPDATE',
           modelId,
           cabinetId,
           knobs,
+          ...(presetSlot !== undefined ? { presetSlot } : {}),
         };
       }
 
       // Effect Update
       if (type >= DspType.STOMP && type <= DspType.REVERB) {
         const instance = data[3];
-        // data[3] seems to be 0x00 for active effects
+        // data[3] is 0x00 for active effects
         if (instance === 0x00) {
           const slot = data[OFFSETS.SLOT_INDEX];
           const modelId = (data[OFFSETS.MODEL_ID_MSB] << 8) | data[OFFSETS.MODEL_ID_LSB];

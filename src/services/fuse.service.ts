@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, NgZone, signal } from '@angular/core';
 import { FuseAPI } from '../lib';
 import { Store } from '../lib/store';
 import { Protocol } from '../lib/protocol/protocol';
@@ -9,10 +9,12 @@ import { NotificationService } from './notification.service';
 @Injectable({ providedIn: 'root' })
 export class FuseService {
   private readonly notifications = inject(NotificationService);
+  private readonly zone = inject(NgZone);
   private store = new Store();
+  private storeUnsubscribe?: () => void;
   private protocol: IProtocol = new Protocol();
 
-  public api = this.createApi(this.protocol);
+  public api = this.createApi(this.store, this.protocol);
   public state = signal(this.store.getState());
   public isDemo = signal(false);
   public connecting = signal(false);
@@ -26,13 +28,25 @@ export class FuseService {
   public currentPresetSlot = computed(() => this.state().currentPresetSlot);
 
   constructor() {
-    this.store.subscribe(state => {
-      this.state.set({ ...state });
+    this.attachStore(this.store);
+  }
+
+  private attachStore(nextStore: Store): void {
+    this.storeUnsubscribe?.();
+    this.store = nextStore;
+    this.storeUnsubscribe = this.store.subscribe(state => {
+      if (NgZone.isInAngularZone()) {
+        this.state.set({ ...state });
+      } else {
+        this.zone.run(() => {
+          this.state.set({ ...state });
+        });
+      }
     });
   }
 
-  private createApi(protocol: IProtocol): FuseAPI {
-    const api = new FuseAPI(this.store, protocol);
+  private createApi(store: Store, protocol: IProtocol): FuseAPI {
+    const api = new FuseAPI(store, protocol);
     api.onConnectionLost = () => {
       this.notifications.error('Amplifier disconnected');
     };
@@ -42,10 +56,10 @@ export class FuseService {
   async connect(): Promise<boolean> {
     if (this.connecting()) return false;
     this.connecting.set(true);
-    const wasDemo = this.isDemo();
     try {
+      const nextStore = new Store();
       const physicalProtocol = new Protocol();
-      const physicalApi = this.createApi(physicalProtocol);
+      const physicalApi = this.createApi(nextStore, physicalProtocol);
       const connected = await physicalApi.connect();
 
       if (!connected) {
@@ -54,13 +68,14 @@ export class FuseService {
         return false;
       }
 
-      // Real physical amp connected successfully!
-      if (wasDemo) {
-        await this.api.disconnect();
-      }
+      // Real physical amp connected successfully — tear down previous session without
+      // clobbering the newly synced Store, then swap API + Store atomically.
+      const previousApi = this.api;
       this.protocol = physicalProtocol;
       this.api = physicalApi;
       this.isDemo.set(false);
+      this.attachStore(nextStore);
+      await previousApi.disconnect();
       return true;
     } catch (err) {
       console.error('[FuseService] Connection failed:', err);
@@ -79,11 +94,18 @@ export class FuseService {
     if (this.connecting()) return false;
     this.connecting.set(true);
     try {
-      await this.api.disconnect();
-      this.protocol = new DemoProtocol();
-      this.api = this.createApi(this.protocol);
+      const nextStore = new Store();
+      const demoProtocol = new DemoProtocol();
+      const demoApi = this.createApi(nextStore, demoProtocol);
+      const connected = await demoApi.connect();
+
+      const previousApi = this.api;
+      this.protocol = demoProtocol;
+      this.api = demoApi;
       this.isDemo.set(true);
-      return await this.api.connect();
+      this.attachStore(nextStore);
+      await previousApi.disconnect();
+      return connected;
     } finally {
       this.connecting.set(false);
     }

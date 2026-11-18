@@ -39,14 +39,31 @@ export class EffectController extends BaseController {
 
   handleEffectUpdate(command: EffectUpdateCommand): boolean {
     const { slot, dspType, modelId, enabled, knobs } = command;
+
+    if (modelId === 0) {
+      this.store.batch(() => {
+        if (slot === 0 || !isValidSlot(slot)) {
+          // Hardware empty-DSP report (modelId = 0, slot = 0 or 0xff): clear whichever slot held this DSP type
+          const slots = [...this.store.getState().slots];
+          slots.forEach((effect, i) => {
+            if (effect?.type === dspType) {
+              this.store.clearSlot(i);
+            }
+          });
+        } else {
+          // Explicit non-zero slot clear: only clear if empty or matching DSP type
+          const existing = this.store.getState().slots[slot];
+          if (!existing || existing.type === dspType) {
+            this.store.clearSlot(slot);
+          }
+        }
+      });
+      return true;
+    }
+
     if (!isValidSlot(slot)) return false;
 
     this.store.batch(() => {
-      if (modelId === 0) {
-        this.store.clearSlot(slot);
-        return;
-      }
-
       // Hardware allows one effect per DSP type; if it moved, drop the stale copy.
       this.forEachOtherSlotOfType(slot, dspType, i => {
         debug(`[EffectController] ${DspType[dspType]} moved ${i} -> ${slot}`);

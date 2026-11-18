@@ -285,12 +285,61 @@ describe('FuseAPI', () => {
 
       const fxKnobPacket = new Uint8Array(64);
       fxKnobPacket[0] = 0x06; // STOMP
+      fxKnobPacket[1] = 0xc3; // Non-zero hardware sub-byte
       fxKnobPacket[5] = 0x01; // Gain index
       fxKnobPacket[10] = 200;
       fxKnobPacket[13] = 0x02; // Slot 2
       protocol.emitReport(fxKnobPacket);
 
       expect(api.effects.getEffectKnobs(2).find(k => k.name === 'Gain')?.value).toBe(200);
+    });
+
+    it('should select the active preset slot from AMP_UPDATE during initial state dump instead of staying stuck on slot 0', async () => {
+      protocol.sendPacket.mockImplementation(async (data: Uint8Array) => {
+        if (data[0] === 0xff && data[1] === 0xc1) {
+          // 1. Hardware dumps preset names 0..2 with 0x00 confirmations
+          for (let s = 0; s < 3; s++) {
+            const info = new Uint8Array(64);
+            info[0] = 0x1c;
+            info[1] = 0x01;
+            info[2] = 0x04;
+            info[4] = s;
+            info.set(new TextEncoder().encode(`Preset ${s}`), 16);
+            protocol.emitReport(info);
+
+            const confirm = new Uint8Array(64);
+            confirm[0] = 0x1c;
+            confirm[1] = 0x01;
+            confirm[2] = 0x00;
+            confirm[4] = s;
+            protocol.emitReport(confirm);
+          }
+
+          // 2. Hardware sends active state for slot 2
+          const activeAmp = new Uint8Array(64);
+          activeAmp[0] = 0x1c;
+          activeAmp[1] = 0x01;
+          activeAmp[2] = 0x05; // DspType.AMP
+          activeAmp[3] = 0x00;
+          activeAmp[4] = 0x02; // Active preset = slot 2!
+          activeAmp[16] = 0x67;
+          activeAmp[17] = 0x00;
+          protocol.emitReport(activeAmp);
+        } else if (data[0] === 0x19 && data[1] === 0x00) {
+          for (let slot = 0; slot < 8; slot++) {
+            const bp = new Uint8Array(64);
+            bp[0] = 0x19;
+            bp[1] = 0xc3;
+            bp[3] = 0x00;
+            bp[4] = slot;
+            protocol.emitReport(bp);
+          }
+        }
+      });
+
+      await connectWithFakeTimers(api, 100);
+      expect(api.state.currentPresetSlot).toBe(2);
+      expect(api.amp.getAmpModel()?.id).toBe(0x6700);
     });
   });
 

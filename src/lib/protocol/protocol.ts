@@ -46,8 +46,13 @@ export class Protocol implements IProtocol {
       });
       if (devices.length === 0) return false;
 
-      const device = devices[0];
-      await device.open();
+      const device =
+        devices.find(d =>
+          d.collections?.some(c => (c.inputReports?.length ?? 0) > 0 && (c.outputReports?.length ?? 0) > 0),
+        ) ?? devices[0];
+      if (!device.opened) {
+        await device.open();
+      }
       this.device = device;
 
       // Bind any listeners registered prior to connect()
