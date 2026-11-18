@@ -161,6 +161,29 @@ describe('FuseAPI', () => {
       expect(api.state.refreshing).toBe(false);
     });
 
+    it('should re-request state and bypass states when syncState() is called manually', async () => {
+      await connectWithFakeTimers(api, 60);
+      protocol.sendPacket.mockClear();
+
+      vi.useFakeTimers();
+      const syncPromise = api.syncState();
+      expect(api.state.refreshing).toBe(true);
+      await vi.advanceTimersByTimeAsync(100);
+      await syncPromise;
+      vi.useRealTimers();
+
+      expect(api.state.refreshing).toBe(false);
+      expect(protocol.sendPacket).toHaveBeenCalledTimes(2);
+      expect(protocol.sendPacket.mock.calls[0][0][0]).toBe(0xff);
+      expect(protocol.sendPacket.mock.calls[1][0][0]).toBe(0x19);
+    });
+
+    it('should no-op syncState() when disconnected', async () => {
+      await api.syncState();
+      expect(protocol.sendPacket).not.toHaveBeenCalled();
+      expect(api.state.refreshing).toBe(false);
+    });
+
     it('should fall back gracefully on refreshBypassStates timeout when hardware does not reply', async () => {
       protocol.autoRespondBypass = false;
       await connectWithFakeTimers(api, 1100);

@@ -23,6 +23,10 @@ export class Protocol implements IProtocol {
     return !!this.device;
   }
 
+  public get deviceName(): string | undefined {
+    return this.device?.productName || undefined;
+  }
+
   public get isSupported(): boolean {
     return Protocol.isHidSupported();
   }

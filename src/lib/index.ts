@@ -143,9 +143,18 @@ export class FuseAPI {
 
     debug('[API] Connected. Initiating state sync...');
     this.store.setConnected(true);
-
-    this.store.setRefreshing(true);
     this.startMonitoring();
+    await this.syncState();
+
+    return true;
+  }
+
+  /**
+   * Request a fresh preset and DSP state dump from the connected amplifier.
+   */
+  async syncState(): Promise<void> {
+    if (!this.isConnected) return;
+    this.store.setRefreshing(true);
     try {
       await this.refreshState();
       await this.refreshBypassStates();
@@ -154,8 +163,6 @@ export class FuseAPI {
     } finally {
       this.store.setRefreshing(false);
     }
-
-    return true;
   }
 
   async disconnect(): Promise<void> {

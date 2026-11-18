@@ -258,8 +258,18 @@ export class DashboardComponent {
     }
   }
 
+  async onConnectAmp() {
+    if (!this.service.isSupported() || this.service.connecting() || this.service.refreshing()) return;
+    await this.service.connect();
+  }
+
+  async onResyncAmp() {
+    await this.service.resync();
+  }
+
   async onDisconnect() {
-    await this.service.disconnect();
+    await this.service.enableDemo();
+    this.notifications.info('Disconnected amplifier — switched to Demo Mode.');
   }
 
   protected isEffectSlot(slot: number | 'amp'): boolean {

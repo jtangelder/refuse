@@ -18,6 +18,7 @@ export class FuseService {
   public state = signal(this.store.getState());
   public isDemo = signal(false);
   public connecting = signal(false);
+  public deviceName = signal<string | null>(null);
 
   public connected = computed(() => this.state().connected);
   public refreshing = computed(() => this.state().refreshing);
@@ -48,6 +49,9 @@ export class FuseService {
   private createApi(store: Store, protocol: IProtocol): FuseAPI {
     const api = new FuseAPI(store, protocol);
     api.onConnectionLost = () => {
+      this.zone.run(() => {
+        this.deviceName.set(null);
+      });
       this.notifications.error('Amplifier disconnected');
     };
     return api;
@@ -74,6 +78,7 @@ export class FuseService {
       this.protocol = physicalProtocol;
       this.api = physicalApi;
       this.isDemo.set(false);
+      this.deviceName.set(physicalProtocol.deviceName?.trim() || null);
       this.attachStore(nextStore);
       await previousApi.disconnect();
       return true;
@@ -85,9 +90,16 @@ export class FuseService {
     }
   }
 
+  async resync(): Promise<void> {
+    if (!this.connected() || this.connecting() || this.refreshing()) return;
+    await this.api.syncState();
+    this.notifications.info('Synced state from amplifier.');
+  }
+
   async disconnect(): Promise<void> {
     await this.api.disconnect();
     this.isDemo.set(false);
+    this.deviceName.set(null);
   }
 
   async enableDemo(): Promise<boolean> {
@@ -103,6 +115,7 @@ export class FuseService {
       this.protocol = demoProtocol;
       this.api = demoApi;
       this.isDemo.set(true);
+      this.deviceName.set(null);
       this.attachStore(nextStore);
       await previousApi.disconnect();
       return connected;

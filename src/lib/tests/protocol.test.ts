@@ -64,6 +64,7 @@ describe('Protocol', () => {
 
       expect(success).toBe(true);
       expect(protocol.isConnected).toBe(true);
+      expect(protocol.deviceName).toBe('Mustang GT');
       expect(mockHid.requestDevice).toHaveBeenCalledWith({ filters: [{ vendorId: FENDER_VID }] });
       expect(mockDevice.open).toHaveBeenCalled();
 
@@ -103,6 +104,7 @@ describe('Protocol', () => {
 
       expect(mockDevice.close).toHaveBeenCalled();
       expect(protocol.isConnected).toBe(false);
+      expect(protocol.deviceName).toBeUndefined();
     });
 
     it('should handle disconnect when not connected', async () => {

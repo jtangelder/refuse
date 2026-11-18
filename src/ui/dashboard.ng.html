@@ -19,73 +19,108 @@
   </div>
 
   <div class="top-bar-right">
-    <div class="top-connection" [class.compact]="isMobile()">
-      @if (service.connected() && !service.isDemo()) {
-        <span class="status-dot connected"></span>
-        <span class="status-label">Connected</span>
-      } @else if (service.isDemo()) {
-        <span class="status-dot connected demo"></span>
-        <span class="status-label">{{ isMobile() ? 'Demo' : 'Demo Mode' }}</span>
-      } @else {
-        <span class="status-dot disconnected"></span>
-        <span class="status-label">{{ isMobile() ? 'Offline' : 'Disconnected' }}</span>
-      }
-    </div>
-    @if (!service.connected() || service.isDemo()) {
-      <button
-        mat-flat-button
-        color="primary"
-        class="top-action-btn connect-btn-highlight"
-        [disabled]="!service.isSupported() || service.connecting()"
-        (click)="service.connect()"
-        matTooltip="Connect physical Fender Mustang amp via USB"
-      >
-        <mat-icon aria-hidden="true">usb</mat-icon>
-        <span>{{ service.connecting() ? 'Connecting...' : isMobile() ? 'Connect' : 'Connect Amp' }}</span>
+    @if (service.connecting() || service.refreshing()) {
+      <button type="button" class="connection-pill is-busy" aria-disabled="true">
+        <progress
+          class="pill-spinner"
+          [attr.aria-label]="service.connecting() ? 'Connecting to amplifier' : 'Syncing presets from amplifier'"
+        ></progress>
+        <span class="pill-text">{{ service.connecting() ? 'Connecting…' : 'Syncing…' }}</span>
       </button>
+    } @else if (service.connected() && !service.isDemo()) {
+      <button
+        type="button"
+        class="connection-pill is-connected"
+        [matMenuTriggerFor]="connectionMenu"
+        matTooltip="Amplifier connected via USB — click for options"
+      >
+        <span class="status-led connected" aria-hidden="true"></span>
+        <mat-icon class="pill-icon" aria-hidden="true">usb</mat-icon>
+        <span class="pill-text">{{ isMobile() ? 'Connected' : (service.deviceName() || 'USB Connected') }}</span>
+        <mat-icon class="pill-chevron" aria-hidden="true">expand_more</mat-icon>
+      </button>
+      <mat-menu #connectionMenu="matMenu">
+        <button mat-menu-item (click)="onResyncAmp()">
+          <mat-icon aria-hidden="true">sync</mat-icon>
+          <span>Sync State from Amp</span>
+        </button>
+        <button mat-menu-item (click)="onDisconnect()">
+          <mat-icon aria-hidden="true">link_off</mat-icon>
+          <span>Disconnect (Use Demo)</span>
+        </button>
+      </mat-menu>
+    } @else if (service.isDemo() && service.isSupported()) {
+      <button
+        type="button"
+        class="connection-pill is-demo-connectable"
+        (click)="onConnectAmp()"
+        matTooltip="Simulated mode — click to connect your Fender Mustang via USB"
+      >
+        <span class="pill-segment-status">
+          <span class="status-led demo" aria-hidden="true"></span>
+          <span class="pill-text">{{ isMobile() ? 'Demo' : 'Demo Mode' }}</span>
+        </span>
+        <span class="pill-segment-cta">
+          <mat-icon class="pill-icon" aria-hidden="true">usb</mat-icon>
+          <span>{{ isMobile() ? 'Connect' : 'Connect Amp' }}</span>
+        </span>
+      </button>
+    } @else if (service.isDemo()) {
+      <button
+        type="button"
+        class="connection-pill is-demo-only"
+        (click)="openAboutDialog()"
+        matTooltip="WebHID USB is not available in this browser — click for details"
+      >
+        <span class="status-led demo" aria-hidden="true"></span>
+        <span class="pill-text">Demo Mode</span>
+        <mat-icon class="pill-chevron" aria-hidden="true">info_outline</mat-icon>
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="connection-pill is-disconnected"
+        [matMenuTriggerFor]="disconnectedMenu"
+        matTooltip="Amplifier disconnected — click to reconnect or switch to Demo Mode"
+      >
+        <span class="status-led disconnected" aria-hidden="true"></span>
+        <mat-icon class="pill-icon" aria-hidden="true">usb_off</mat-icon>
+        <span class="pill-text">{{ isMobile() ? 'Disconnected' : 'Amp Disconnected' }}</span>
+        <mat-icon class="pill-chevron" aria-hidden="true">expand_more</mat-icon>
+      </button>
+      <mat-menu #disconnectedMenu="matMenu">
+        @if (service.isSupported()) {
+          <button mat-menu-item (click)="onConnectAmp()">
+            <mat-icon aria-hidden="true">usb</mat-icon>
+            <span>Reconnect Amplifier</span>
+          </button>
+        }
+        <button mat-menu-item (click)="onDisconnect()">
+          <mat-icon aria-hidden="true">science</mat-icon>
+          <span>Switch to Demo Mode</span>
+        </button>
+      </mat-menu>
     }
+
     @if (!isMobile()) {
       <button
         matButton="tonal"
         class="top-action-btn"
         (click)="openAboutDialog()"
-        matTooltip="About Fender FUSE"
+        matTooltip="About ReFUSE"
       >
         About
       </button>
-    }
-    @if (!isMobile() && service.connected()) {
-      <button
-        mat-icon-button
-        class="disconnect-btn"
-        [matTooltip]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
-        [attr.aria-label]="service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier'"
-        (click)="onDisconnect()"
-      >
-        <mat-icon aria-hidden="true">power_settings_new</mat-icon>
-      </button>
-    }
-    @if (isMobile()) {
+    } @else {
       <button
         mat-icon-button
         class="more-menu-btn"
-        [matMenuTriggerFor]="mobileActionsMenu"
-        aria-label="More actions"
+        aria-label="About ReFUSE"
+        matTooltip="About ReFUSE"
+        (click)="openAboutDialog()"
       >
-        <mat-icon aria-hidden="true">more_vert</mat-icon>
+        <mat-icon aria-hidden="true">help_outline</mat-icon>
       </button>
-      <mat-menu #mobileActionsMenu="matMenu">
-        <button mat-menu-item (click)="openAboutDialog()">
-          <mat-icon aria-hidden="true">help_outline</mat-icon>
-          <span>About ReFUSE</span>
-        </button>
-        @if (service.connected()) {
-          <button mat-menu-item (click)="onDisconnect()">
-            <mat-icon aria-hidden="true">power_settings_new</mat-icon>
-            <span>{{ service.isDemo() ? 'Exit Demo Mode' : 'Disconnect Amplifier' }}</span>
-          </button>
-        }
-      </mat-menu>
     }
   </div>
 </header>

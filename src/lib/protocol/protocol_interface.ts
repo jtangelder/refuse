@@ -3,6 +3,7 @@ export type ProtocolEventListenerFn = (data: Uint8Array) => void;
 export interface IProtocol {
   isConnected: boolean;
   isSupported: boolean;
+  readonly deviceName?: string;
   onDisconnect?: () => void;
 
   connect(): Promise<boolean>;
