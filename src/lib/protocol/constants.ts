@@ -132,3 +132,7 @@ export function isValidSlot(slot: number): boolean {
 export function isValidKnobIndex(index: number): boolean {
   return Number.isInteger(index) && index >= 0 && index < LIMITS.KNOB_COUNT;
 }
+
+export function isValidPresetSlot(slot: number): boolean {
+  return Number.isInteger(slot) && slot >= 0 && slot <= LIMITS.MAX_PRESET_SLOT;
+}

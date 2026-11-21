@@ -126,6 +126,34 @@ describe('Protocol', () => {
       expect(onDisconnectSpy).toHaveBeenCalledTimes(1);
       expect(protocol.isConnected).toBe(false);
     });
+
+    it('should close device and remove listeners if handshake fails during connect()', async () => {
+      const cb = vi.fn();
+      protocol.addEventListener(cb);
+      mockHid.requestDevice.mockResolvedValue([mockDevice]);
+      mockDevice.sendReport.mockRejectedValueOnce(new Error('Handshake failed'));
+
+      const success = await protocol.connect();
+
+      expect(success).toBe(false);
+      expect(protocol.isConnected).toBe(false);
+      expect(mockDevice.close).toHaveBeenCalled();
+      expect(mockDevice.removeEventListener).toHaveBeenCalledWith('inputreport', expect.any(Function));
+      expect(mockHid.removeEventListener).toHaveBeenCalledWith('disconnect', expect.any(Function));
+    });
+
+    it('should preserve registered listeners across disconnect() and subsequent connect()', async () => {
+      const cb = vi.fn();
+      protocol.addEventListener(cb);
+      mockHid.requestDevice.mockResolvedValue([mockDevice]);
+
+      await protocol.connect();
+      await protocol.disconnect();
+      mockDevice.addEventListener.mockClear();
+
+      await protocol.connect();
+      expect(mockDevice.addEventListener).toHaveBeenCalledWith('inputreport', expect.any(Function));
+    });
   });
 
   describe('Communication', () => {

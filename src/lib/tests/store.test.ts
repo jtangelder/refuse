@@ -198,5 +198,29 @@ describe('Store', () => {
       store.setPresetMetadata(0, 'Clean');
       expect(listener).toHaveBeenCalledTimes(1);
     });
+
+    it('should skip redundant notifications and Map clones in setPresetActive when unchanged, and reject float slots', () => {
+      store.setPresetActive(2, 'Plexi');
+      const initialPresetsMap = store.getState().presets;
+      const listener = vi.fn();
+      store.subscribe(listener);
+      listener.mockClear();
+
+      // Re-setting same active slot with empty or identical name is a no-op
+      store.setPresetActive(2, '', true);
+      store.setPresetActive(2, 'Plexi', true);
+      expect(listener).not.toHaveBeenCalled();
+      expect(store.getState().presets).toBe(initialPresetsMap);
+
+      // Non-integer slot indices are ignored
+      store.updateSlotState(1.5, {
+        type: DspType.STOMP,
+        slot: 1,
+        modelId: 10,
+        enabled: true,
+        knobs: [],
+      });
+      expect(listener).not.toHaveBeenCalled();
+    });
   });
 });

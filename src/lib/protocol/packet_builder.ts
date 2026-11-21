@@ -6,6 +6,23 @@ const UTF8_ENCODER = new TextEncoder();
 /** Fixed HID report size used by all Mustang packets. */
 export const PACKET_SIZE = 64;
 
+/**
+ * Truncate a string so its UTF-8 byte encoding fits within `maxBytes`
+ * without ever splitting a multi-byte Unicode code point.
+ */
+export function truncateUtf8String(value: string, maxBytes: number): string {
+  if (maxBytes <= 0 || !value) return '';
+  let result = '';
+  let byteCount = 0;
+  for (const char of value) {
+    const charBytes = UTF8_ENCODER.encode(char).length;
+    if (byteCount + charBytes > maxBytes) break;
+    result += char;
+    byteCount += charBytes;
+  }
+  return result;
+}
+
 export class PacketBuilder {
   private buffer: Uint8Array;
 
@@ -76,6 +93,9 @@ export class PacketBuilder {
   }
 
   public static bypass(slot: number, enabled: boolean, dspType: DspType): PacketBuilder {
+    if (dspType < DspType.STOMP || dspType > DspType.REVERB) {
+      throw new Error(`Invalid effect DSP type for bypass: 0x${dspType.toString(16)}`);
+    }
     // Map DspType to family: 0x06 (STOMP) -> 3, 0x07 (MOD) -> 4, etc.
     const family = dspType - 3;
 
@@ -91,15 +111,16 @@ export class PacketBuilder {
     const builder = new PacketBuilder()
       .setCommand(OPCODES.DATA_PACKET)
       .setSubCommand(OPCODES.DATA_READ)
-      .setType(0x03) // Save type?
+      .setType(0x03) // Save type
       .setByte(3, 0x00)
       .setByte(OFFSETS.PRESET_SLOT, slot) // 4
       .setByte(5, 0x00)
       .setByte(6, 0x01)
       .setByte(7, 0x01);
 
-    // Truncate on bytes (not characters) so multi-byte UTF-8 can't overflow the field.
-    const nameBytes = UTF8_ENCODER.encode(name).slice(0, LIMITS.PRESET_NAME_BYTES);
+    // Truncate on UTF-8 code-point boundaries so multi-byte characters are never split.
+    const safeName = truncateUtf8String(name, LIMITS.PRESET_NAME_BYTES);
+    const nameBytes = UTF8_ENCODER.encode(safeName);
     builder.addBytes(OFFSETS.PRESET_NAME, nameBytes); // 16
 
     return builder;
@@ -144,19 +165,19 @@ export class PacketBuilder {
   }
 
   public static handshake1(): Uint8Array {
-    return new Uint8Array([OPCODES.HANDSHAKE_1]);
+    return new PacketBuilder().setCommand(OPCODES.HANDSHAKE_1).build();
   }
 
   public static handshake2(): Uint8Array {
-    return new Uint8Array([OPCODES.HANDSHAKE_2_BYTE1, OPCODES.HANDSHAKE_2_BYTE2]);
+    return new PacketBuilder().setCommand(OPCODES.HANDSHAKE_2_BYTE1).setSubCommand(OPCODES.HANDSHAKE_2_BYTE2).build();
   }
 
   public static requestState(): Uint8Array {
-    return new Uint8Array([OPCODES.REQUEST_STATE, OPCODES.REQUEST_STATE_BYTE2]);
+    return new PacketBuilder().setCommand(OPCODES.REQUEST_STATE).setSubCommand(OPCODES.REQUEST_STATE_BYTE2).build();
   }
 
   public static requestBypassStates(): Uint8Array {
-    return new Uint8Array([OPCODES.REQUEST_BYPASS, OPCODES.REQUEST_BYPASS_BYTE2]);
+    return new PacketBuilder().setCommand(OPCODES.REQUEST_BYPASS).setSubCommand(OPCODES.REQUEST_BYPASS_BYTE2).build();
   }
 
   public build(): Uint8Array {

@@ -411,5 +411,123 @@ describe('EffectController', () => {
       expect(slots[3]?.modelId).toBe(EFFECT_MODELS.SMALL_HALL.id);
       expect(slots[4]).toBeNull();
     });
+
+    it('should route live KNOB_CHANGE by dspType even when hardware sends slot 0 for a post-amp effect', () => {
+      store.updateSlotState(0, {
+        slot: 0,
+        type: DspType.STOMP,
+        modelId: EFFECT_MODELS.OVERDRIVE.id,
+        enabled: true,
+        knobs: new Array(32).fill(50),
+      });
+      store.updateSlotState(6, {
+        slot: 6,
+        type: DspType.REVERB,
+        modelId: EFFECT_MODELS.SMALL_HALL.id,
+        enabled: true,
+        knobs: new Array(32).fill(20),
+      });
+
+      const handled = controller.handleKnobChange({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.REVERB,
+        slot: 0,
+        knobIndex: 0,
+        value: 210,
+      });
+
+      expect(handled).toBe(true);
+      // Stomp in slot 0 must be untouched; Reverb in slot 6 must be updated
+      expect(store.getState().slots[0]?.knobs[0]).toBe(50);
+      expect(store.getState().slots[6]?.knobs[0]).toBe(210);
+    });
+
+    it('should clear the replaced hardware DSP unit when setEffect overwrites a slot with a different DspType', async () => {
+      await controller.setEffectById(0, EFFECT_MODELS.OVERDRIVE.id);
+      vi.mocked(mockProtocol.sendPacket).mockClear();
+
+      await controller.setEffectById(0, EFFECT_MODELS.SINE_CHORUS.id);
+
+      expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.SINE_CHORUS.id);
+      // Should send STOMP clear + apply (2) followed by MOD write + apply (2) = 4 packets
+      expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(4);
+      const firstPacket = vi.mocked(mockProtocol.sendPacket).mock.calls[0][0] as Uint8Array;
+      expect(firstPacket[2]).toBe(DspType.STOMP);
+      expect(firstPacket[16]).toBe(0);
+      expect(firstPacket[17]).toBe(0);
+    });
+
+    it('should no-op clearEffect when slot is already empty instead of clearing STOMP', async () => {
+      await controller.setEffectById(0, EFFECT_MODELS.OVERDRIVE.id);
+      vi.mocked(mockProtocol.sendPacket).mockClear();
+
+      await controller.clearEffect(2); // Slot 2 is empty
+
+      expect(mockProtocol.sendPacket).not.toHaveBeenCalled();
+      expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+    });
+
+    it('should no-op moveEffect when source slot is empty without evicting target effects', async () => {
+      store.updateSlotState(4, {
+        slot: 4,
+        type: DspType.MOD,
+        modelId: EFFECT_MODELS.SINE_CHORUS.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(5, {
+        slot: 5,
+        type: DspType.DELAY,
+        modelId: EFFECT_MODELS.MONO_DELAY.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(6, {
+        slot: 6,
+        type: DspType.REVERB,
+        modelId: EFFECT_MODELS.SMALL_HALL.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+      store.updateSlotState(7, {
+        slot: 7,
+        type: DspType.REVERB,
+        modelId: EFFECT_MODELS.LARGE_HALL.id,
+        enabled: true,
+        knobs: new Array(32).fill(0),
+      });
+
+      const landed = await controller.moveEffect(0, 4);
+      expect(landed).toBe(0);
+      expect(mockProtocol.sendPacket).not.toHaveBeenCalled();
+      expect(store.getState().slots[7]?.modelId).toBe(EFFECT_MODELS.LARGE_HALL.id);
+    });
+
+    it('should enforce one effect per DspType in replaceAllEffects', async () => {
+      await controller.replaceAllEffects([
+        { slot: 0, modelId: EFFECT_MODELS.OVERDRIVE.id },
+        { slot: 1, modelId: EFFECT_MODELS.FUZZ.id },
+      ]);
+
+      expect(store.getState().slots[0]).toBeNull();
+      expect(store.getState().slots[1]?.modelId).toBe(EFFECT_MODELS.FUZZ.id);
+    });
+
+    it('should roll back store mutations if hardware transmission fails', async () => {
+      await controller.setEffectById(0, EFFECT_MODELS.OVERDRIVE.id);
+      const before = store.getState().slots[0];
+
+      mockProtocol.sendPacket.mockRejectedValueOnce(new Error('Not connected'));
+      await expect(controller.setEffectKnob(0, 0, 200)).rejects.toThrow('Not connected');
+      expect(store.getState().slots[0]).toEqual(before);
+
+      mockProtocol.sendPacket.mockRejectedValueOnce(new Error('Not connected'));
+      await expect(controller.clearEffect(0)).rejects.toThrow('Not connected');
+      expect(store.getState().slots[0]).toEqual(before);
+
+      mockProtocol.sendPacket.mockRejectedValueOnce(new Error('Not connected'));
+      await expect(controller.setEffectEnabled(0, false)).rejects.toThrow('Not connected');
+      expect(store.getState().slots[0]?.enabled).toBe(true);
+    });
   });
 });

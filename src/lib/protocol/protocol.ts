@@ -44,6 +44,11 @@ export class Protocol implements IProtocol {
       return false;
     }
 
+    if (this.device) {
+      await this.disconnect();
+    }
+
+    let openedDevice: HIDDevice | null = null;
     try {
       const devices = await navigator.hid.requestDevice({
         filters: [{ vendorId: FENDER_VID }],
@@ -57,6 +62,7 @@ export class Protocol implements IProtocol {
       if (!device.opened) {
         await device.open();
       }
+      openedDevice = device;
       this.device = device;
 
       // Bind any listeners registered prior to connect()
@@ -74,7 +80,11 @@ export class Protocol implements IProtocol {
       return true;
     } catch (err) {
       console.error('Connection failed', err);
-      this.device = null;
+      if (openedDevice) {
+        await this.disconnect();
+      } else {
+        this.device = null;
+      }
       return false;
     }
   }
@@ -108,7 +118,6 @@ export class Protocol implements IProtocol {
     if (this.device) {
       const device = this.device;
       this.listeners.forEach(listener => device.removeEventListener('inputreport', listener));
-      this.listeners.clear();
       this.device = null;
       try {
         await device.close();

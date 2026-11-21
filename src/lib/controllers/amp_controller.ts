@@ -11,6 +11,7 @@ import {
   LIMITS,
   OFFSETS,
   isValidKnobIndex,
+  isValidPresetSlot,
   toByte,
   type AdvancedAmpParam,
 } from '../protocol/constants';
@@ -40,8 +41,14 @@ export class AmpController extends BaseController {
           knobs: command.knobs,
         }),
       );
-      if (command.presetSlot !== undefined) {
-        this.store.setPresetActive(command.presetSlot, '', true);
+      if (command.presetSlot !== undefined && isValidPresetSlot(command.presetSlot)) {
+        const state = this.store.getState();
+        // During bulk refresh or initial load, AMP_UPDATE carries the active slot.
+        // Outside refresh, ignore byte 4 === 0 so firmwares that zero byte 4 on DSP
+        // updates never snap a non-zero active preset back to slot 0.
+        if (state.refreshing || state.currentPresetSlot === null || command.presetSlot !== 0) {
+          this.store.setPresetActive(command.presetSlot, '', true);
+        }
       }
     });
     return true;
@@ -77,8 +84,17 @@ export class AmpController extends BaseController {
       knobs,
     });
 
+    const previous = this.store.getState().amp;
+    this.cancelCoalesced('amp');
     this.commit(newState);
-    await this.sendAmpState(newState);
+    try {
+      await this.sendAmpState(newState);
+    } catch (err) {
+      if (this.store.getState().amp === newState) {
+        this.commit(previous);
+      }
+      throw err;
+    }
   }
 
   /**
@@ -97,15 +113,27 @@ export class AmpController extends BaseController {
   }
 
   /**
-   * Update one amp parameter and transmit to the hardware.
+   * Update one amp parameter and transmit to the hardware (coalesced for smooth knob drags).
    */
-  setAmpKnob(index: number, value: number): Promise<void> {
+  async setAmpKnob(index: number, value: number): Promise<void> {
     if (!isValidKnobIndex(index)) {
-      return Promise.reject(new Error(`Invalid amp knob index: ${index}`));
+      throw new Error(`Invalid amp knob index: ${index}`);
     }
-    const newState = this.withKnob(this.store.getState().amp, index, value);
+    const previous = this.store.getState().amp;
+    const newState = this.withKnob(previous, index, value);
     this.commit(newState);
-    return this.sendAmpState(newState);
+    try {
+      await this.transmitCoalesced(
+        'amp',
+        () => PacketBuilder.fromAmpState(newState, this.protocol.getNextSequenceId()).build(),
+        this.applyPacket(DspType.AMP),
+      );
+    } catch (err) {
+      if (this.store.getState().amp === newState) {
+        this.commit(previous);
+      }
+      throw err;
+    }
   }
 
   setAdvancedSetting(key: AdvancedAmpParam, value: number): Promise<void> {
@@ -117,9 +145,18 @@ export class AmpController extends BaseController {
     if (!findCabinetModel(id)) {
       throw new Error(`Unknown cabinet ID: 0x${id.toString(16).padStart(2, '0')}`);
     }
-    const newState = this.withKnob(this.store.getState().amp, AMP_KNOB_INDEX.cabinet, id);
+    const previous = this.store.getState().amp;
+    const newState = this.withKnob(previous, AMP_KNOB_INDEX.cabinet, id);
+    this.cancelCoalesced('amp');
     this.commit(newState);
-    await this.sendAmpState(newState);
+    try {
+      await this.sendAmpState(newState);
+    } catch (err) {
+      if (this.store.getState().amp === newState) {
+        this.commit(previous);
+      }
+      throw err;
+    }
   }
 
   // ---------------------------------------------------------------------------

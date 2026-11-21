@@ -122,5 +122,12 @@ describe('PresetController', () => {
         { slot: 15, name: 'Fifteen' },
       ]);
     });
+
+    it('truncates long UTF-8 preset names consistently in Store and wire packet', async () => {
+      const longName = 'a'.repeat(31) + 'ü';
+      await controller.savePreset(2, longName);
+
+      expect(controller.getPreset(2)?.name).toBe('a'.repeat(31));
+    });
   });
 });

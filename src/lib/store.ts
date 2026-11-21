@@ -1,5 +1,6 @@
 import type { PresetMetadata } from '.';
 import { DspType } from './models';
+import { isValidSlot } from './protocol/constants';
 
 export interface EntityState {
   modelId: number;
@@ -115,23 +116,24 @@ export class Store {
   }
 
   public setPresetActive(slot: number, name: string, force = false) {
-    const newPresets = new Map(this.state.presets);
-    if (name) {
-      newPresets.set(slot, { slot, name });
-    }
-
     // Only update the active selection if:
     // 1. Caller explicitly forces it (e.g. active AMP_UPDATE state packet)
     // 2. We aren't in a bulk refresh (dump)
     // 3. OR we don't have a selection yet
     const shouldUpdateSelection = force || !this.state.refreshing || this.state.currentPresetSlot === null;
     const nextSlot = shouldUpdateSelection ? slot : this.state.currentPresetSlot;
-    const slotChanged = this.state.currentPresetSlot !== null && nextSlot !== this.state.currentPresetSlot;
+    const selectionChanged = nextSlot !== this.state.currentPresetSlot;
+    const slotChanged = this.state.currentPresetSlot !== null && selectionChanged;
+    const nameChanged = !!name && this.state.presets.get(slot)?.name !== name;
+
+    if (!selectionChanged && !nameChanged) return;
+
+    const presets = nameChanged ? new Map(this.state.presets).set(slot, { slot, name }) : this.state.presets;
 
     this.state = {
       ...this.state,
       currentPresetSlot: nextSlot,
-      presets: newPresets,
+      presets,
       presetDetails: slotChanged ? {} : this.state.presetDetails,
     };
     this.notify();
@@ -155,7 +157,7 @@ export class Store {
   }
 
   public updateSlotState(slot: number, state: EffectState | null) {
-    if (slot >= 0 && slot < 8) {
+    if (isValidSlot(slot)) {
       if (this.state.slots[slot] === state) return;
       const newSlots = [...this.state.slots];
       newSlots[slot] = state;
@@ -169,7 +171,7 @@ export class Store {
   }
 
   public setEffectBypass(slot: number, enabled: boolean) {
-    if (slot >= 0 && slot < 8) {
+    if (isValidSlot(slot)) {
       const effect = this.state.slots[slot];
       if (!effect || effect.enabled === enabled) return;
       const newSlots = [...this.state.slots];
@@ -184,7 +186,7 @@ export class Store {
   }
 
   public clearSlot(slot: number) {
-    if (slot >= 0 && slot < 8) {
+    if (isValidSlot(slot)) {
       if (this.state.slots[slot] === null) return;
       const newSlots = [...this.state.slots];
       newSlots[slot] = null;

@@ -25,15 +25,31 @@ export class EffectController extends BaseController {
   // ---------------------------------------------------------------------------
 
   handleKnobChange(command: KnobChangeCommand): boolean {
-    const { slot, knobIndex, value } = command;
-    if (!isValidSlot(slot) || !isValidKnobIndex(knobIndex)) return false;
+    const { dspType, slot, knobIndex, value } = command;
+    if (dspType === DspType.AMP || !isValidKnobIndex(knobIndex)) return false;
 
-    const effect = this.store.getState().slots[slot];
-    if (!effect) return false;
+    const slots = this.store.getState().slots;
+    let targetSlot = -1;
 
+    if (isValidSlot(slot)) {
+      const candidate = slots[slot];
+      if (candidate && (dspType === undefined || candidate.type === dspType)) {
+        targetSlot = slot;
+      }
+    }
+
+    // Physical Mustang firmware often leaves byte[13] (slot) as 0 on live effect knob packets;
+    // since each DSP type (STOMP, MOD, DELAY, REVERB) is a singleton, match by dspType.
+    if (targetSlot === -1 && dspType !== undefined) {
+      targetSlot = slots.findIndex(eff => eff?.type === dspType);
+    }
+
+    if (targetSlot === -1) return false;
+
+    const effect = slots[targetSlot]!;
     const knobs = [...effect.knobs];
     knobs[knobIndex] = toByte(value);
-    this.store.updateSlotState(slot, { ...effect, knobs });
+    this.store.updateSlotState(targetSlot, { ...effect, knobs });
     return true;
   }
 
@@ -136,6 +152,8 @@ export class EffectController extends BaseController {
     if (!model) throw new Error(`Unknown effect model ID: 0x${modelId.toString(16).padStart(4, '0')}`);
     debug(`[EffectController] setEffect(slot ${slot}, 0x${modelId.toString(16)})`);
 
+    const previousSlots = [...this.store.getState().slots];
+    const existingAtSlot = previousSlots[slot];
     const duplicateSlots = this.otherSlotsOfType(slot, model.type);
     const defaults = getModelDefault(modelId) ?? new Uint8Array(64);
     const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)));
@@ -146,9 +164,15 @@ export class EffectController extends BaseController {
     const newState: EffectState = { slot, type: model.type, modelId, enabled: options.enabled ?? true, knobs };
     const packets: PacketFactory[] = [];
 
+    this.cancelCoalesced(`effect:${slot}`);
+    if (existingAtSlot && existingAtSlot.type !== model.type) {
+      packets.push(...this.buildClearPackets(slot, existingAtSlot.type));
+    }
+
     this.store.batch(() => {
       for (const i of duplicateSlots) {
         debug(`[EffectController] Auto-removing ${DspType[model.type]} from slot ${i}`);
+        this.cancelCoalesced(`effect:${i}`);
         this.store.clearSlot(i);
         packets.push(...this.buildClearPackets(i, model.type));
       }
@@ -156,7 +180,14 @@ export class EffectController extends BaseController {
     });
 
     packets.push(...this.buildEffectStatePackets(newState));
-    await this.transmit(...packets);
+    try {
+      await this.transmit(...packets);
+    } catch (err) {
+      if (this.store.getState().slots[slot] === newState) {
+        this.restoreSlots(previousSlots);
+      }
+      throw err;
+    }
   }
 
   async setEffectEnabled(slot: number, enabled: boolean): Promise<void> {
@@ -164,25 +195,42 @@ export class EffectController extends BaseController {
     const effect = this.store.getState().slots[slot];
     if (!effect) return;
 
+    const previousEnabled = effect.enabled;
     this.store.setEffectBypass(slot, enabled);
-    await this.transmit(() => PacketBuilder.bypass(slot, enabled, effect.type).build());
+    try {
+      await this.transmit(() => PacketBuilder.bypass(slot, enabled, effect.type).build());
+    } catch (err) {
+      const current = this.store.getState().slots[slot];
+      if (current && current.modelId === effect.modelId && current.enabled === enabled) {
+        this.store.setEffectBypass(slot, previousEnabled);
+      }
+      throw err;
+    }
   }
 
-  setEffectKnob(slot: number, index: number, value: number): Promise<void> {
+  async setEffectKnob(slot: number, index: number, value: number): Promise<void> {
     this.assertSlot(slot);
-    if (!isValidKnobIndex(index)) return Promise.reject(new Error(`Invalid knob index: ${index}`));
+    if (!isValidKnobIndex(index)) throw new Error(`Invalid knob index: ${index}`);
     const effect = this.store.getState().slots[slot];
-    if (!effect) return Promise.reject(new Error(`No effect in slot ${slot}`));
+    if (!effect) throw new Error(`No effect in slot ${slot}`);
 
     const knobs = [...effect.knobs];
     knobs[index] = toByte(value);
     const newState: EffectState = { ...effect, knobs };
     this.store.updateSlotState(slot, newState);
 
-    return this.transmit(
-      () => PacketBuilder.fromEffectState(newState, this.protocol.getNextSequenceId()).build(),
-      this.applyPacket(effect.type),
-    );
+    try {
+      await this.transmitCoalesced(
+        `effect:${slot}`,
+        () => PacketBuilder.fromEffectState(newState, this.protocol.getNextSequenceId()).build(),
+        this.applyPacket(effect.type),
+      );
+    } catch (err) {
+      if (this.store.getState().slots[slot] === newState) {
+        this.store.updateSlotState(slot, effect);
+      }
+      throw err;
+    }
   }
 
   /**
@@ -212,9 +260,10 @@ export class EffectController extends BaseController {
     if (!isValidSlot(fromSlot) || !isValidSlot(toSlot)) {
       throw new Error(`Invalid slot indices: ${fromSlot}, ${toSlot}`);
     }
+    const before = this.store.getState().slots;
+    if (!before[fromSlot]) return fromSlot;
     if (fromSlot === toSlot && !options?.appendToGroup) return toSlot;
 
-    const before = this.store.getState().slots;
     const slots = [...before];
     const size = LIMITS.GROUP_SIZE;
     const fromStart = groupStart(fromSlot);
@@ -314,6 +363,13 @@ export class EffectController extends BaseController {
           if (isValidKnobIndex(k.index)) knobs[k.index] = toByte(k.value);
         }
       }
+      // Enforce Mustang hardware rule: at most one effect per DSP type.
+      for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+        if (i !== item.slot && after[i]?.type === model.type) {
+          after[i] = null;
+        }
+      }
+
       after[item.slot] = {
         slot: item.slot,
         type: model.type,
@@ -328,9 +384,19 @@ export class EffectController extends BaseController {
 
   async clearEffect(slot: number): Promise<void> {
     this.assertSlot(slot);
-    const type = this.store.getState().slots[slot]?.type ?? DspType.STOMP;
+    const existing = this.store.getState().slots[slot];
+    if (!existing) return;
+
+    this.cancelCoalesced(`effect:${slot}`);
     this.store.clearSlot(slot);
-    await this.transmit(...this.buildClearPackets(slot, type));
+    try {
+      await this.transmit(...this.buildClearPackets(slot, existing.type));
+    } catch (err) {
+      if (this.store.getState().slots[slot] === null) {
+        this.store.updateSlotState(slot, existing);
+      }
+      throw err;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -340,6 +406,10 @@ export class EffectController extends BaseController {
   private async syncSlots(before: ReadonlyArray<EffectState | null>, after: ReadonlyArray<EffectState | null>) {
     const packets: PacketFactory[] = [];
     const snapshotBefore = [...before];
+
+    for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+      this.cancelCoalesced(`effect:${i}`);
+    }
 
     // 1. Clear any active effect whose slot is now empty OR whose slot is replaced by a different DSP type.
     // Each DSP type (Stomp, Mod, Delay, Reverb) is an independent hardware DSP unit.
@@ -368,18 +438,37 @@ export class EffectController extends BaseController {
     }
 
     // 3. Synchronize in-memory store state in a single atomic batch
+    const placedSlots: Array<EffectState | null> = new Array(LIMITS.SLOT_COUNT).fill(null);
     this.store.batch(() => {
       for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
         const newEffect = after[i];
         const placed = newEffect ? { ...newEffect, slot: i } : null;
+        placedSlots[i] = placed;
         this.store.updateSlotState(i, placed);
       }
     });
 
     // 4. Transmit all packets as one atomic FIFO transaction
     if (packets.length > 0) {
-      await this.transmit(...packets);
+      try {
+        await this.transmit(...packets);
+      } catch (err) {
+        const currentSlots = this.store.getState().slots;
+        const stillMatches = placedSlots.every((p, idx) => currentSlots[idx] === p);
+        if (stillMatches) {
+          this.restoreSlots(snapshotBefore);
+        }
+        throw err;
+      }
     }
+  }
+
+  private restoreSlots(slots: ReadonlyArray<EffectState | null>): void {
+    this.store.batch(() => {
+      for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+        this.store.updateSlotState(i, slots[i]);
+      }
+    });
   }
 
   private buildClearPackets(slot: number, type: DspType): PacketFactory[] {

@@ -172,4 +172,25 @@ describe('PresetImporter Integration via FuseAPI', () => {
     store.setPresetActive(1, 'Slot 1');
     expect(store.getState().presetDetails.author).toBeUndefined();
   });
+
+  it('should reject arbitrary non-preset XML without wiping active effects or transmitting packets', async () => {
+    await api.effects.setEffectById(0, EFFECT_MODELS.OVERDRIVE.id);
+    protocol.sendPacket.mockClear();
+
+    await expect(api.loadPresetFromXml('<svg><rect width="10" height="10" /></svg>')).rejects.toThrow(
+      /Invalid preset XML/,
+    );
+    expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.OVERDRIVE.id);
+    expect(protocol.sendPacket).not.toHaveBeenCalled();
+  });
+
+  it('should roll back store state if transmitting imported preset packets fails', async () => {
+    await api.effects.setEffectById(5, EFFECT_MODELS.TAPE_DELAY.id);
+    protocol.sendPacket.mockRejectedValueOnce(new Error('HID write failed'));
+
+    await expect(api.loadPresetFromXml(mockPresetXml)).rejects.toThrow('HID write failed');
+    expect(store.getState().slots[5]?.modelId).toBe(EFFECT_MODELS.TAPE_DELAY.id);
+    expect(store.getState().slots[0]).toBeNull();
+    expect(store.getState().presetDetails.author).toBeUndefined();
+  });
 });

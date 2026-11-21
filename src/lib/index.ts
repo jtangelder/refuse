@@ -8,7 +8,7 @@ import { PresetController } from './controllers/preset_controller';
 import { ProtocolDecoder } from './protocol/protocol_decoder';
 import { PacketBuilder } from './protocol/packet_builder';
 import { PresetImporter } from './preset_importer';
-import { enqueueWrite } from './protocol/write_queue';
+import { abortWrites, enqueueWrite } from './protocol/write_queue';
 
 export { getModelDefault } from './defaults';
 export {
@@ -35,13 +35,16 @@ export {
   enqueueWrite,
   enqueueCoalescedWrite,
   cancelCoalescedWrite,
+  abortWrites,
   flushWrites,
   setInterPacketDelay,
+  setProtocolPacketDelay,
   resetInterPacketDelay,
   DEFAULT_PACKET_DELAY_MS,
   type PacketFactory,
 } from './protocol/write_queue';
-export { LIMITS, OFFSETS, AMP_KNOB_INDEX, type AdvancedAmpParam } from './protocol/constants';
+export { truncateUtf8String } from './protocol/packet_builder';
+export { LIMITS, OFFSETS, AMP_KNOB_INDEX, isValidPresetSlot, type AdvancedAmpParam } from './protocol/constants';
 export { type SetEffectOptions } from './controllers/effect_controller';
 
 export interface PresetMetadata {
@@ -102,6 +105,8 @@ export class FuseAPI {
   public onConnectionLost?: () => void;
 
   private monitoringListener?: (data: Uint8Array) => void;
+  private syncPromise: Promise<void> | null = null;
+  private syncCancelers = new Set<() => void>();
 
   constructor(
     public store: Store,
@@ -114,6 +119,8 @@ export class FuseAPI {
 
     this.protocol.onDisconnect = () => {
       debug('[API] Device disconnected by hardware or system');
+      this.cancelActiveSyncs();
+      abortWrites(this.protocol, new Error('Amplifier disconnected'));
       this.stopMonitoring();
       this.store.setConnected(false);
       this.onConnectionLost?.();
@@ -144,32 +151,56 @@ export class FuseAPI {
     debug('[API] Connected. Initiating state sync...');
     this.store.setConnected(true);
     this.startMonitoring();
-    await this.syncState();
+    try {
+      await this.syncState();
+    } catch (err) {
+      await this.disconnect();
+      throw err;
+    }
 
     return true;
   }
 
   /**
    * Request a fresh preset and DSP state dump from the connected amplifier.
+   * Concurrent calls coalesce onto the in-flight sync so `refreshing` never races.
    */
   async syncState(): Promise<void> {
     if (!this.isConnected) return;
+    if (this.syncPromise) return this.syncPromise;
+
     this.store.setRefreshing(true);
-    try {
-      await this.refreshState();
-      await this.refreshBypassStates();
-      // Wait for incoming dump packets to reach quiescence (up to 500ms cap)
-      await this.waitForQuiescence(50, 500);
-    } finally {
-      this.store.setRefreshing(false);
-    }
+    const run = (async () => {
+      try {
+        await this.refreshState();
+        if (!this.isConnected) return;
+        await this.refreshBypassStates();
+        if (!this.isConnected) return;
+        // Wait for incoming dump packets to reach quiescence (up to 500ms cap)
+        await this.waitForQuiescence(50, 500);
+      } finally {
+        this.syncPromise = null;
+        this.store.setRefreshing(false);
+      }
+    })();
+
+    this.syncPromise = run;
+    return run;
   }
 
   async disconnect(): Promise<void> {
     debug('[API CALL] disconnect()');
+    this.cancelActiveSyncs();
+    abortWrites(this.protocol, new Error('Not connected'));
     this.stopMonitoring();
     await this.protocol.disconnect();
     this.store.setConnected(false);
+  }
+
+  private cancelActiveSyncs() {
+    const cancelers = Array.from(this.syncCancelers);
+    this.syncCancelers.clear();
+    cancelers.forEach(cancel => cancel());
   }
 
   private stopMonitoring() {
@@ -213,11 +244,6 @@ export class FuseAPI {
       }
     };
     this.protocol.addEventListener(this.monitoringListener);
-
-    // Subscribe to Preset changes to trigger refresh
-    this.presets.onLoad = payload => {
-      debug(`[API DEBUG] Preset loaded event received: ${JSON.stringify(payload)}`);
-    };
   }
 
   private async refreshState() {
@@ -225,14 +251,24 @@ export class FuseAPI {
   }
 
   private async refreshBypassStates(): Promise<void> {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve, reject) => {
       const pending = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
+      let settled = false;
+
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        this.syncCancelers.delete(cancel);
+        this.protocol.removeEventListener(listener);
+      };
 
       const done = () => {
-        clearTimeout(timeoutId);
-        this.protocol.removeEventListener(listener);
+        if (settled) return;
+        settled = true;
+        cleanup();
         resolve();
       };
+
+      const cancel = () => done();
 
       const listener = (data: Uint8Array) => {
         const command = ProtocolDecoder.decode(data);
@@ -245,8 +281,18 @@ export class FuseAPI {
       };
 
       const timeoutId = setTimeout(done, 1000);
+      this.syncCancelers.add(cancel);
       this.protocol.addEventListener(listener);
-      enqueueWrite(this.protocol, () => PacketBuilder.requestBypassStates()).catch(done);
+      enqueueWrite(this.protocol, () => PacketBuilder.requestBypassStates()).catch(err => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (!this.isConnected) {
+          resolve();
+        } else {
+          reject(err);
+        }
+      });
     });
   }
 
@@ -257,10 +303,14 @@ export class FuseAPI {
   private waitForQuiescence(quietMs = 50, maxWaitMs = 500): Promise<void> {
     return new Promise<void>(resolve => {
       let quietTimer: ReturnType<typeof setTimeout> | undefined;
+      let settled = false;
 
       const finish = () => {
+        if (settled) return;
+        settled = true;
         if (quietTimer !== undefined) clearTimeout(quietTimer);
         clearTimeout(maxTimer);
+        this.syncCancelers.delete(finish);
         this.protocol.removeEventListener(onPacket);
         resolve();
       };
@@ -271,6 +321,7 @@ export class FuseAPI {
       };
 
       const maxTimer = setTimeout(finish, maxWaitMs);
+      this.syncCancelers.add(finish);
       this.protocol.addEventListener(onPacket);
       quietTimer = setTimeout(finish, quietMs);
     });

@@ -1,5 +1,5 @@
 import { DspType } from '../models';
-import { OFFSETS, OPCODES, VALUES } from './constants';
+import { OFFSETS, OPCODES, VALUES, isValidPresetSlot, isValidSlot } from './constants';
 
 const UTF8_DECODER = new TextDecoder('utf-8');
 
@@ -105,16 +105,25 @@ export class ProtocolDecoder {
 
     // 2. Data Packet (0x1c: 0x01 = Read/Dump/Notification, 0x03 = Write/Hardware Edit)
     if (command === OPCODES.DATA_PACKET && (subCommand === OPCODES.DATA_READ || subCommand === OPCODES.DATA_WRITE)) {
+      if (data.length <= OFFSETS.TYPE) {
+        return { type: 'UNKNOWN', raw: data };
+      }
+
       const type = data[OFFSETS.TYPE];
 
       // Preset Info / Change (only valid on DATA_READ 0x01; 0x1c 0x03 0x00 is an Apply echo)
       // Type 0x04 = Preset Info (when requesting list)
       // Type 0x00 / 0x01 = Preset Change (when selecting preset on amp)
       if (subCommand === OPCODES.DATA_READ && (type === OPCODES.PRESET_INFO || type === 0x00 || type === 0x01)) {
+        if (data.length < OFFSETS.PRESET_NAME) {
+          return { type: 'UNKNOWN', raw: data };
+        }
         // data[3] === 0x00 indicates main amp preset (non-zero is Mod/Delay knob bank metadata)
         if (data[3] !== 0x00) return { type: 'UNKNOWN', raw: data };
 
         const slot = data[OFFSETS.PRESET_SLOT];
+        if (!isValidPresetSlot(slot)) return { type: 'UNKNOWN', raw: data };
+
         // Parse name
         const nameBytes = data.slice(OFFSETS.PRESET_NAME, OFFSETS.PRESET_NAME + 32);
         // Find the first null byte to correctly slice the buffer
@@ -131,6 +140,9 @@ export class ProtocolDecoder {
 
       // Amp Update
       if (type === DspType.AMP) {
+        if (data.length < OFFSETS.KNOB_END) {
+          return { type: 'UNKNOWN', raw: data };
+        }
         // Ensure instance is 0x00 (Active)
         const instance = data[3];
         if (instance !== 0x00) return { type: 'UNKNOWN', raw: data };
@@ -138,7 +150,9 @@ export class ProtocolDecoder {
         const modelId = (data[OFFSETS.MODEL_ID_MSB] << 8) | data[OFFSETS.MODEL_ID_LSB];
         const cabinetId = data[OFFSETS.CABINET_ID];
         const knobs = Array.from(data.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END));
-        const presetSlot = subCommand === OPCODES.DATA_READ ? data[OFFSETS.PRESET_SLOT] : undefined;
+        const rawPresetSlot = data[OFFSETS.PRESET_SLOT];
+        const presetSlot =
+          subCommand === OPCODES.DATA_READ && isValidPresetSlot(rawPresetSlot) ? rawPresetSlot : undefined;
         return {
           type: 'AMP_UPDATE',
           modelId,
@@ -150,6 +164,9 @@ export class ProtocolDecoder {
 
       // Effect Update
       if (type >= DspType.STOMP && type <= DspType.REVERB) {
+        if (data.length < OFFSETS.KNOB_END) {
+          return { type: 'UNKNOWN', raw: data };
+        }
         const instance = data[3];
         // data[3] is 0x00 for active effects
         if (instance === 0x00) {
@@ -171,6 +188,9 @@ export class ProtocolDecoder {
 
     // 3. Bypass Response (0x19 0xc3)
     if (command === 0x19 && subCommand === 0xc3) {
+      if (data.length < 5 || !isValidSlot(data[4])) {
+        return { type: 'UNKNOWN', raw: data };
+      }
       return {
         type: 'BYPASS_STATE',
         slot: data[4],

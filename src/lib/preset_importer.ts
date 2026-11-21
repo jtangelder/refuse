@@ -1,7 +1,7 @@
 import { DspType, resolveFuseModelId, findAmpModel, findEffectModel } from './models';
 import { PacketBuilder } from './protocol/packet_builder';
 import { type IProtocol } from './protocol/protocol_interface';
-import { enqueueWrite, type PacketFactory } from './protocol/write_queue';
+import { cancelCoalescedWrite, enqueueWrite, type PacketFactory } from './protocol/write_queue';
 import { AMP_KNOB_INDEX, LIMITS, OFFSETS, VALUES, toByte } from './protocol/constants';
 import { normalizeAmpState } from './controllers/amp_controller';
 import { normalizeKnobs } from './controllers/effect_controller';
@@ -24,6 +24,10 @@ export class PresetImporter {
 
     debug(`[PresetImporter] loadXml (Length: ${xmlString.length})`);
 
+    if (typeof DOMParser === 'undefined') {
+      throw new Error('XML parsing is not supported in this environment (DOMParser unavailable)');
+    }
+
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlString, 'text/xml');
 
@@ -32,10 +36,19 @@ export class PresetImporter {
       throw new Error(`XML parsing failed: ${parserError.textContent?.slice(0, 100) || 'Malformed XML'}`);
     }
 
-    const beforeSlots = this.store ? [...this.store.getState().slots] : [];
+    const rootTag = doc.documentElement?.tagName;
+    const hasRecognizedSection = Boolean(doc.querySelector('Amplifier, FX'));
+    if (rootTag !== 'Preset' && rootTag !== 'FenderPreset' && !hasRecognizedSection) {
+      throw new Error('Invalid preset XML: missing Fender FUSE Preset, Amplifier, or FX section');
+    }
+
+    const previousState = this.store ? this.store.getState() : null;
+    const beforeSlots = previousState ? [...previousState.slots] : [];
     const importedTypes = new Set<DspType>();
     const usedSlots = new Set<number>();
     const modulePackets: PacketFactory[] = [];
+
+    cancelCoalescedWrite(this.protocol);
 
     const applyStoreAndCollectPackets = () => {
       this.store?.clearAllSlots();
@@ -86,7 +99,20 @@ export class PresetImporter {
 
     const packets = [...clearPackets, ...modulePackets];
     if (packets.length > 0) {
-      await enqueueWrite(this.protocol, ...packets);
+      try {
+        await enqueueWrite(this.protocol, ...packets);
+      } catch (err) {
+        if (this.store && previousState) {
+          this.store.batch(() => {
+            this.store!.updateAmpState(previousState.amp);
+            for (let i = 0; i < LIMITS.SLOT_COUNT; i++) {
+              this.store!.updateSlotState(i, beforeSlots[i]);
+            }
+            this.store!.replacePresetDetails(previousState.presetDetails);
+          });
+        }
+        throw err;
+      }
     }
   }
 

@@ -142,5 +142,32 @@ describe('AmpController', () => {
       expect(settings?.volume).toBe(10);
       expect(settings?.treble).toBe(50);
     });
+
+    it('should not snap a non-zero active preset back to 0 when AMP_UPDATE has presetSlot 0 outside refresh', () => {
+      store.setPresetActive(5, 'Plexi');
+      controller.handleAmpUpdate({
+        type: 'AMP_UPDATE',
+        modelId: AMP_MODELS.BRIT_70S.id,
+        cabinetId: 0x08,
+        knobs: new Array(32).fill(100),
+        presetSlot: 0,
+      });
+
+      expect(store.getState().currentPresetSlot).toBe(5);
+      expect(store.getState().amp.modelId).toBe(AMP_MODELS.BRIT_70S.id);
+    });
+
+    it('should roll back amp state if hardware transmission fails', async () => {
+      await controller.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
+      const before = store.getState().amp;
+
+      vi.mocked(mockProtocol.sendPacket).mockRejectedValueOnce(new Error('Not connected'));
+      await expect(controller.setAmpKnob(0, 222)).rejects.toThrow('Not connected');
+      expect(store.getState().amp).toEqual(before);
+
+      vi.mocked(mockProtocol.sendPacket).mockRejectedValueOnce(new Error('Not connected'));
+      await expect(controller.setCabinetById(0x02)).rejects.toThrow('Not connected');
+      expect(store.getState().amp).toEqual(before);
+    });
   });
 });

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProtocolDecoder } from '../protocol/protocol_decoder';
 import { PacketBuilder } from '../protocol/packet_builder';
 import { DspType, AMP_MODELS, EFFECT_MODELS } from '../models';
-import { enqueueCoalescedWrite, flushWrites } from '../protocol/write_queue';
+import { abortWrites, enqueueCoalescedWrite, enqueueWrite, flushWrites } from '../protocol/write_queue';
 import { Store, type AmpState, type EffectState } from '../store';
 import { AmpController } from '../controllers/amp_controller';
 import { EffectController } from '../controllers/effect_controller';
@@ -156,8 +156,8 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
     });
   });
 
-  describe('Protocol Write Queue (Unthrottled Sequential Delivery)', () => {
-    it('transmits all rapid updates sequentially without throttling or dropping messages', async () => {
+  describe('Protocol Write Queue (FIFO, Coalescing, Pacing & Abort)', () => {
+    it('transmits all structural enqueueWrite updates sequentially in FIFO order', async () => {
       const sentValues: number[] = [];
       const mockProtocol: IProtocol = {
         isConnected: true,
@@ -173,7 +173,31 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
         }),
       };
 
-      // Dispatch 5 rapid updates without awaiting between them
+      const promises = [10, 20, 30, 40, 50].map(val => enqueueWrite(mockProtocol, () => new Uint8Array([val])));
+
+      await Promise.all(promises);
+      await flushWrites(mockProtocol);
+
+      expect(sentValues).toEqual([10, 20, 30, 40, 50]);
+    });
+
+    it('coalesces rapid enqueueCoalescedWrite updates under the same key to prevent knob drag lag', async () => {
+      const sentValues: number[] = [];
+      const mockProtocol: IProtocol = {
+        isConnected: true,
+        isSupported: true,
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        getNextSequenceId: vi.fn().mockReturnValue(1),
+        sendPacket: vi.fn().mockImplementation(async (packet: Uint8Array) => {
+          await Promise.resolve();
+          sentValues.push(packet[0]);
+        }),
+      };
+
+      // First update starts immediately; superseded intermediate updates collapse into the latest (50)
       const promises = [10, 20, 30, 40, 50].map(val =>
         enqueueCoalescedWrite(mockProtocol, 'amp', () => new Uint8Array([val])),
       );
@@ -181,11 +205,10 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
       await Promise.all(promises);
       await flushWrites(mockProtocol);
 
-      // All updates must have been transmitted in FIFO order (no messages dropped/throttled)
-      expect(sentValues).toEqual([10, 20, 30, 40, 50]);
+      expect(sentValues).toEqual([10, 50]);
     });
 
-    it('paces consecutive packet writes to protect hardware from buffer overruns', async () => {
+    it('paces consecutive packet writes even across separate awaited enqueueWrite calls', async () => {
       const timestamps: number[] = [];
       const mockProtocol: IProtocol = {
         isConnected: true,
@@ -200,21 +223,46 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
         }),
       };
 
-      // Send 3 packets
-      await enqueueCoalescedWrite(
-        mockProtocol,
-        'amp',
-        () => new Uint8Array([1]),
-        () => new Uint8Array([2]),
-        () => new Uint8Array([3]),
-      );
+      await enqueueWrite(mockProtocol, () => new Uint8Array([1]));
+      await enqueueWrite(mockProtocol, () => new Uint8Array([2]));
+      await enqueueWrite(mockProtocol, () => new Uint8Array([3]));
 
       expect(timestamps.length).toBe(3);
-      // Pacing should introduce at least ~15ms between consecutive packets
       const diff1 = timestamps[1] - timestamps[0];
       const diff2 = timestamps[2] - timestamps[1];
       expect(diff1).toBeGreaterThanOrEqual(14);
       expect(diff2).toBeGreaterThanOrEqual(14);
+    });
+
+    it('fast-fails pending queued writes on abortWrites without sleeping through pacing delays', async () => {
+      let releaseFirst!: () => void;
+      const mockProtocol: IProtocol = {
+        isConnected: true,
+        isSupported: true,
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        getNextSequenceId: vi.fn().mockReturnValue(1),
+        sendPacket: vi.fn().mockImplementation(
+          () =>
+            new Promise<void>(resolve => {
+              releaseFirst = resolve;
+            }),
+        ),
+      };
+
+      const p1 = enqueueWrite(mockProtocol, () => new Uint8Array([1]));
+      const p2 = enqueueWrite(mockProtocol, () => new Uint8Array([2]));
+      const p3 = enqueueWrite(mockProtocol, () => new Uint8Array([3]));
+
+      abortWrites(mockProtocol, new Error('Disconnected'));
+
+      await expect(p2).rejects.toThrow('Disconnected');
+      await expect(p3).rejects.toThrow('Disconnected');
+      releaseFirst();
+      await p1;
+      expect(mockProtocol.sendPacket).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -231,5 +231,21 @@ describe('ProtocolDecoder', () => {
         expect(command.slot).toBe(9);
       }
     });
+
+    it('should reject truncated 0x1c data packets and short/invalid 0x19 bypass responses as UNKNOWN', () => {
+      expect(ProtocolDecoder.decode(new Uint8Array([0x1c, 0x01, DspType.AMP, 0x00])).type).toBe('UNKNOWN');
+      expect(ProtocolDecoder.decode(new Uint8Array([0x1c, 0x01, DspType.STOMP, 0x00])).type).toBe('UNKNOWN');
+      expect(ProtocolDecoder.decode(new Uint8Array([0x1c, 0x01, 0x04, 0x00, 0x01])).type).toBe('UNKNOWN');
+      expect(ProtocolDecoder.decode(new Uint8Array([0x19, 0xc3, 0x00, 0x00])).type).toBe('UNKNOWN');
+      // Out-of-range bypass slot (>= 8)
+      expect(ProtocolDecoder.decode(new Uint8Array([0x19, 0xc3, 0x00, 0x00, 8])).type).toBe('UNKNOWN');
+      // Out-of-range preset slot (> 99)
+      const invalidPreset = new Uint8Array(64);
+      invalidPreset[0] = 0x1c;
+      invalidPreset[1] = 0x01;
+      invalidPreset[2] = 0x04;
+      invalidPreset[4] = 100;
+      expect(ProtocolDecoder.decode(invalidPreset).type).toBe('UNKNOWN');
+    });
   });
 });

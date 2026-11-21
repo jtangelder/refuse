@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PacketBuilder } from '../protocol/packet_builder';
+import { PacketBuilder, PACKET_SIZE, truncateUtf8String } from '../protocol/packet_builder';
 import { OPCODES } from '../protocol/constants';
 import { DspType, AMP_MODELS, EFFECT_MODELS } from '../models';
 
@@ -165,6 +165,31 @@ describe('PacketBuilder', () => {
       expect(buffer[22]).toBe(1); // Enabled false -> 1
       expect(buffer[32]).toBe(10);
       expect(buffer[33]).toBe(20);
+    });
+
+    it('should pad control packets to full 64-byte HID report size', () => {
+      expect(PacketBuilder.handshake1().length).toBe(PACKET_SIZE);
+      expect(PacketBuilder.handshake2().length).toBe(PACKET_SIZE);
+      expect(PacketBuilder.requestState().length).toBe(PACKET_SIZE);
+      expect(PacketBuilder.requestBypassStates().length).toBe(PACKET_SIZE);
+    });
+
+    it('should truncate multi-byte UTF-8 preset names cleanly without splitting code points', () => {
+      // 31 ASCII bytes + 1 two-byte UTF-8 char ('ü' = 0xc3 0xbc) = 33 bytes -> must drop 'ü', not emit 0xc3
+      const name = 'a'.repeat(31) + 'ü';
+      expect(truncateUtf8String(name, 32)).toBe('a'.repeat(31));
+
+      const packet = PacketBuilder.savePreset(0, name).build();
+      const rawName = packet.slice(16, 48);
+      const nullIdx = rawName.indexOf(0);
+      const decoded = new TextDecoder('utf-8', { fatal: true }).decode(
+        nullIdx !== -1 ? rawName.slice(0, nullIdx) : rawName,
+      );
+      expect(decoded).toBe('a'.repeat(31));
+    });
+
+    it('should reject DspType.AMP in PacketBuilder.bypass()', () => {
+      expect(() => PacketBuilder.bypass(0, true, DspType.AMP)).toThrow(/Invalid effect DSP type/);
     });
   });
 });

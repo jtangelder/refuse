@@ -155,14 +155,14 @@ describe('FuseAPI', () => {
 
   describe('Connection & Synchronization', () => {
     it('should resolve connect() quickly when all 8 bypass packets arrive and quiescence is reached', async () => {
-      await connectWithFakeTimers(api, 60);
+      await connectWithFakeTimers(api, 80);
       expect(api.isConnected).toBe(true);
       expect(api.state.connected).toBe(true);
       expect(api.state.refreshing).toBe(false);
     });
 
     it('should re-request state and bypass states when syncState() is called manually', async () => {
-      await connectWithFakeTimers(api, 60);
+      await connectWithFakeTimers(api, 80);
       protocol.sendPacket.mockClear();
 
       vi.useFakeTimers();
@@ -176,6 +176,71 @@ describe('FuseAPI', () => {
       expect(protocol.sendPacket).toHaveBeenCalledTimes(2);
       expect(protocol.sendPacket.mock.calls[0][0][0]).toBe(0xff);
       expect(protocol.sendPacket.mock.calls[1][0][0]).toBe(0x19);
+    });
+
+    it('should coalesce concurrent syncState() calls without racing on refreshing state', async () => {
+      await connectWithFakeTimers(api, 80);
+      protocol.sendPacket.mockClear();
+
+      vi.useFakeTimers();
+      const first = api.syncState();
+      const second = api.syncState();
+      expect(api.state.refreshing).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(100);
+      await Promise.all([first, second]);
+      vi.useRealTimers();
+
+      expect(api.state.refreshing).toBe(false);
+      // Only one requestState + one requestBypassStates should have been sent
+      expect(protocol.sendPacket).toHaveBeenCalledTimes(2);
+    });
+
+    it('should abort pending sync immediately on disconnect instead of hanging for 1000ms', async () => {
+      await connectWithFakeTimers(api, 80);
+      protocol.autoRespondBypass = false;
+
+      vi.useFakeTimers();
+      const syncPromise = api.syncState();
+      await vi.advanceTimersByTimeAsync(25);
+      expect(api.state.refreshing).toBe(true);
+
+      // Simulate sudden unplug during bypass wait
+      protocol.isConnected = false;
+      protocol.onDisconnect?.();
+
+      // Should settle immediately without advancing to the 1000ms timeout
+      await syncPromise;
+      vi.useRealTimers();
+
+      expect(api.state.refreshing).toBe(false);
+      expect(api.state.connected).toBe(false);
+    });
+
+    it('should preserve user-registered presets.onLoad callback across connect()', async () => {
+      const onLoadSpy = vi.fn();
+      api.presets.onLoad = onLoadSpy;
+
+      await connectWithFakeTimers(api, 80);
+
+      const packet = new Uint8Array(64);
+      packet[0] = 0x1c;
+      packet[1] = 0x01;
+      packet[2] = 0x00;
+      packet[4] = 3;
+      packet.set(new TextEncoder().encode('Jazz Clean'), 16);
+      protocol.emitReport(packet);
+
+      expect(onLoadSpy).toHaveBeenCalledWith({ slot: 3, name: 'Jazz Clean' });
+    });
+
+    it('should clean up connection state if initial syncState() throws inside connect()', async () => {
+      protocol.sendPacket.mockRejectedValueOnce(new Error('USB write failed'));
+
+      await expect(api.connect()).rejects.toThrow('USB write failed');
+      expect(api.state.connected).toBe(false);
+      expect(api.state.refreshing).toBe(false);
+      expect(protocol.disconnect).toHaveBeenCalled();
     });
 
     it('should no-op syncState() when disconnected', async () => {

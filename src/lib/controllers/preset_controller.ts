@@ -1,7 +1,7 @@
 import { debug } from '../helpers';
 import type { PresetMetadata } from '../index';
-import { PacketBuilder } from '../protocol/packet_builder';
-import { LIMITS } from '../protocol/constants';
+import { PacketBuilder, truncateUtf8String } from '../protocol/packet_builder';
+import { LIMITS, isValidPresetSlot } from '../protocol/constants';
 import { type PresetChangeCommand, type PresetInfoCommand } from '../protocol/protocol_decoder';
 
 import { BaseController } from './base_controller';
@@ -27,12 +27,14 @@ export class PresetController extends BaseController {
   async loadPreset(slot: number): Promise<void> {
     assertPresetSlot(slot);
     debug(`[PresetController] loadPreset(${slot})`);
+    // Drop pending knob drags from the previous preset so they never overwrite the newly loaded preset.
+    this.cancelCoalesced();
     await this.transmit(() => PacketBuilder.loadPreset(slot).build());
   }
 
   async savePreset(slot: number, name: string): Promise<void> {
     assertPresetSlot(slot);
-    const cleanName = sanitizePresetName(name);
+    const cleanName = truncateUtf8String(sanitizePresetName(name), LIMITS.PRESET_NAME_BYTES);
     if (!cleanName) throw new Error('Preset name must not be empty');
     debug(`[PresetController] savePreset(${slot}, "${cleanName}")`);
 
@@ -51,7 +53,7 @@ export class PresetController extends BaseController {
 }
 
 function assertPresetSlot(slot: number): void {
-  if (!Number.isInteger(slot) || slot < 0 || slot > LIMITS.MAX_PRESET_SLOT) {
+  if (!isValidPresetSlot(slot)) {
     throw new Error(`Invalid preset slot: ${slot}`);
   }
 }
