@@ -7,7 +7,7 @@ import type { IProtocol, ProtocolEventListenerFn } from '../protocol/protocol_in
 class MockProtocol implements IProtocol {
   isConnected = false;
   isSupported = true;
-  autoRespondBypass = true;
+  autoRespondDump = true;
   onDisconnect?: () => void;
   private listeners = new Set<ProtocolEventListenerFn>();
 
@@ -29,15 +29,11 @@ class MockProtocol implements IProtocol {
   });
 
   sendPacket = vi.fn().mockImplementation(async (data: Uint8Array) => {
-    if (this.autoRespondBypass && data[0] === 0x19 && data[1] === 0x00) {
-      for (let slot = 0; slot < 8; slot++) {
-        const bp = new Uint8Array(64);
-        bp[0] = 0x19;
-        bp[1] = 0xc3;
-        bp[3] = 0x00;
-        bp[4] = slot;
-        this.emitReport(bp);
-      }
+    if (this.autoRespondDump && data[0] === 0xff && data[1] === 0xc1) {
+      const done = new Uint8Array(64);
+      done[0] = 0xff;
+      done[1] = 0x01; // DUMP_COMPLETE
+      this.emitReport(done);
     }
   });
 
@@ -48,7 +44,7 @@ class MockProtocol implements IProtocol {
   }
 }
 
-async function connectWithFakeTimers(api: FuseAPI, ms = 100) {
+async function connectWithFakeTimers(api: FuseAPI, ms = 300) {
   vi.useFakeTimers();
   const connectPromise = api.connect();
   await vi.advanceTimersByTimeAsync(ms);
@@ -154,32 +150,28 @@ describe('FuseAPI', () => {
   });
 
   describe('Connection & Synchronization', () => {
-    it('should resolve connect() quickly when all 8 bypass packets arrive and quiescence is reached', async () => {
-      await connectWithFakeTimers(api, 80);
+    it('should resolve connect() immediately when DUMP_COMPLETE (0xff 0x01) arrives', async () => {
+      await api.connect();
       expect(api.isConnected).toBe(true);
       expect(api.state.connected).toBe(true);
       expect(api.state.refreshing).toBe(false);
     });
 
-    it('should re-request state and bypass states when syncState() is called manually', async () => {
-      await connectWithFakeTimers(api, 80);
+    it('should send only 0xff 0xc1 (no non-existent 0x19 0x00 poll) when syncState() is called manually', async () => {
+      await api.connect();
       protocol.sendPacket.mockClear();
 
-      vi.useFakeTimers();
-      const syncPromise = api.syncState();
-      expect(api.state.refreshing).toBe(true);
-      await vi.advanceTimersByTimeAsync(100);
-      await syncPromise;
-      vi.useRealTimers();
+      await api.syncState();
 
       expect(api.state.refreshing).toBe(false);
-      expect(protocol.sendPacket).toHaveBeenCalledTimes(2);
+      expect(protocol.sendPacket).toHaveBeenCalledTimes(1);
       expect(protocol.sendPacket.mock.calls[0][0][0]).toBe(0xff);
-      expect(protocol.sendPacket.mock.calls[1][0][0]).toBe(0x19);
+      expect(protocol.sendPacket.mock.calls[0][0][1]).toBe(0xc1);
     });
 
     it('should coalesce concurrent syncState() calls without racing on refreshing state', async () => {
-      await connectWithFakeTimers(api, 80);
+      await api.connect();
+      protocol.autoRespondDump = false;
       protocol.sendPacket.mockClear();
 
       vi.useFakeTimers();
@@ -187,29 +179,29 @@ describe('FuseAPI', () => {
       const second = api.syncState();
       expect(api.state.refreshing).toBe(true);
 
-      await vi.advanceTimersByTimeAsync(100);
+      await vi.advanceTimersByTimeAsync(300);
       await Promise.all([first, second]);
       vi.useRealTimers();
 
       expect(api.state.refreshing).toBe(false);
-      // Only one requestState + one requestBypassStates should have been sent
-      expect(protocol.sendPacket).toHaveBeenCalledTimes(2);
+      // Only one 0xff 0xc1 requestState packet should have been sent
+      expect(protocol.sendPacket).toHaveBeenCalledTimes(1);
     });
 
-    it('should abort pending sync immediately on disconnect instead of hanging for 1000ms', async () => {
-      await connectWithFakeTimers(api, 80);
-      protocol.autoRespondBypass = false;
+    it('should abort pending sync immediately on disconnect instead of hanging for quiescence timeout', async () => {
+      await api.connect();
+      protocol.autoRespondDump = false;
 
       vi.useFakeTimers();
       const syncPromise = api.syncState();
       await vi.advanceTimersByTimeAsync(25);
       expect(api.state.refreshing).toBe(true);
 
-      // Simulate sudden unplug during bypass wait
+      // Simulate sudden unplug during state dump wait
       protocol.isConnected = false;
       protocol.onDisconnect?.();
 
-      // Should settle immediately without advancing to the 1000ms timeout
+      // Should settle immediately without advancing to timeout
       await syncPromise;
       vi.useRealTimers();
 
@@ -221,7 +213,7 @@ describe('FuseAPI', () => {
       const onLoadSpy = vi.fn();
       api.presets.onLoad = onLoadSpy;
 
-      await connectWithFakeTimers(api, 80);
+      await api.connect();
 
       const packet = new Uint8Array(64);
       packet[0] = 0x1c;
@@ -249,9 +241,9 @@ describe('FuseAPI', () => {
       expect(api.state.refreshing).toBe(false);
     });
 
-    it('should fall back gracefully on refreshBypassStates timeout when hardware does not reply', async () => {
-      protocol.autoRespondBypass = false;
-      await connectWithFakeTimers(api, 1100);
+    it('should fall back gracefully on quiescence timeout when hardware does not emit DUMP_COMPLETE', async () => {
+      protocol.autoRespondDump = false;
+      await connectWithFakeTimers(api, 300);
       expect(api.isConnected).toBe(true);
       expect(api.state.refreshing).toBe(false);
     });
@@ -358,35 +350,45 @@ describe('FuseAPI', () => {
       expect(api.effects.getSettings(2)?.enabled).toBe(false);
     });
 
-    it('should update state on live hardware amp and effect knob turns', async () => {
-      await connectWithFakeTimers(api);
+    it('should update state on live 0x05 0xc3 hardware amp, discrete cabinet, and effect knob turns', async () => {
+      await api.connect();
       await api.amp.setAmpModelById(AMP_MODELS.F57_DELUXE.id);
       await api.effects.setEffectById(2, EFFECT_MODELS.OVERDRIVE.id);
+      await api.effects.setEffectById(5, EFFECT_MODELS.MULTITAP_DELAY.id);
 
+      // Continuous Amp Volume via 0x05 0xc3 0x02
       const ampKnobPacket = new Uint8Array(64);
-      ampKnobPacket[0] = 0x05; // AMP
-      ampKnobPacket[5] = 0x00; // Vol index
-      ampKnobPacket[10] = 150;
+      ampKnobPacket.set([0x05, 0xc3, 0x02, 0x67, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 150]);
       protocol.emitReport(ampKnobPacket);
-
       expect(api.amp.getAmpKnobs().find(k => k.name === 'Vol')?.value).toBe(150);
 
-      const fxKnobPacket = new Uint8Array(64);
-      fxKnobPacket[0] = 0x06; // STOMP
-      fxKnobPacket[1] = 0xc3; // Non-zero hardware sub-byte
-      fxKnobPacket[5] = 0x01; // Gain index
-      fxKnobPacket[10] = 200;
-      fxKnobPacket[13] = 0x02; // Slot 2
-      protocol.emitReport(fxKnobPacket);
+      // Discrete Amp Cabinet via 0x05 0xc3 0x02 (typeFlag 0x8e -> value in byte[9])
+      const cabPacket = new Uint8Array(64);
+      cabPacket.set([0x05, 0xc3, 0x02, 0x67, 0x00, 17, 17, 0x8e, 0x00, 0x09, 0x00]);
+      protocol.emitReport(cabPacket);
+      expect(api.state.amp.cabinetId).toBe(0x09);
 
+      // Continuous Stomp Gain via 0x05 0xc3 0x03
+      const fxKnobPacket = new Uint8Array(64);
+      fxKnobPacket.set([0x05, 0xc3, 0x03, 0x3c, 0x00, 0x01, 0x01, 0x03, 0x00, 0x00, 200]);
+      protocol.emitReport(fxKnobPacket);
       expect(api.effects.getEffectKnobs(2).find(k => k.name === 'Gain')?.value).toBe(200);
+
+      // Discrete Delay Multitap Mode via 0x05 0xc3 0x05 (typeFlag 0x8b -> value in byte[9])
+      const modePacket = new Uint8Array(64);
+      modePacket.set([0x05, 0xc3, 0x05, 0x44, 0x00, 0x04, 0x04, 0x8b, 0x00, 0x03, 0x00]);
+      protocol.emitReport(modePacket);
+      expect(api.effects.getEffectKnobs(5).find(k => k.name === 'Mode')?.value).toBe(3);
     });
 
-    it('should select the active preset slot from AMP_UPDATE during initial state dump instead of staying stuck on slot 0', async () => {
+    it('should sync full Mustang startup dump (preset pairs + active preset + 0xff 0x01) with zero bogus onLoad callbacks', async () => {
+      const onLoadSpy = vi.fn();
+      api.presets.onLoad = onLoadSpy;
+
       protocol.sendPacket.mockImplementation(async (data: Uint8Array) => {
         if (data[0] === 0xff && data[1] === 0xc1) {
-          // 1. Hardware dumps preset names 0..2 with 0x00 confirmations
-          for (let s = 0; s < 3; s++) {
+          // 1. Hardware dumps preset names 0..23 each followed by an empty-name 0x00 confirmation ACK
+          for (let s = 0; s < 24; s++) {
             const info = new Uint8Array(64);
             info[0] = 0x1c;
             info[1] = 0x01;
@@ -403,31 +405,81 @@ describe('FuseAPI', () => {
             protocol.emitReport(confirm);
           }
 
-          // 2. Hardware sends active state for slot 2
+          // 2. Active preset block for slot 7 (even when AMP_UPDATE byte 4 is zeroed)
+          const activeHeader = new Uint8Array(64);
+          activeHeader[0] = 0x1c;
+          activeHeader[1] = 0x01;
+          activeHeader[2] = 0x04;
+          activeHeader[4] = 7;
+          activeHeader.set(new TextEncoder().encode('Preset 7'), 16);
+          protocol.emitReport(activeHeader);
+
           const activeAmp = new Uint8Array(64);
           activeAmp[0] = 0x1c;
           activeAmp[1] = 0x01;
           activeAmp[2] = 0x05; // DspType.AMP
           activeAmp[3] = 0x00;
-          activeAmp[4] = 0x02; // Active preset = slot 2!
+          activeAmp[4] = 0x00; // Zeroed byte 4 -> falls back to preceding active 0x04 header (slot 7)
           activeAmp[16] = 0x67;
           activeAmp[17] = 0x00;
           protocol.emitReport(activeAmp);
-        } else if (data[0] === 0x19 && data[1] === 0x00) {
-          for (let slot = 0; slot < 8; slot++) {
-            const bp = new Uint8Array(64);
-            bp[0] = 0x19;
-            bp[1] = 0xc3;
-            bp[3] = 0x00;
-            bp[4] = slot;
-            protocol.emitReport(bp);
-          }
+
+          const activeAck = new Uint8Array(64);
+          activeAck[0] = 0x1c;
+          activeAck[1] = 0x01;
+          activeAck[2] = 0x00;
+          activeAck[4] = 7;
+          protocol.emitReport(activeAck);
+
+          // 3. End-of-dump ACK (0xff 0x01)
+          const done = new Uint8Array(64);
+          done[0] = 0xff;
+          done[1] = 0x01;
+          protocol.emitReport(done);
         }
       });
 
-      await connectWithFakeTimers(api, 100);
-      expect(api.state.currentPresetSlot).toBe(2);
+      await api.connect();
+      expect(api.presets.getPresets()).toHaveLength(24);
+      expect(api.state.currentPresetSlot).toBe(7);
       expect(api.amp.getAmpModel()?.id).toBe(0x6700);
+      expect(onLoadSpy).not.toHaveBeenCalled();
+    });
+
+    it('should track manual hardware preset wheel turns (0x04 + AMP + 0x00 ACK) cleanly', async () => {
+      await api.connect();
+      const onLoadSpy = vi.fn();
+      api.presets.onLoad = onLoadSpy;
+
+      // Turning physical preset knob to slot 11 emits 0x04 name, 0x05 amp, 0x00 empty ACK
+      const header = new Uint8Array(64);
+      header[0] = 0x1c;
+      header[1] = 0x01;
+      header[2] = 0x04;
+      header[4] = 11;
+      header.set(new TextEncoder().encode('Surf Reverb'), 16);
+      protocol.emitReport(header);
+
+      const amp = new Uint8Array(64);
+      amp[0] = 0x1c;
+      amp[1] = 0x01;
+      amp[2] = 0x05;
+      amp[4] = 0x00;
+      amp[16] = 0x75;
+      amp[17] = 0x00;
+      protocol.emitReport(amp);
+
+      const ack = new Uint8Array(64);
+      ack[0] = 0x1c;
+      ack[1] = 0x01;
+      ack[2] = 0x00;
+      ack[4] = 0x00;
+      protocol.emitReport(ack);
+
+      expect(api.state.currentPresetSlot).toBe(11);
+      expect(api.presets.getPreset(11)?.name).toBe('Surf Reverb');
+      expect(onLoadSpy).toHaveBeenCalledTimes(1);
+      expect(onLoadSpy).toHaveBeenCalledWith({ slot: 11, name: 'Surf Reverb' });
     });
   });
 

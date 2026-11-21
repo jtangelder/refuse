@@ -2,18 +2,34 @@ import { debug } from '../helpers';
 import type { PresetMetadata } from '../index';
 import { PacketBuilder, truncateUtf8String } from '../protocol/packet_builder';
 import { LIMITS, isValidPresetSlot } from '../protocol/constants';
-import { type PresetChangeCommand, type PresetInfoCommand } from '../protocol/protocol_decoder';
+import {
+  type PresetAckCommand,
+  type PresetChangeCommand,
+  type PresetInfoCommand,
+} from '../protocol/protocol_decoder';
 
 import { BaseController } from './base_controller';
 
 export class PresetController extends BaseController {
   public onLoad?: (payload: { slot: number; name: string }) => void;
+  private _lastRefreshPresetSlot?: number;
+
+  public get lastRefreshPresetSlot(): number | undefined {
+    return this._lastRefreshPresetSlot;
+  }
+
+  public resetRefreshTracking(): void {
+    this._lastRefreshPresetSlot = undefined;
+  }
 
   handlePresetChange(command: PresetChangeCommand): boolean {
     const { slot, name } = command;
-    debug(`[PresetController] PRESET_CHANGE: ${slot} ${name}`);
-    this.store.setPresetActive(slot, name);
-    this.onLoad?.({ slot, name });
+    const effectiveName = name || this.store.getState().presets.get(slot)?.name || '';
+    debug(`[PresetController] PRESET_CHANGE: ${slot} ${effectiveName}`);
+    this.store.setPresetActive(slot, effectiveName);
+    if (!this.store.getState().refreshing) {
+      this.onLoad?.({ slot, name: effectiveName });
+    }
     return true;
   }
 
@@ -21,6 +37,29 @@ export class PresetController extends BaseController {
     const { slot, name } = command;
     debug(`[PresetController] PRESET_INFO: ${slot} ${name}`);
     this.store.setPresetMetadata(slot, name);
+    if (this.store.getState().refreshing) {
+      // During bulk dump (0xff 0xc1), record the latest slot without firing per-slot onLoad events;
+      // the active preset's 0x04 header immediately precedes its AMP_UPDATE (0x05).
+      this._lastRefreshPresetSlot = slot;
+    } else {
+      // Outside bulk refresh, hardware sends 0x1c 0x01 0x04 on manual preset wheel turns and loadPreset replies.
+      this.store.setPresetActive(slot, name);
+      this.onLoad?.({ slot, name });
+    }
+    return true;
+  }
+
+  handlePresetAck(command: PresetAckCommand): boolean {
+    const { slot } = command;
+    debug(`[PresetController] PRESET_ACK: ${slot}`);
+    const state = this.store.getState();
+    if (state.refreshing) {
+      return true;
+    }
+    if (state.currentPresetSlot === null) {
+      const existingName = state.presets.get(slot)?.name || '';
+      this.store.setPresetActive(slot, existingName, true);
+    }
     return true;
   }
 
@@ -38,7 +77,11 @@ export class PresetController extends BaseController {
     if (!cleanName) throw new Error('Preset name must not be empty');
     debug(`[PresetController] savePreset(${slot}, "${cleanName}")`);
 
-    await this.transmit(() => PacketBuilder.savePreset(slot, cleanName).build());
+    // Match Fender FUSE & offa/plug: select the saved memory bank immediately after writing its name
+    await this.transmit(
+      () => PacketBuilder.savePreset(slot, cleanName).build(),
+      () => PacketBuilder.loadPreset(slot).build(),
+    );
     this.store.setPresetActive(slot, cleanName);
     this.onLoad?.({ slot, name: cleanName });
   }

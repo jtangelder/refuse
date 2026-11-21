@@ -55,8 +55,12 @@ describe('PresetController', () => {
       expect(onLoadSpy).toHaveBeenCalledWith({ slot: 3, name: 'Texas Blues' });
     });
 
-    it('handles PRESET_INFO by storing metadata without changing currentPresetSlot', () => {
+    it('handles PRESET_INFO during refresh by storing metadata without changing currentPresetSlot or firing onLoad', () => {
+      const onLoadSpy = vi.fn();
+      controller.onLoad = onLoadSpy;
       store.setPresetActive(0, 'Initial');
+      store.setRefreshing(true);
+
       controller.handlePresetInfo({
         type: 'PRESET_INFO',
         slot: 12,
@@ -65,6 +69,35 @@ describe('PresetController', () => {
 
       expect(store.getState().currentPresetSlot).toBe(0);
       expect(controller.getPreset(12)?.name).toBe('Surf Reverb');
+      expect(controller.lastRefreshPresetSlot).toBe(12);
+      expect(onLoadSpy).not.toHaveBeenCalled();
+    });
+
+    it('handles PRESET_INFO outside refresh (manual wheel turn / loadPreset reply) by activating slot and firing onLoad', () => {
+      const onLoadSpy = vi.fn();
+      controller.onLoad = onLoadSpy;
+      store.setPresetActive(0, 'Initial');
+
+      controller.handlePresetInfo({
+        type: 'PRESET_INFO',
+        slot: 12,
+        name: 'Surf Reverb',
+      });
+
+      expect(store.getState().currentPresetSlot).toBe(12);
+      expect(controller.getPreset(12)?.name).toBe('Surf Reverb');
+      expect(onLoadSpy).toHaveBeenCalledWith({ slot: 12, name: 'Surf Reverb' });
+    });
+
+    it('handles PRESET_ACK without resetting active slot back to 0 or firing duplicate onLoad', () => {
+      const onLoadSpy = vi.fn();
+      controller.onLoad = onLoadSpy;
+      store.setPresetActive(7, 'British Lead');
+
+      controller.handlePresetAck({ type: 'PRESET_ACK', slot: 0 });
+
+      expect(store.getState().currentPresetSlot).toBe(7);
+      expect(onLoadSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -85,20 +118,27 @@ describe('PresetController', () => {
       await expect(controller.loadPreset(2.5)).rejects.toThrow(/Invalid preset slot/);
     });
 
-    it('saves a sanitized preset name, transmits savePreset packet, and updates Store', async () => {
+    it('saves a sanitized preset name, transmits savePreset + loadPreset packets, and updates Store', async () => {
       const onLoadSpy = vi.fn();
       controller.onLoad = onLoadSpy;
 
       await controller.savePreset(4, '  \u0000 Plexi Lead \u0007 ');
 
-      expect(sentPackets).toHaveLength(1);
-      const packet = sentPackets[0];
-      expect(packet[0]).toBe(OPCODES.DATA_PACKET);
-      expect(packet[1]).toBe(OPCODES.DATA_READ);
-      expect(packet[2]).toBe(0x03);
-      expect(packet[OFFSETS.PRESET_SLOT]).toBe(4);
+      // Matches Fender FUSE & offa/plug: savePreset (0x03) immediately followed by loadPreset (0x01)
+      expect(sentPackets).toHaveLength(2);
+      const savePacket = sentPackets[0];
+      expect(savePacket[0]).toBe(OPCODES.DATA_PACKET);
+      expect(savePacket[1]).toBe(OPCODES.DATA_READ);
+      expect(savePacket[2]).toBe(0x03);
+      expect(savePacket[OFFSETS.PRESET_SLOT]).toBe(4);
 
-      const decodedName = new TextDecoder().decode(packet.slice(OFFSETS.PRESET_NAME, OFFSETS.PRESET_NAME + 10));
+      const loadPacket = sentPackets[1];
+      expect(loadPacket[0]).toBe(OPCODES.DATA_PACKET);
+      expect(loadPacket[1]).toBe(OPCODES.DATA_READ);
+      expect(loadPacket[2]).toBe(0x01);
+      expect(loadPacket[OFFSETS.PRESET_SLOT]).toBe(4);
+
+      const decodedName = new TextDecoder().decode(savePacket.slice(OFFSETS.PRESET_NAME, OFFSETS.PRESET_NAME + 10));
       expect(decodedName).toBe('Plexi Lead');
 
       expect(store.getState().currentPresetSlot).toBe(4);

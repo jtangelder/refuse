@@ -13,7 +13,9 @@ import { abortWrites, enqueueWrite } from './protocol/write_queue';
 export { getModelDefault } from './defaults';
 export {
   DspType,
+  type AmpWireMeta,
   type CabinetDef,
+  type KnobSpec,
   type ModelDef,
   type EffectFormFactor,
   AMP_MODELS,
@@ -25,6 +27,11 @@ export {
   findEffectModel,
   findCabinetModel,
   resolveFuseModelId,
+  getFuseXmlId,
+  getEffectWireMeta,
+  getClearEffectWireMeta,
+  getEffectKnobSpec,
+  clampEffectKnob,
   getDelayTimeKnobIndex,
   isWideEffect,
   isRackUnit,
@@ -44,7 +51,21 @@ export {
   type PacketFactory,
 } from './protocol/write_queue';
 export { truncateUtf8String } from './protocol/packet_builder';
-export { LIMITS, OFFSETS, AMP_KNOB_INDEX, isValidPresetSlot, type AdvancedAmpParam } from './protocol/constants';
+export {
+  LIMITS,
+  OFFSETS,
+  AMP_KNOB_INDEX,
+  AMP_DISCRETE_PARAMS,
+  AMP_DISCRETE_KNOB_LIMITS,
+  MUSTANG_DEVICE_SPECS,
+  findMustangDeviceSpec,
+  clampAmpKnob,
+  clampRange,
+  isValidPresetSlot,
+  type AdvancedAmpParam,
+  type DiscreteParamSpec,
+  type MustangDeviceSpec,
+} from './protocol/constants';
 export { type SetEffectOptions } from './controllers/effect_controller';
 
 export interface PresetMetadata {
@@ -56,6 +77,8 @@ export interface KnobInfo {
   name: string;
   value: number;
   index: number;
+  max?: number;
+  labels?: readonly string[];
 }
 
 export interface AmpSettings {
@@ -162,24 +185,21 @@ export class FuseAPI {
   }
 
   /**
-   * Request a fresh preset and DSP state dump from the connected amplifier.
+   * Request a fresh preset and DSP state dump from the connected amplifier (`0xff 0xc1`).
    * Concurrent calls coalesce onto the in-flight sync so `refreshing` never races.
    */
   async syncState(): Promise<void> {
     if (!this.isConnected) return;
     if (this.syncPromise) return this.syncPromise;
 
+    this.presets.resetRefreshTracking();
     this.store.setRefreshing(true);
     const run = (async () => {
       try {
-        await this.refreshState();
-        if (!this.isConnected) return;
-        await this.refreshBypassStates();
-        if (!this.isConnected) return;
-        // Wait for incoming dump packets to reach quiescence (up to 500ms cap)
-        await this.waitForQuiescence(50, 500);
+        await this.requestFullStateDump();
       } finally {
         this.syncPromise = null;
+        this.presets.resetRefreshTracking();
         this.store.setRefreshing(false);
       }
     })();
@@ -223,7 +243,7 @@ export class FuseAPI {
           }
           break;
         case 'AMP_UPDATE':
-          this.amp.handleAmpUpdate(command);
+          this.amp.handleAmpUpdate(command, this.presets.lastRefreshPresetSlot);
           break;
         case 'EFFECT_UPDATE':
           this.effects.handleEffectUpdate(command);
@@ -237,53 +257,59 @@ export class FuseAPI {
         case 'PRESET_INFO':
           this.presets.handlePresetInfo(command);
           break;
+        case 'PRESET_ACK':
+          this.presets.handlePresetAck(command);
+          break;
+        case 'DUMP_COMPLETE':
         case 'UNKNOWN':
         default:
-          // Ignore
+          // Handled by sync waiter or ignored
           break;
       }
     };
     this.protocol.addEventListener(this.monitoringListener);
   }
 
-  private async refreshState() {
-    await enqueueWrite(this.protocol, () => PacketBuilder.requestState());
-  }
-
-  private async refreshBypassStates(): Promise<void> {
+  /**
+   * Transmit `0xff 0xc1` and wait until the amp terminates the dump with `0xff 0x01`
+   * (`DUMP_COMPLETE`), falling back to stream quiescence if an older firmware or mock
+   * omits the terminator.
+   */
+  private requestFullStateDump(initialQuietMs = 250, quietMs = 150, maxWaitMs = 2500): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const pending = new Set([0, 1, 2, 3, 4, 5, 6, 7]);
+      let quietTimer: ReturnType<typeof setTimeout> | undefined;
       let settled = false;
 
       const cleanup = () => {
-        clearTimeout(timeoutId);
-        this.syncCancelers.delete(cancel);
-        this.protocol.removeEventListener(listener);
+        if (quietTimer !== undefined) clearTimeout(quietTimer);
+        clearTimeout(maxTimer);
+        this.syncCancelers.delete(finish);
+        this.protocol.removeEventListener(onPacket);
       };
 
-      const done = () => {
+      const finish = () => {
         if (settled) return;
         settled = true;
         cleanup();
         resolve();
       };
 
-      const cancel = () => done();
-
-      const listener = (data: Uint8Array) => {
+      const onPacket = (data: Uint8Array) => {
         const command = ProtocolDecoder.decode(data);
-        if (command.type === 'BYPASS_STATE') {
-          pending.delete(command.slot);
-          if (pending.size === 0) {
-            done();
-          }
+        if (command.type === 'DUMP_COMPLETE') {
+          finish();
+          return;
         }
+        if (quietTimer !== undefined) clearTimeout(quietTimer);
+        quietTimer = setTimeout(finish, quietMs);
       };
 
-      const timeoutId = setTimeout(done, 1000);
-      this.syncCancelers.add(cancel);
-      this.protocol.addEventListener(listener);
-      enqueueWrite(this.protocol, () => PacketBuilder.requestBypassStates()).catch(err => {
+      const maxTimer = setTimeout(finish, maxWaitMs);
+      this.syncCancelers.add(finish);
+      this.protocol.addEventListener(onPacket);
+      quietTimer = setTimeout(finish, initialQuietMs);
+
+      enqueueWrite(this.protocol, () => PacketBuilder.requestState()).catch(err => {
         if (settled) return;
         settled = true;
         cleanup();
@@ -293,37 +319,6 @@ export class FuseAPI {
           reject(err);
         }
       });
-    });
-  }
-
-  /**
-   * Resolves once no incoming packets have been received for `quietMs`,
-   * bounded by an upper safety cap `maxWaitMs`.
-   */
-  private waitForQuiescence(quietMs = 50, maxWaitMs = 500): Promise<void> {
-    return new Promise<void>(resolve => {
-      let quietTimer: ReturnType<typeof setTimeout> | undefined;
-      let settled = false;
-
-      const finish = () => {
-        if (settled) return;
-        settled = true;
-        if (quietTimer !== undefined) clearTimeout(quietTimer);
-        clearTimeout(maxTimer);
-        this.syncCancelers.delete(finish);
-        this.protocol.removeEventListener(onPacket);
-        resolve();
-      };
-
-      const onPacket = () => {
-        if (quietTimer !== undefined) clearTimeout(quietTimer);
-        quietTimer = setTimeout(finish, quietMs);
-      };
-
-      const maxTimer = setTimeout(finish, maxWaitMs);
-      this.syncCancelers.add(finish);
-      this.protocol.addEventListener(onPacket);
-      quietTimer = setTimeout(finish, quietMs);
     });
   }
 

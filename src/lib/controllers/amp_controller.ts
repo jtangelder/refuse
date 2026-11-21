@@ -10,9 +10,10 @@ import {
   AMP_KNOB_INDEX,
   LIMITS,
   OFFSETS,
+  clampAmpKnob,
+  clampRange,
   isValidKnobIndex,
   isValidPresetSlot,
-  toByte,
   type AdvancedAmpParam,
 } from '../protocol/constants';
 
@@ -31,7 +32,7 @@ export class AmpController extends BaseController {
     return true;
   }
 
-  handleAmpUpdate(command: AmpUpdateCommand): boolean {
+  handleAmpUpdate(command: AmpUpdateCommand, fallbackRefreshSlot?: number): boolean {
     this.store.batch(() => {
       this.store.updateAmpState(
         normalizeAmpState({
@@ -41,13 +42,19 @@ export class AmpController extends BaseController {
           knobs: command.knobs,
         }),
       );
-      if (command.presetSlot !== undefined && isValidPresetSlot(command.presetSlot)) {
-        const state = this.store.getState();
-        // During bulk refresh or initial load, AMP_UPDATE carries the active slot.
+      const state = this.store.getState();
+      const resolvedSlot =
+        command.presetSlot !== undefined && isValidPresetSlot(command.presetSlot) && command.presetSlot !== 0
+          ? command.presetSlot
+          : state.refreshing && fallbackRefreshSlot !== undefined && isValidPresetSlot(fallbackRefreshSlot)
+            ? fallbackRefreshSlot
+            : command.presetSlot;
+      if (resolvedSlot !== undefined && isValidPresetSlot(resolvedSlot)) {
+        // During bulk refresh or initial load, AMP_UPDATE (or the PRESET_INFO right before it) carries the active slot.
         // Outside refresh, ignore byte 4 === 0 so firmwares that zero byte 4 on DSP
         // updates never snap a non-zero active preset back to slot 0.
-        if (state.refreshing || state.currentPresetSlot === null || command.presetSlot !== 0) {
-          this.store.setPresetActive(command.presetSlot, '', true);
+        if (state.refreshing || state.currentPresetSlot === null || resolvedSlot !== 0) {
+          this.store.setPresetActive(resolvedSlot, '', true);
         }
       }
     });
@@ -72,7 +79,7 @@ export class AmpController extends BaseController {
     if (knobOverrides) {
       for (const override of knobOverrides) {
         if (isValidKnobIndex(override.index)) {
-          knobs[override.index] = toByte(override.value);
+          knobs[override.index] = clampAmpKnob(override.index, override.value);
         }
       }
     }
@@ -80,7 +87,7 @@ export class AmpController extends BaseController {
     const newState = normalizeAmpState({
       modelId,
       enabled: true,
-      cabinetId: defaults[OFFSETS.CABINET_ID],
+      cabinetId: knobs[AMP_KNOB_INDEX.cabinet],
       knobs,
     });
 
@@ -214,11 +221,12 @@ export class AmpController extends BaseController {
 
   private withKnob(state: AmpState, index: number, value: number): AmpState {
     const knobs = [...state.knobs];
-    knobs[index] = toByte(value);
+    const clamped = clampAmpKnob(index, value);
+    knobs[index] = clamped;
     return normalizeAmpState({
       ...state,
       knobs,
-      cabinetId: index === AMP_KNOB_INDEX.cabinet ? toByte(value) : state.cabinetId,
+      cabinetId: index === AMP_KNOB_INDEX.cabinet ? clamped : state.cabinetId,
     });
   }
 
@@ -235,12 +243,12 @@ export class AmpController extends BaseController {
 }
 
 /**
- * Enforce the AmpState invariants: exactly 32 byte-sized knobs, and the cabinet
- * byte (knob 17 / packet byte 49) always equal to `cabinetId`.
+ * Enforce the AmpState invariants: exactly 32 clamped hardware parameter bytes,
+ * and the cabinet byte (knob 17 / packet byte 49) always equal to `cabinetId`.
  */
 export function normalizeAmpState(state: AmpState): AmpState {
-  const knobs = Array.from({ length: LIMITS.KNOB_COUNT }, (_, i) => toByte(state.knobs[i] ?? 0));
-  const cabinetId = toByte(state.cabinetId);
+  const knobs = Array.from({ length: LIMITS.KNOB_COUNT }, (_, i) => clampAmpKnob(i, state.knobs[i] ?? 0));
+  const cabinetId = clampRange(state.cabinetId, 0, LIMITS.MAX_CABINET_ID);
   knobs[AMP_KNOB_INDEX.cabinet] = cabinetId;
   return { ...state, cabinetId, knobs };
 }

@@ -1,9 +1,13 @@
+import type { MustangDeviceSpec } from './constants';
+
 export type ProtocolEventListenerFn = (data: Uint8Array) => void;
 
 export interface IProtocol {
   isConnected: boolean;
   isSupported: boolean;
   readonly deviceName?: string;
+  readonly productId?: number;
+  readonly deviceSpec?: MustangDeviceSpec;
   readonly lastError?: string | null;
   onDisconnect?: () => void;
 

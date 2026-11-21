@@ -1,9 +1,16 @@
 import { debug } from '../helpers';
 import { type IProtocol, type ProtocolEventListenerFn } from './protocol_interface';
 import { ProtocolDecoder } from './protocol_decoder';
-import { AMP_MODELS, DspType, EFFECT_MODELS } from '../models';
+import {
+  AMP_MODELS,
+  DspType,
+  EFFECT_MODELS,
+  getClearEffectWireMeta,
+  getEffectKnobSpec,
+  getEffectWireMeta,
+} from '../models';
 import { getModelDefault } from '../defaults';
-import { OFFSETS, OPCODES } from './constants';
+import { AMP_KNOB_INDEX, LIMITS, OFFSETS, OPCODES, clampRange } from './constants';
 
 interface SavedDemoPreset {
   name: string;
@@ -91,15 +98,19 @@ export class DemoProtocol implements IProtocol {
     // Simulate response delay
     await new Promise(resolve => setTimeout(resolve, 0));
 
-    // Handle Request State (0xff 0xc1)
+    // Handle Request State (0xff 0xc1) — mirrors real Mustang firmware dump order:
+    // 1. All preset name pairs (0x1c 0x01 0x04 + 0x1c 0x01 0x00 ACK)
+    // 2. Active preset state (0x1c 0x01 0x04 + AMP + 4x FX + 0x1c 0x01 0x00 ACK)
+    // 3. End-of-dump ACK (0xff 0x01)
     if (data[0] === 0xff && data[1] === 0xc1) {
+      this.emitDemoPresetNames();
       const savedZero = this.savedPresets.get(0);
       if (savedZero) {
         this.emitSavedPreset(0, savedZero);
       } else {
         this.generateRandomConfiguration(0, DEMO_PRESET_NAMES[0]);
       }
-      this.emitDemoPresetNames();
+      this.emitDumpComplete();
       return;
     }
 
@@ -188,15 +199,36 @@ export class DemoProtocol implements IProtocol {
     }
   }
 
+  private emitPresetInfoPacket(slot: number, name: string) {
+    const infoPacket = new Uint8Array(64);
+    infoPacket[0] = 0x1c;
+    infoPacket[1] = 0x01;
+    infoPacket[2] = 0x04; // PRESET_INFO
+    infoPacket[3] = 0x00;
+    infoPacket[OFFSETS.PRESET_SLOT] = slot;
+    infoPacket.set(new TextEncoder().encode(name).slice(0, 32), OFFSETS.PRESET_NAME);
+    this.emit(infoPacket);
+  }
+
+  private emitPresetAckPacket(slot: number) {
+    const ackPacket = new Uint8Array(64);
+    ackPacket[0] = 0x1c;
+    ackPacket[1] = 0x01;
+    ackPacket[2] = 0x00; // Empty-name confirmation ACK
+    ackPacket[3] = 0x00;
+    ackPacket[OFFSETS.PRESET_SLOT] = slot;
+    this.emit(ackPacket);
+  }
+
+  private emitDumpComplete() {
+    const donePacket = new Uint8Array(64);
+    donePacket[0] = OPCODES.DUMP_COMPLETE;
+    donePacket[1] = OPCODES.DUMP_COMPLETE_BYTE2;
+    this.emit(donePacket);
+  }
+
   private emitSavedPreset(slot: number, saved: SavedDemoPreset) {
-    const presetPacket = new Uint8Array(64);
-    presetPacket[0] = 0x1c;
-    presetPacket[1] = 0x01;
-    presetPacket[2] = 0x00;
-    presetPacket[3] = 0x00;
-    presetPacket[OFFSETS.PRESET_SLOT] = slot;
-    presetPacket.set(new TextEncoder().encode(saved.name).slice(0, 32), OFFSETS.PRESET_NAME);
-    this.emit(presetPacket);
+    this.emitPresetInfoPacket(slot, saved.name);
 
     if (saved.amp) {
       const ampCopy = new Uint8Array(saved.amp);
@@ -219,10 +251,16 @@ export class DemoProtocol implements IProtocol {
         emptyFxPacket[1] = 0x01;
         emptyFxPacket[2] = type;
         emptyFxPacket[3] = 0x00;
+        const [m0, m1, m2] = getClearEffectWireMeta(type);
+        emptyFxPacket[OFFSETS.EFFECT_META_0] = m0;
+        emptyFxPacket[OFFSETS.EFFECT_META_1] = m1;
+        emptyFxPacket[OFFSETS.EFFECT_META_2] = m2;
         emptyFxPacket[OFFSETS.BYPASS] = 0x01;
         this.emit(emptyFxPacket);
       }
     }
+
+    this.emitPresetAckPacket(slot);
   }
 
   private emitDemoPresetNames() {
@@ -233,34 +271,16 @@ export class DemoProtocol implements IProtocol {
     for (let slot = 0; slot <= maxSlot; slot++) {
       const presetName = this.savedPresets.get(slot)?.name ?? DEMO_PRESET_NAMES[slot];
       if (!presetName) continue;
-      const infoPacket = new Uint8Array(64);
-      infoPacket[0] = 0x1c;
-      infoPacket[1] = 0x01;
-      infoPacket[2] = 0x04; // PRESET_INFO
-      infoPacket[3] = 0x00;
-      infoPacket[4] = slot;
-      const nameBytes = new TextEncoder().encode(presetName).slice(0, 32);
-      infoPacket.set(nameBytes, OFFSETS.PRESET_NAME);
-      this.emit(infoPacket);
+      this.emitPresetInfoPacket(slot, presetName);
+      this.emitPresetAckPacket(slot);
     }
   }
 
   private generateRandomConfiguration(slot = 0, name = 'Random Demo') {
-    // 1. Emit Preset Change
-    const nameBytes = new TextEncoder().encode(name);
+    // 1. Emit active preset header (0x1c 0x01 0x04)
+    this.emitPresetInfoPacket(slot, name);
 
-    // 0x1c 0x01 | 0x00 0x00 | slot | ...
-    const presetPacket = new Uint8Array(64);
-    presetPacket[0] = 0x1c;
-    presetPacket[1] = 0x01;
-    presetPacket[2] = 0x00; // Type: Preset Change
-    presetPacket[3] = 0x00;
-    presetPacket[4] = slot;
-    presetPacket.set(nameBytes, 16); // OFFSETS.PRESET_NAME is 16
-
-    this.emit(presetPacket);
-
-    // 2. Select Random Amp
+    // 2. Select Random Amp (seeded from captured defaults so amp metadata bytes stay valid)
     const amps = Object.values(AMP_MODELS);
     const randomAmp = amps[Math.floor(Math.random() * amps.length)];
     const defaults = getModelDefault(randomAmp.id);
@@ -268,35 +288,35 @@ export class DemoProtocol implements IProtocol {
 
     debug(`[Demo] Random Amp: ${randomAmp.name}`);
 
-    // AMP_UPDATE Packet
-    const ampPacket = new Uint8Array(64);
+    const ampPacket = defaults ? new Uint8Array(defaults) : new Uint8Array(64);
     ampPacket[0] = 0x1c;
     ampPacket[1] = 0x01;
     ampPacket[2] = DspType.AMP; // 0x05
     ampPacket[3] = 0x00;
     ampPacket[OFFSETS.PRESET_SLOT] = slot;
+    ampPacket[OFFSETS.MODEL_ID_MSB] = (randomAmp.id >> 8) & 0xff;
+    ampPacket[OFFSETS.MODEL_ID_LSB] = randomAmp.id & 0xff;
 
-    // Model ID
-    ampPacket[16] = (randomAmp.id >> 8) & 0xff;
-    ampPacket[17] = randomAmp.id & 0xff;
-
-    // Random Knobs (offsets 32-64)
-    for (let i = 32; i < 64; i++) {
-      ampPacket[i] = Math.floor(Math.random() * 256);
+    // Randomize primary tone knobs (0..7) and bias (10)
+    for (const idx of [0, 1, 2, 3, 4, 5, 6, 7, AMP_KNOB_INDEX.bias]) {
+      ampPacket[OFFSETS.KNOB_START + idx] = Math.floor(Math.random() * 256);
     }
+    // Keep discrete amp controls within valid Mustang hardware ranges
+    const noiseGate = Math.floor(Math.random() * 6); // 0..5
+    ampPacket[OFFSETS.KNOB_START + AMP_KNOB_INDEX.noiseGate] = noiseGate;
+    ampPacket[OFFSETS.KNOB_START + AMP_KNOB_INDEX.threshold] = noiseGate === 5 ? Math.floor(Math.random() * 10) : 0;
+    ampPacket[OFFSETS.KNOB_START + AMP_KNOB_INDEX.depth] = noiseGate === 5 ? Math.floor(Math.random() * 256) : 0x80;
+    ampPacket[OFFSETS.KNOB_START + AMP_KNOB_INDEX.sag] = Math.floor(Math.random() * 3); // 0..2
+    ampPacket[OFFSETS.KNOB_START + AMP_KNOB_INDEX.brightness] = Math.floor(Math.random() * 2); // 0..1
 
-    // Default Cabinet for this amp (set after the random knobs loop so offset 49 is preserved)
-    ampPacket[OFFSETS.CABINET_ID] = defaultCabId !== 0 ? defaultCabId : 0x08;
+    // Default Cabinet for this amp (clamped to hardware range 0x00..0x0c)
+    ampPacket[OFFSETS.CABINET_ID] = clampRange(defaultCabId !== 0 ? defaultCabId : 0x08, 0, LIMITS.MAX_CABINET_ID);
 
     this.liveAmpPacket = new Uint8Array(ampPacket);
     this.liveEffectPackets.clear();
     this.emit(ampPacket);
 
     // 3. Generate Random Effects (Max 1 of each DspType to adhere to hardware rules)
-    // Stomp: Slot 0 (Pre-amp only)
-    // Mod: Slot 1 (Pre-amp) or Slot 4 (Post-amp)
-    // Delay: Slot 2 (Pre-amp) or Slot 5 (Post-amp)
-    // Reverb: Slot 3 (Pre-amp) or Slot 6 (Post-amp)
     const slotMapping: Record<number, number> = {
       [DspType.STOMP]: 0,
       [DspType.MOD]: Math.random() > 0.5 ? 1 : 4,
@@ -305,37 +325,39 @@ export class DemoProtocol implements IProtocol {
     };
 
     const availableTypes = [DspType.STOMP, DspType.MOD, DspType.DELAY, DspType.REVERB];
-    // Shuffle types and pick 2-4
     const shuffledTypes = [...availableTypes].sort(() => Math.random() - 0.5);
     const numEffects = Math.floor(Math.random() * 3) + 2;
 
     for (let i = 0; i < numEffects; i++) {
       const type = shuffledTypes[i];
-      const slot = slotMapping[type];
+      const fxSlot = slotMapping[type];
       const matchingEffects = Object.values(EFFECT_MODELS).filter(m => m.type === type);
       if (matchingEffects.length === 0) continue;
       const effect = matchingEffects[Math.floor(Math.random() * matchingEffects.length)];
 
-      // EFFECT_UPDATE Packet
-      const fxPacket = new Uint8Array(64);
+      const fxDefaults = getModelDefault(effect.id);
+      const fxPacket = fxDefaults ? new Uint8Array(fxDefaults) : new Uint8Array(64);
       fxPacket[0] = 0x1c;
       fxPacket[1] = 0x01;
       fxPacket[2] = effect.type;
       fxPacket[3] = 0x00;
+      fxPacket[OFFSETS.MODEL_ID_MSB] = (effect.id >> 8) & 0xff;
+      fxPacket[OFFSETS.MODEL_ID_LSB] = effect.id & 0xff;
+      fxPacket[OFFSETS.SLOT_INDEX] = fxSlot;
 
-      // Model ID
-      fxPacket[16] = (effect.id >> 8) & 0xff;
-      fxPacket[17] = effect.id & 0xff;
+      const [m0, m1, m2] = getEffectWireMeta(effect.id, effect.type);
+      fxPacket[OFFSETS.EFFECT_META_0] = m0;
+      fxPacket[OFFSETS.EFFECT_META_1] = m1;
+      fxPacket[OFFSETS.EFFECT_META_2] = m2;
+      fxPacket[OFFSETS.BYPASS] = Math.random() > 0.3 ? 0x00 : 0x01;
 
-      // Slot
-      fxPacket[18] = slot;
-
-      // Enabled (0 = Enabled, 1 = Bypassed)
-      fxPacket[22] = Math.random() > 0.3 ? 0x00 : 0x01;
-
-      // Random Knobs
-      for (let k = 32; k < 64; k++) {
-        fxPacket[k] = Math.floor(Math.random() * 256);
+      // Randomize defined knobs within their hardware range (discrete specs or 0..255)
+      for (let k = 0; k < effect.knobs.length; k++) {
+        if (!effect.knobs[k]) continue;
+        const spec = getEffectKnobSpec(effect.id, k);
+        const min = spec?.min ?? 0;
+        const max = spec?.max ?? LIMITS.MAX_VALUE;
+        fxPacket[OFFSETS.KNOB_START + k] = min + Math.floor(Math.random() * (max - min + 1));
       }
 
       this.liveEffectPackets.set(effect.type, new Uint8Array(fxPacket));
@@ -344,15 +366,23 @@ export class DemoProtocol implements IProtocol {
 
     // Clear unselected DSP effect types (modelId = 0) just like physical Mustang preset loads
     for (let i = numEffects; i < shuffledTypes.length; i++) {
-      this.liveEffectPackets.set(shuffledTypes[i], null);
+      const clearType = shuffledTypes[i];
+      this.liveEffectPackets.set(clearType, null);
       const emptyFxPacket = new Uint8Array(64);
       emptyFxPacket[0] = 0x1c;
       emptyFxPacket[1] = 0x01;
-      emptyFxPacket[2] = shuffledTypes[i];
+      emptyFxPacket[2] = clearType;
       emptyFxPacket[3] = 0x00;
-      emptyFxPacket[22] = 0x01; // Bypassed
+      const [m0, m1, m2] = getClearEffectWireMeta(clearType);
+      emptyFxPacket[OFFSETS.EFFECT_META_0] = m0;
+      emptyFxPacket[OFFSETS.EFFECT_META_1] = m1;
+      emptyFxPacket[OFFSETS.EFFECT_META_2] = m2;
+      emptyFxPacket[OFFSETS.BYPASS] = 0x01;
       this.emit(emptyFxPacket);
     }
+
+    // 4. Emit end-of-preset confirmation ACK (0x1c 0x01 0x00)
+    this.emitPresetAckPacket(slot);
   }
 
   private emit(data: Uint8Array) {

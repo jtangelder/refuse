@@ -346,6 +346,14 @@ function getAudibleDefaultEffectKnobs(effect: ModelDef): Array<{ index: number; 
 
   effect.knobs.forEach((name, index) => {
     if (!name) return;
+    const spec = effect.knobSpecs?.[index];
+    if (spec) {
+      const min = spec.min ?? 0;
+      const raw = defaults ? defaults[OFFSETS.KNOB_START + index] : min;
+      result.push({ index, value: Math.max(min, Math.min(spec.max, raw)) });
+      return;
+    }
+
     let val = defaults ? defaults[OFFSETS.KNOB_START + index] : 128;
     const lower = name.toLowerCase();
 

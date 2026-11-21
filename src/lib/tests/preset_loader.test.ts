@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FuseAPI, EFFECT_MODELS } from '../index';
+import { AMP_MODELS, EFFECT_MODELS, FuseAPI } from '../index';
 import { Store } from '../store';
 
 describe('PresetImporter Integration via FuseAPI', () => {
@@ -66,7 +66,7 @@ describe('PresetImporter Integration via FuseAPI', () => {
     expect(state.presetDetails.description).toBe('Classic studio tone');
   });
 
-  it('should correctly resolve legacy FUSE ID 111 to Orange Box (0x0101)', async () => {
+  it('should correctly resolve legacy FUSE ID 111 and official FUSE ID 272 to Orange Box (0x1001)', async () => {
     const orangeBoxXml = `
       <FenderPreset name="Orange Preset" version="1.0">
         <FX>
@@ -80,6 +80,92 @@ describe('PresetImporter Integration via FuseAPI', () => {
     `;
     await api.loadPresetFromXml(orangeBoxXml);
     expect(store.getState().slots[0]?.modelId).toBe(EFFECT_MODELS.ORANGE_BOX.id);
+    expect(EFFECT_MODELS.ORANGE_BOX.id).toBe(0x1001);
+  });
+
+  it('should import and export real Fender FUSE / offa/plug XML with decimal IDs, unshifted amp params, and wire metadata', async () => {
+    const realFuseXml = `<?xml version="1.0" encoding="utf-8"?>
+      <Preset amplifier="Mustang I/II" ProductId="1">
+        <Amplifier>
+          <Module ID="100" POS="0" BypassState="1">
+            <Param ControlIndex="0">32896</Param>
+            <Param ControlIndex="1">51400</Param>
+            <Param ControlIndex="9">46260</Param>
+            <Param ControlIndex="15">5</Param>
+            <Param ControlIndex="16">6</Param>
+            <Param ControlIndex="17">2</Param>
+            <Param ControlIndex="19">1</Param>
+            <Param ControlIndex="20">1</Param>
+          </Module>
+        </Amplifier>
+        <FX>
+          <Stompbox ID="1">
+            <Module ID="272" POS="0" BypassState="0">
+              <Param ControlIndex="0">32896</Param>
+              <Param ControlIndex="1">41120</Param>
+              <Param ControlIndex="2">28784</Param>
+            </Module>
+          </Stompbox>
+          <Modulation ID="2">
+            <Module ID="287" POS="4" BypassState="0">
+              <Param ControlIndex="0">32896</Param>
+              <Param ControlIndex="1">4</Param>
+              <Param ControlIndex="2">2</Param>
+              <Param ControlIndex="3">1</Param>
+              <Param ControlIndex="4">32896</Param>
+            </Module>
+          </Modulation>
+        </FX>
+        <FUSE>
+          <Info name="Real Bassman" author="Fender" tags="tweed">Real FUSE capture</Info>
+        </FUSE>
+      </Preset>
+    `;
+
+    await api.loadPresetFromXml(realFuseXml);
+    const state = store.getState();
+
+    // ID="100" (0x64) -> '59 Bassman, NOT Studio Preamp; amp is always enabled even when BypassState="1"
+    expect(state.amp.modelId).toBe(AMP_MODELS.F59_BASSMAN.id);
+    expect(state.amp.enabled).toBe(true);
+    expect(state.amp.knobs[0]).toBe(128);
+    expect(state.amp.knobs[1]).toBe(200);
+    expect(state.amp.knobs[9]).toBe(180);
+    expect(state.amp.knobs[15]).toBe(5); // Noise Gate Custom (unshifted)
+    expect(state.amp.knobs[16]).toBe(6); // Threshold (unshifted)
+    expect(state.amp.cabinetId).toBe(2); // 4x10 '59 Bassman (unshifted)
+    expect(state.amp.knobs[19]).toBe(1); // Sag Normal (unshifted)
+    expect(state.amp.knobs[20]).toBe(1); // Brightness On (unshifted)
+
+    // Effects: ID="272" -> Orange Box (0x1001), ID="287" -> Diatonic Pitch Shifter (0x1f10)
+    expect(state.slots[0]?.modelId).toBe(EFFECT_MODELS.ORANGE_BOX.id);
+    expect(state.slots[4]?.modelId).toBe(EFFECT_MODELS.DIATONIC_PITCH_SHIFTER.id);
+    expect(state.slots[4]?.knobs[1]).toBe(4);
+    expect(state.slots[4]?.knobs[2]).toBe(2);
+    expect(state.slots[4]?.knobs[3]).toBe(1);
+    expect(state.presetDetails.author).toBe('Fender');
+    expect(state.presetDetails.description).toBe('Real FUSE capture');
+
+    // Verify transmitted packets contain required amp and effect wire metadata bytes
+    const sentPackets = protocol.sendPacket.mock.calls.map((c: unknown[]) => c[0] as Uint8Array);
+    const ampPacket = sentPackets[0];
+    expect(Array.from(ampPacket.slice(44, 47))).toEqual([0x02, 0x02, 0x02]);
+    expect(ampPacket[54]).toBe(0x67);
+    const orangePacket = sentPackets[2];
+    expect(Array.from(orangePacket.slice(19, 22))).toEqual([0x00, 0x08, 0x01]);
+    const diatonicPacket = sentPackets[4];
+    expect(Array.from(diatonicPacket.slice(19, 22))).toEqual([0x00, 0x08, 0x01]);
+
+    // Export XML must emit official Fender FUSE IDs, unshifted discrete amp params, and <FUSE><Info>
+    const exported = api.exportPresetToXml('Real Bassman');
+    expect(exported).toContain('<Module ID="100" POS="0"');
+    expect(exported).toContain('<Param ControlIndex="17">2</Param>');
+    expect(exported).toContain('<Param ControlIndex="15">5</Param>');
+    expect(exported).toContain('<Param ControlIndex="19">1</Param>');
+    expect(exported).toContain('<Param ControlIndex="20">1</Param>');
+    expect(exported).toContain('<Module ID="272" POS="0" BypassState="0">');
+    expect(exported).toContain('<Module ID="287" POS="4" BypassState="0">');
+    expect(exported).toContain('<FUSE>');
   });
 
   it('should round-trip export and import preset XML', async () => {

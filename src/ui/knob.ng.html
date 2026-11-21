@@ -1,6 +1,7 @@
 <div
   class="knob-container"
   [class.knob-dragging]="isDragging()"
+  [class.knob-disabled]="disabled()"
   tabindex="0"
   role="slider"
   [attr.aria-label]="name()"
@@ -8,6 +9,7 @@
   [attr.aria-valuemin]="min()"
   [attr.aria-valuemax]="max()"
   [attr.aria-valuetext]="displayValue()"
+  [attr.aria-disabled]="disabled() ? 'true' : null"
   (pointerdown)="onPointerDown($event)"
   (pointermove)="onPointerMove($event)"
   (pointerup)="onPointerUp($event)"
@@ -32,4 +34,7 @@
 </div>
 
 <span class="name">{{ name() }}</span>
+@if (isDiscrete()) {
+  <span class="value-readout" [class.value-readout-disabled]="disabled()">{{ displayValue() }}</span>
+}
 

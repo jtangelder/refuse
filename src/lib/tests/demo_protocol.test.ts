@@ -6,7 +6,7 @@ import { getModelDefault } from '../defaults';
 import { OFFSETS } from '../protocol/constants';
 import { setInterPacketDelay, resetInterPacketDelay } from '../protocol/write_queue';
 
-test('DemoProtocol should connect and emit random configuration', async () => {
+test('DemoProtocol should connect and emit hardware-accurate startup dump ending with 0xff 0x01', async () => {
   const protocol = new DemoProtocol();
   expect(await protocol.connect()).toBe(true);
   expect(protocol.isConnected).toBe(true);
@@ -17,23 +17,29 @@ test('DemoProtocol should connect and emit random configuration', async () => {
     packets.push(data);
   });
 
-  // Protocol specific: Request state should trigger emission
-  // 0xff 0xc1
+  // Request state (0xff 0xc1)
   const req = new Uint8Array([0xff, 0xc1]);
   await protocol.sendPacket(req);
 
   // Wait for async response simulation
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  expect(packets.length).toBeGreaterThan(2); // Preset + Amp + at least a few effects
+  // 24 preset name pairs (48) + active preset (0x04 + AMP + 4x FX + 0x00 ACK = 7) + DUMP_COMPLETE (1) = 56
+  expect(packets.length).toBe(56);
 
-  // Verify Preset Change
-  const presetPacket = packets[0];
-  expect(presetPacket[0]).toBe(0x1c);
-  expect(presetPacket[2]).toBe(0x00); // Preset Change
+  // First 48 packets are 24 (PRESET_INFO 0x04 + PRESET_ACK 0x00) pairs
+  const listPackets = packets.slice(0, 48);
+  expect(listPackets.filter(p => p[0] === 0x1c && p[2] === 0x04).length).toBe(24);
+  expect(listPackets.filter(p => p[0] === 0x1c && p[2] === 0x00).length).toBe(24);
 
-  // Verify Amp Update
-  const ampPacket = packets[1];
+  // Active preset header (0x1c 0x01 0x04)
+  const activeHeader = packets[48];
+  expect(activeHeader[0]).toBe(0x1c);
+  expect(activeHeader[2]).toBe(0x04);
+  expect(activeHeader[4]).toBe(0);
+
+  // Active Amp Update (0x1c 0x01 0x05)
+  const ampPacket = packets[49];
   expect(ampPacket[0]).toBe(0x1c);
   expect(ampPacket[2]).toBe(0x05); // AMP
 
@@ -41,19 +47,26 @@ test('DemoProtocol should connect and emit random configuration', async () => {
   const defaults = getModelDefault(ampModelId);
   const expectedCabId = defaults ? (defaults[OFFSETS.CABINET_ID] !== 0 ? defaults[OFFSETS.CABINET_ID] : 0x08) : 0x01;
   expect(ampPacket[OFFSETS.CABINET_ID]).toBe(expectedCabId);
+  // Discrete amp parameters must stay in valid Mustang hardware bounds
+  expect(ampPacket[32 + 15]).toBeLessThanOrEqual(5); // noiseGate
+  expect(ampPacket[32 + 16]).toBeLessThanOrEqual(9); // threshold
+  expect(ampPacket[32 + 19]).toBeLessThanOrEqual(2); // sag
+  expect(ampPacket[32 + 20]).toBeLessThanOrEqual(1); // brightness
 
-  // Verify Effect Updates and Preset Info packets
-  const effectPackets = packets.slice(2).filter(p => p[2] !== 0x04);
-  expect(effectPackets.length).toBeGreaterThanOrEqual(2);
+  // 4 Effect Updates (STOMP, MOD, DELAY, REVERB)
+  const effectPackets = packets.slice(50, 54);
+  expect(effectPackets.length).toBe(4);
   effectPackets.forEach(p => {
     expect(p[0]).toBe(0x1c);
-    // Type should be Stomp, Mod, Delay or Reverb
     expect(p[2]).toBeGreaterThanOrEqual(0x06);
     expect(p[2]).toBeLessThanOrEqual(0x09);
   });
 
-  const presetInfoPackets = packets.slice(2).filter(p => p[2] === 0x04);
-  expect(presetInfoPackets.length).toBe(24);
+  // End-of-preset ACK (0x1c 0x01 0x00) + End-of-dump terminator (0xff 0x01)
+  expect(packets[54][0]).toBe(0x1c);
+  expect(packets[54][2]).toBe(0x00);
+  expect(packets[55][0]).toBe(0xff);
+  expect(packets[55][1]).toBe(0x01);
 
   await protocol.disconnect();
   expect(protocol.isConnected).toBe(false);

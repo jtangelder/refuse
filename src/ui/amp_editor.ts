@@ -4,7 +4,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { KnobComponent } from './knob';
-import type { KnobInfo, CabinetDef, ModelDef, AmpSettings, AdvancedAmpParam } from '../lib';
+import {
+  AMP_DISCRETE_PARAMS,
+  type AdvancedAmpParam,
+  type AmpSettings,
+  type CabinetDef,
+  type KnobInfo,
+  type ModelDef,
+} from '../lib';
+
+interface AdvancedSettingDef {
+  key: AdvancedAmpParam;
+  label: string;
+  max?: number;
+  labels?: readonly string[];
+  requiresCustomGate?: boolean;
+}
 
 @Component({
   selector: 'fuse-amp-editor',
@@ -30,14 +45,39 @@ export class AmpEditorComponent {
     this.showAdvanced.update(v => !v);
   }
 
-  protected advancedSettingsDefinition: { key: AdvancedAmpParam; label: string }[] = [
+  protected advancedSettingsDefinition: readonly AdvancedSettingDef[] = [
     { key: 'bias', label: 'Bias' },
-    { key: 'noiseGate', label: 'Noise Gate' },
-    { key: 'threshold', label: 'Gate Thresh' },
-    { key: 'sag', label: 'Sag' },
-    { key: 'brightness', label: 'Brightness' },
-    { key: 'depth', label: 'Depth' },
+    {
+      key: 'noiseGate',
+      label: 'Noise Gate',
+      max: AMP_DISCRETE_PARAMS['noiseGate'].max,
+      labels: AMP_DISCRETE_PARAMS['noiseGate'].labels,
+    },
+    {
+      key: 'threshold',
+      label: 'Gate Thresh',
+      max: AMP_DISCRETE_PARAMS['threshold'].max,
+      requiresCustomGate: true,
+    },
+    {
+      key: 'sag',
+      label: 'Sag',
+      max: AMP_DISCRETE_PARAMS['sag'].max,
+      labels: AMP_DISCRETE_PARAMS['sag'].labels,
+    },
+    {
+      key: 'brightness',
+      label: 'Brightness',
+      max: AMP_DISCRETE_PARAMS['brightness'].max,
+      labels: AMP_DISCRETE_PARAMS['brightness'].labels,
+    },
+    { key: 'depth', label: 'Depth', requiresCustomGate: true },
   ];
+
+  isAdvancedSettingDisabled(setting: AdvancedSettingDef): boolean {
+    if (!setting.requiresCustomGate) return false;
+    return (this.settings()?.noiseGate ?? 0) !== 5;
+  }
 
   currentAmpName = computed(() => {
     const s = this.settings();

@@ -1,12 +1,27 @@
-import { DspType, resolveFuseModelId, findAmpModel, findEffectModel } from './models';
+import {
+  DspType,
+  clampEffectKnob,
+  findAmpModel,
+  findEffectModel,
+  getEffectKnobSpec,
+  getFuseXmlId,
+  resolveFuseModelId,
+} from './models';
+import { getModelDefault } from './defaults';
 import { PacketBuilder } from './protocol/packet_builder';
 import { type IProtocol } from './protocol/protocol_interface';
 import { cancelCoalescedWrite, enqueueWrite, type PacketFactory } from './protocol/write_queue';
-import { AMP_KNOB_INDEX, LIMITS, OFFSETS, VALUES, toByte } from './protocol/constants';
+import { AMP_KNOB_INDEX, LIMITS, OFFSETS, clampAmpKnob, toByte } from './protocol/constants';
 import { normalizeAmpState } from './controllers/amp_controller';
 import { normalizeKnobs } from './controllers/effect_controller';
-import { type Store, type PresetDetails } from './store';
+import { type EffectState, type PresetDetails, type Store } from './store';
 import { debug } from './helpers';
+
+/**
+ * Amplifier `.fuse` XML ControlIndex values stored as unshifted raw integers
+ * (bytes 44..53 in the amp packet: model metadata, noise gate, threshold, cabinet, sag, brightness).
+ */
+const AMP_RAW_XML_INDICES = new Set<number>([12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
 
 export class PresetImporter {
   private protocol: IProtocol;
@@ -88,11 +103,7 @@ export class PresetImporter {
     for (const oldEff of beforeSlots) {
       if (!oldEff || importedTypes.has(oldEff.type)) continue;
       clearPackets.push(
-        () =>
-          PacketBuilder.dspWrite(oldEff.type, this.protocol.getNextSequenceId())
-            .setByte(OFFSETS.SLOT_INDEX, oldEff.slot)
-            .setByte(OFFSETS.BYPASS, VALUES.BYPASSED)
-            .build(),
+        () => PacketBuilder.clearEffect(oldEff.type, oldEff.slot).build(),
         () => PacketBuilder.applyChange(oldEff.type, this.protocol.getNextSequenceId()).build(),
       );
     }
@@ -125,7 +136,7 @@ export class PresetImporter {
     }
     const state = this.store.getState();
     const ampModel = findAmpModel(state.amp.modelId);
-    const ampFuseId = ampModel?.fuseIds?.[0] ?? state.amp.modelId;
+    const ampFuseId = ampModel ? getFuseXmlId(ampModel) : state.amp.modelId;
 
     const escapeXml = (str: string) =>
       str
@@ -135,7 +146,29 @@ export class PresetImporter {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
 
-    const formatParams = (knobs: number[]) =>
+    const ampKnobs = [...state.amp.knobs];
+    ampKnobs[AMP_KNOB_INDEX.cabinet] = state.amp.cabinetId;
+    if (ampModel?.ampMeta) {
+      ampKnobs[8] = ampModel.ampMeta.b40;
+      ampKnobs[11] = ampModel.ampMeta.b43;
+      ampKnobs[12] = ampModel.ampMeta.num;
+      ampKnobs[13] = ampModel.ampMeta.num;
+      ampKnobs[14] = ampModel.ampMeta.num;
+      ampKnobs[18] = ampModel.ampMeta.num;
+      ampKnobs[21] = 0x01;
+      ampKnobs[22] = ampModel.ampMeta.b54;
+    }
+
+    const formatAmpParams = (knobs: number[]) =>
+      knobs
+        .map((val, idx) => {
+          const byte = toByte(val);
+          const encoded = AMP_RAW_XML_INDICES.has(idx) ? byte : (byte << 8) | byte;
+          return `      <Param ControlIndex="${idx}">${encoded}</Param>`;
+        })
+        .join('\n');
+
+    const formatEffectParams = (knobs: number[]) =>
       knobs
         .map((val, idx) => `      <Param ControlIndex="${idx}">${(toByte(val) << 8) | toByte(val)}</Param>`)
         .join('\n');
@@ -148,11 +181,11 @@ export class PresetImporter {
       const modulesXml = matching
         .map(eff => {
           const model = findEffectModel(eff.modelId);
-          const fuseId = model?.fuseIds?.[0] ?? eff.modelId;
+          const fuseId = model ? getFuseXmlId(model) : eff.modelId;
           const bypass = eff.enabled ? 0 : 1;
           return [
             `      <Module ID="${fuseId}" POS="${eff.slot}" BypassState="${bypass}">`,
-            formatParams(eff.knobs),
+            formatEffectParams(eff.knobs),
             '      </Module>',
           ].join('\n');
         })
@@ -173,7 +206,7 @@ export class PresetImporter {
       `<Preset name="${escapeXml(presetName)}" amplifier="Mustang" productId="1">`,
       '  <Amplifier>',
       `    <Module ID="${ampFuseId}" POS="0" BypassState="0">`,
-      formatParams(state.amp.knobs),
+      formatAmpParams(ampKnobs),
       '    </Module>',
       '  </Amplifier>',
       '  <FX>',
@@ -182,7 +215,9 @@ export class PresetImporter {
       formatEffectGroup('Delay', DspType.DELAY),
       formatEffectGroup('Reverb', DspType.REVERB),
       '  </FX>',
-      `  <Info name="${escapeXml(presetName)}"${authorAttr}${tagsAttr}${g1Attr}${g2Attr}${g3Attr}>${descContent}</Info>`,
+      '  <FUSE>',
+      `    <Info name="${escapeXml(presetName)}"${authorAttr}${tagsAttr}${g1Attr}${g2Attr}${g3Attr}>${descContent}</Info>`,
+      '  </FUSE>',
       '</Preset>',
     ].join('\n');
   }
@@ -237,13 +272,12 @@ export class PresetImporter {
       }
       importedTypes.add(type);
 
-      const buffer = new Uint8Array(64);
-      buffer[16] = (modelId >> 8) & 0xff;
-      buffer[17] = modelId & 0xff;
-      buffer[18] = pos;
-      buffer[22] = bypass;
+      // Seed knobs from model defaults so omitted metadata / unused bytes match real hardware
+      const defaults = getModelDefault(modelId);
+      const knobs = defaults
+        ? Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END))
+        : new Array<number>(LIMITS.KNOB_COUNT).fill(0);
 
-      const knobs = new Array<number>(LIMITS.KNOB_COUNT).fill(0);
       const params = m.querySelectorAll('Param');
       for (let j = 0; j < params.length; j++) {
         const p = params[j];
@@ -252,41 +286,49 @@ export class PresetImporter {
 
         const val16 = parseInt(p.textContent || '0', 10);
         const safeVal16 = isNaN(val16) ? 0 : val16;
-        const val8 = Math.max(0, Math.min(255, safeVal16 >> 8));
+
+        let val8: number;
+        if (type === DspType.AMP) {
+          // Real Fender FUSE / offa/plug XML stores discrete/meta ControlIndex 12..21 as raw integers
+          // (accept shifted values > 255 for backwards compatibility with older exports)
+          const decoded = AMP_RAW_XML_INDICES.has(rawIndex) && safeVal16 <= 255 ? safeVal16 : safeVal16 >> 8;
+          val8 = clampAmpKnob(rawIndex, decoded);
+        } else {
+          const spec = getEffectKnobSpec(modelId, rawIndex);
+          const decoded = spec && safeVal16 >= (spec.min ?? 0) && safeVal16 <= spec.max ? safeVal16 : safeVal16 >> 8;
+          val8 = clampEffectKnob(modelId, rawIndex, decoded);
+        }
 
         knobs[rawIndex] = val8;
-        if (32 + rawIndex < 64) {
-          buffer[32 + rawIndex] = val8;
-        }
       }
 
-      // Synchronize local Store state so the UI reflects imported settings immediately
-      if (this.store) {
-        if (type === DspType.AMP) {
-          this.store.updateAmpState(
-            normalizeAmpState({
-              modelId,
-              enabled: bypass === 0,
-              cabinetId: knobs[AMP_KNOB_INDEX.cabinet] ?? 0,
-              knobs,
-            }),
-          );
-        } else {
-          this.store.updateSlotState(pos, {
-            slot: pos,
-            type,
-            modelId,
-            enabled: bypass === 0,
-            knobs: normalizeKnobs(knobs),
-          });
-        }
+      if (type === DspType.AMP) {
+        const ampState = normalizeAmpState({
+          modelId,
+          // Amplifiers cannot be bypassed on Mustang hardware (FUSE / offa/plug even write BypassState="1")
+          enabled: true,
+          cabinetId: knobs[AMP_KNOB_INDEX.cabinet] ?? 0,
+          knobs,
+        });
+        this.store?.updateAmpState(ampState);
+        packets.push(
+          () => PacketBuilder.fromAmpState(ampState, this.protocol.getNextSequenceId()).build(),
+          () => PacketBuilder.applyChange(type, this.protocol.getNextSequenceId()).build(),
+        );
+      } else {
+        const effectState: EffectState = {
+          slot: pos,
+          type,
+          modelId,
+          enabled: bypass === 0,
+          knobs: normalizeKnobs(knobs, modelId),
+        };
+        this.store?.updateSlotState(pos, effectState);
+        packets.push(
+          () => PacketBuilder.fromEffectState(effectState, this.protocol.getNextSequenceId()).build(),
+          () => PacketBuilder.applyChange(type, this.protocol.getNextSequenceId()).build(),
+        );
       }
-
-      packets.push(
-        () =>
-          PacketBuilder.dspWrite(type, this.protocol.getNextSequenceId()).addBytes(16, buffer.slice(16, 64)).build(),
-        () => PacketBuilder.applyChange(type, this.protocol.getNextSequenceId()).build(),
-      );
     }
 
     return packets;

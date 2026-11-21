@@ -1,12 +1,12 @@
 import { BaseController } from './base_controller';
-import { DspType, findEffectModel, getDelayTimeKnobIndex, type ModelDef } from '../models';
+import { DspType, clampEffectKnob, findEffectModel, getDelayTimeKnobIndex, type ModelDef } from '../models';
 import { getModelDefault } from '../defaults';
 import type { EffectState } from '../store';
 import type { EffectSettings, KnobInfo } from '../index';
 import { debug } from '../helpers';
 import { PacketBuilder } from '../protocol/packet_builder';
 import type { BypassStateCommand, EffectUpdateCommand, KnobChangeCommand } from '../protocol/protocol_decoder';
-import { LIMITS, OFFSETS, VALUES, isValidKnobIndex, isValidSlot, toByte } from '../protocol/constants';
+import { LIMITS, OFFSETS, isValidKnobIndex, isValidSlot, toByte } from '../protocol/constants';
 import type { PacketFactory } from '../protocol/write_queue';
 
 /** Maximum delay time (ms) corresponding to parameter byte 255 on Mustang delay models. */
@@ -48,7 +48,7 @@ export class EffectController extends BaseController {
 
     const effect = slots[targetSlot]!;
     const knobs = [...effect.knobs];
-    knobs[knobIndex] = toByte(value);
+    knobs[knobIndex] = clampEffectKnob(effect.modelId, knobIndex, value);
     this.store.updateSlotState(targetSlot, { ...effect, knobs });
     return true;
   }
@@ -86,7 +86,13 @@ export class EffectController extends BaseController {
         this.store.clearSlot(i);
       });
 
-      this.store.updateSlotState(slot, { slot, type: dspType, modelId, enabled, knobs: normalizeKnobs(knobs) });
+      this.store.updateSlotState(slot, {
+        slot,
+        type: dspType,
+        modelId,
+        enabled,
+        knobs: normalizeKnobs(knobs, modelId),
+      });
     });
     return true;
   }
@@ -114,7 +120,18 @@ export class EffectController extends BaseController {
     const model = this.getEffectModel(slot);
     const effect = this.store.getState().slots[slot];
     if (!model || !effect) return [];
-    return model.knobs.flatMap((name, index) => (name ? [{ name, value: effect.knobs[index] ?? 0, index }] : []));
+    return model.knobs.flatMap((name, index) => {
+      if (!name) return [];
+      const spec = model.knobSpecs?.[index];
+      return [
+        {
+          name,
+          value: effect.knobs[index] ?? 0,
+          index,
+          ...(spec ? { max: spec.max, ...(spec.labels ? { labels: spec.labels } : {}) } : {}),
+        },
+      ];
+    });
   }
 
   getSettings(slot: number): EffectSettings | null {
@@ -156,9 +173,9 @@ export class EffectController extends BaseController {
     const existingAtSlot = previousSlots[slot];
     const duplicateSlots = this.otherSlotsOfType(slot, model.type);
     const defaults = getModelDefault(modelId) ?? new Uint8Array(64);
-    const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)));
+    const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)), modelId);
     for (const k of options.knobs ?? []) {
-      if (isValidKnobIndex(k.index)) knobs[k.index] = toByte(k.value);
+      if (isValidKnobIndex(k.index)) knobs[k.index] = clampEffectKnob(modelId, k.index, k.value);
     }
 
     const newState: EffectState = { slot, type: model.type, modelId, enabled: options.enabled ?? true, knobs };
@@ -215,7 +232,7 @@ export class EffectController extends BaseController {
     if (!effect) throw new Error(`No effect in slot ${slot}`);
 
     const knobs = [...effect.knobs];
-    knobs[index] = toByte(value);
+    knobs[index] = clampEffectKnob(effect.modelId, index, value);
     const newState: EffectState = { ...effect, knobs };
     this.store.updateSlotState(slot, newState);
 
@@ -357,10 +374,10 @@ export class EffectController extends BaseController {
         throw new Error(`Unknown effect model ID: 0x${item.modelId.toString(16).padStart(4, '0')}`);
       }
       const defaults = getModelDefault(item.modelId) ?? new Uint8Array(64);
-      const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)));
+      const knobs = normalizeKnobs(Array.from(defaults.slice(OFFSETS.KNOB_START, OFFSETS.KNOB_END)), item.modelId);
       if (item.knobs) {
         for (const k of item.knobs) {
-          if (isValidKnobIndex(k.index)) knobs[k.index] = toByte(k.value);
+          if (isValidKnobIndex(k.index)) knobs[k.index] = clampEffectKnob(item.modelId, k.index, k.value);
         }
       }
       // Enforce Mustang hardware rule: at most one effect per DSP type.
@@ -472,14 +489,7 @@ export class EffectController extends BaseController {
   }
 
   private buildClearPackets(slot: number, type: DspType): PacketFactory[] {
-    return [
-      () =>
-        PacketBuilder.dspWrite(type, this.protocol.getNextSequenceId())
-          .setByte(OFFSETS.SLOT_INDEX, slot)
-          .setByte(OFFSETS.BYPASS, VALUES.BYPASSED)
-          .build(),
-      this.applyPacket(type),
-    ];
+    return [() => PacketBuilder.clearEffect(type, slot).build(), this.applyPacket(type)];
   }
 
   private buildEffectStatePackets(state: EffectState): PacketFactory[] {
@@ -508,8 +518,10 @@ function groupStart(slot: number): number {
   return slot < LIMITS.GROUP_SIZE ? 0 : LIMITS.GROUP_SIZE;
 }
 
-export function normalizeKnobs(knobs: ArrayLike<number>): number[] {
-  return Array.from({ length: LIMITS.KNOB_COUNT }, (_, i) => toByte(knobs[i] ?? 0));
+export function normalizeKnobs(knobs: ArrayLike<number>, modelId?: number): number[] {
+  return Array.from({ length: LIMITS.KNOB_COUNT }, (_, i) =>
+    modelId !== undefined ? clampEffectKnob(modelId, i, knobs[i] ?? 0) : toByte(knobs[i] ?? 0),
+  );
 }
 
 function isSameEffect(oldEff: EffectState | null, newEff: EffectState, targetSlot: number): boolean {

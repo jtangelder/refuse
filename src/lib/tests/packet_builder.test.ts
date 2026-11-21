@@ -61,31 +61,58 @@ describe('PacketBuilder', () => {
   });
 
   describe('Static Factory Methods', () => {
-    it('should create dspWrite packet', () => {
+    it('should create dspWrite packet with fixed [0x01, 0x01] framing bytes', () => {
       const builder = PacketBuilder.dspWrite(DspType.AMP, 5);
       const buffer = builder.build();
 
       expect(buffer[0]).toBe(OPCODES.DATA_PACKET);
       expect(buffer[1]).toBe(OPCODES.DATA_WRITE);
       expect(buffer[2]).toBe(DspType.AMP);
-      expect(buffer[6]).toBe(5); // Sequence ID
+      expect(buffer[6]).toBe(0x01);
+      expect(buffer[7]).toBe(0x01);
     });
 
-    it('should create applyChange packet', () => {
-      const builder = PacketBuilder.applyChange(DspType.AMP, 10);
-      const buffer = builder.build();
-
-      expect(buffer[0]).toBe(OPCODES.DATA_PACKET);
-      expect(buffer[1]).toBe(OPCODES.DATA_WRITE);
-      expect(buffer[2]).toBe(0x00); // Apply Type
-      expect(buffer[6]).toBe(10); // Sequence ID
-      expect(buffer[4]).toBe(0x02); // Other Family (Not MOD)
+    it('should create pure execute/applyChange packet [0x1c, 0x03, 0x00, ...] with zeroed payload', () => {
+      for (const dspType of [DspType.AMP, DspType.STOMP, DspType.MOD, DspType.DELAY, DspType.REVERB]) {
+        const buffer = PacketBuilder.applyChange(dspType, 10).build();
+        expect(buffer[0]).toBe(OPCODES.DATA_PACKET);
+        expect(buffer[1]).toBe(OPCODES.DATA_WRITE);
+        expect(Array.from(buffer.slice(2))).toEqual(new Array(62).fill(0));
+      }
     });
 
-    it('should create applyChange packet for MOD', () => {
-      const builder = PacketBuilder.applyChange(DspType.MOD, 10);
-      const buffer = builder.build();
-      expect(buffer[4]).toBe(0x01); // MOD Family
+    it('should build standard Mustang handshake packets (V1 0x03 and V2/MIII-V 0xc1)', () => {
+      const hs1 = PacketBuilder.handshake1();
+      expect(hs1.length).toBe(PACKET_SIZE);
+      expect(hs1[0]).toBe(0x00);
+      expect(hs1[1]).toBe(0xc3);
+      expect(Array.from(hs1.slice(2))).toEqual(new Array(62).fill(0));
+
+      const hs2V2 = PacketBuilder.handshake2();
+      expect(hs2V2[0]).toBe(0x1a);
+      expect(hs2V2[1]).toBe(0xc1);
+
+      const hs2V1 = PacketBuilder.handshake2(OPCODES.HANDSHAKE_2_BYTE2_V1);
+      expect(hs2V1[0]).toBe(0x1a);
+      expect(hs2V1[1]).toBe(0x03);
+    });
+
+    it('should build clearEffect packet with family metadata bytes 19-21 and zero model ID', () => {
+      const stompClear = PacketBuilder.clearEffect(DspType.STOMP, 0).build();
+      expect(stompClear[2]).toBe(DspType.STOMP);
+      expect(stompClear[6]).toBe(0x01);
+      expect(stompClear[7]).toBe(0x01);
+      expect(stompClear[16]).toBe(0x00);
+      expect(stompClear[17]).toBe(0x00);
+      expect(stompClear[18]).toBe(0);
+      expect(Array.from(stompClear.slice(19, 22))).toEqual([0x00, 0x08, 0x01]);
+      expect(stompClear[22]).toBe(0x00);
+
+      const modClear = PacketBuilder.clearEffect(DspType.MOD, 4).build();
+      expect(Array.from(modClear.slice(19, 22))).toEqual([0x00, 0x01, 0x01]);
+
+      const delayClear = PacketBuilder.clearEffect(DspType.DELAY, 5).build();
+      expect(Array.from(delayClear.slice(19, 22))).toEqual([0x02, 0x01, 0x01]);
     });
 
     it('should create bypass packet', () => {
@@ -127,15 +154,24 @@ describe('PacketBuilder', () => {
   });
 
   describe('State Serializers', () => {
-    it('should serialize Amp State', () => {
+    it('should serialize Amp State with per-amp metadata, discrete clamping, and noise-gate rules', () => {
+      const knobs = new Array(32).fill(0);
+      knobs[0] = 1;
+      knobs[1] = 2;
+      knobs[2] = 3;
+      knobs[9] = 200; // Depth
+      knobs[15] = 2; // Noise Gate (non-custom -> forces threshold=0, depth=0x80)
+      knobs[16] = 7; // Threshold
+      knobs[19] = 99; // Sag -> clamped to 2
+      knobs[20] = 50; // Brightness -> clamped to 1
+
       const ampState = {
         modelId: AMP_MODELS.F57_DELUXE.id,
-        knobs: [1, 2, 3],
+        knobs,
         cabinetId: 4,
       };
 
-      const builder = PacketBuilder.fromAmpState(ampState, 1);
-      const buffer = builder.build();
+      const buffer = PacketBuilder.fromAmpState(ampState, 1).build();
 
       expect(buffer[2]).toBe(DspType.AMP);
       expect(buffer[16]).toBe((ampState.modelId >> 8) & 0xff);
@@ -144,27 +180,81 @@ describe('PacketBuilder', () => {
       expect(buffer[32]).toBe(1);
       expect(buffer[33]).toBe(2);
       expect(buffer[34]).toBe(3);
+      // Non-custom noise gate enforces threshold=0x00 and depth=0x80
+      expect(buffer[41]).toBe(0x80);
+      expect(buffer[47]).toBe(2);
+      expect(buffer[48]).toBe(0x00);
+      // Discrete clamping
+      expect(buffer[51]).toBe(2);
+      expect(buffer[52]).toBe(1);
+      // Per-amp '57 Deluxe firmware metadata bytes
+      expect(buffer[40]).toBe(0x80);
+      expect(buffer[43]).toBe(0x80);
+      expect(Array.from(buffer.slice(44, 47))).toEqual([0x01, 0x01, 0x01]);
+      expect(buffer[50]).toBe(0x01);
+      expect(buffer[53]).toBe(0x01);
+      expect(buffer[54]).toBe(0x53);
+
+      // Custom noise gate (5) preserves depth and clamped threshold (0..9)
+      const customKnobs = [...knobs];
+      customKnobs[15] = 5;
+      customKnobs[16] = 25; // clamped to 9
+      const customBuf = PacketBuilder.fromAmpState(
+        { modelId: AMP_MODELS.F65_DELUXE.id, knobs: customKnobs, cabinetId: 99 },
+        1,
+      ).build();
+      expect(customBuf[41]).toBe(200);
+      expect(customBuf[47]).toBe(5);
+      expect(customBuf[48]).toBe(9);
+      expect(customBuf[49]).toBe(0x0c); // Cabinet clamped to MAX_CABINET_ID
+      // '65 Deluxe Reverb has b40=0x00, b43=0x00, num=0x03, b54=0x6a
+      expect(customBuf[40]).toBe(0x00);
+      expect(customBuf[43]).toBe(0x00);
+      expect(Array.from(customBuf.slice(44, 47))).toEqual([0x03, 0x03, 0x03]);
+      expect(customBuf[50]).toBe(0x03);
+      expect(customBuf[54]).toBe(0x6a);
     });
 
-    it('should serialize Effect State', () => {
+    it('should serialize Effect State with wire metadata bytes 19-21 and discrete clamping', () => {
       const effectState = {
         type: DspType.STOMP,
         slot: 1,
-        modelId: EFFECT_MODELS.OVERDRIVE.id,
+        modelId: EFFECT_MODELS.ORANGE_BOX.id,
         enabled: false,
         knobs: [10, 20],
       };
 
-      const builder = PacketBuilder.fromEffectState(effectState, 1);
-      const buffer = builder.build();
+      const buffer = PacketBuilder.fromEffectState(effectState, 1).build();
 
       expect(buffer[2]).toBe(DspType.STOMP);
+      expect(buffer[16]).toBe(0x10);
+      expect(buffer[17]).toBe(0x01);
       expect(buffer[18]).toBe(1); // Slot
-      expect(buffer[16]).toBe((effectState.modelId >> 8) & 0xff);
-      expect(buffer[17]).toBe(effectState.modelId & 0xff);
+      expect(Array.from(buffer.slice(19, 22))).toEqual([0x00, 0x08, 0x01]);
       expect(buffer[22]).toBe(1); // Enabled false -> 1
       expect(buffer[32]).toBe(10);
       expect(buffer[33]).toBe(20);
+
+      // Mod & Delay wire metadata + discrete knob clamping (Multitap Mode max=3)
+      const modBuf = PacketBuilder.fromEffectState({
+        type: DspType.MOD,
+        slot: 4,
+        modelId: EFFECT_MODELS.TOUCH_WAH_MOD.id,
+        enabled: true,
+        knobs: [100, 100, 100, 100, 50], // High Q (idx 4) clamped to 0..1
+      }).build();
+      expect(Array.from(modBuf.slice(19, 22))).toEqual([0x01, 0x08, 0x01]);
+      expect(modBuf[32 + 4]).toBe(1);
+
+      const delayBuf = PacketBuilder.fromEffectState({
+        type: DspType.DELAY,
+        slot: 5,
+        modelId: EFFECT_MODELS.MULTITAP_DELAY.id,
+        enabled: true,
+        knobs: [128, 128, 128, 128, 99], // Mode (idx 4) clamped to 0..3
+      }).build();
+      expect(Array.from(delayBuf.slice(19, 22))).toEqual([0x02, 0x01, 0x01]);
+      expect(delayBuf[32 + 4]).toBe(3);
     });
 
     it('should pad control packets to full 64-byte HID report size', () => {

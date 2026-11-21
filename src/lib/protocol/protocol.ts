@@ -1,7 +1,20 @@
 import { debug } from '../helpers';
-import { FENDER_VID } from './constants';
+import {
+  FENDER_VID,
+  MUSTANG_DEVICE_SPECS,
+  OPCODES,
+  findMustangDeviceSpec,
+  type MustangDeviceSpec,
+} from './constants';
 import { PacketBuilder } from './packet_builder';
 import { type IProtocol, type ProtocolEventListenerFn } from './protocol_interface';
+
+const DEFAULT_HANDSHAKE_TIMEOUT_MS = 150;
+
+export interface ProtocolOptions {
+  /** Max time (ms) to wait for the amp's 64-byte HID reply to each handshake packet. */
+  handshakeTimeoutMs?: number;
+}
 
 function formatHexPacket(prefix: string, data: Uint8Array): string {
   return `${prefix}: [${Array.from(data)
@@ -17,8 +30,11 @@ export class Protocol implements IProtocol {
   private sequenceId = 0;
   private listeners = new Map<ProtocolEventListenerFn, EventListener>();
   private disconnectHandler?: (ev: HIDConnectionEvent) => void;
+  private cancelHandshakeWait?: () => void;
   private _lastError: string | null = null;
   public onDisconnect?: () => void;
+
+  constructor(private readonly options: ProtocolOptions = {}) {}
 
   public get isConnected(): boolean {
     return !!this.device;
@@ -26,6 +42,14 @@ export class Protocol implements IProtocol {
 
   public get deviceName(): string | undefined {
     return this.device?.productName || undefined;
+  }
+
+  public get productId(): number | undefined {
+    return this.device?.productId;
+  }
+
+  public get deviceSpec(): MustangDeviceSpec | undefined {
+    return findMustangDeviceSpec(this.device?.productId);
   }
 
   public get lastError(): string | null {
@@ -58,7 +82,7 @@ export class Protocol implements IProtocol {
     let openedDevice: HIDDevice | null = null;
     try {
       const devices = await navigator.hid.requestDevice({
-        filters: [{ vendorId: FENDER_VID }],
+        filters: MUSTANG_DEVICE_SPECS.map(spec => ({ vendorId: FENDER_VID, productId: spec.pid })),
       });
       if (devices.length === 0) return false;
 
@@ -80,9 +104,10 @@ export class Protocol implements IProtocol {
       // Setup hot-unplug / disconnect listener
       this.setupDisconnectListener();
 
-      // Handshake
-      await this.sendPacket(PacketBuilder.handshake1());
-      await this.sendPacket(PacketBuilder.handshake2());
+      // 2-step Mustang USB HID handshake (PID-aware: 0x03 for early V1, 0xc1 for MIII-V V1 & all V2)
+      const handshake2Sub = this.deviceSpec?.handshake2SubCommand ?? OPCODES.HANDSHAKE_2_BYTE2_V2;
+      await this.sendHandshakePacket(device, PacketBuilder.handshake1());
+      await this.sendHandshakePacket(device, PacketBuilder.handshake2(handshake2Sub));
 
       return true;
     } catch (err) {
@@ -94,6 +119,39 @@ export class Protocol implements IProtocol {
         this.device = null;
       }
       return false;
+    }
+  }
+
+  private async sendHandshakePacket(device: HIDDevice, packet: Uint8Array): Promise<void> {
+    const timeoutMs = this.options.handshakeTimeoutMs ?? DEFAULT_HANDSHAKE_TIMEOUT_MS;
+    let replied = false;
+    let resolveWait: (() => void) | undefined;
+
+    const onReport: EventListener = () => {
+      replied = true;
+      resolveWait?.();
+    };
+
+    device.addEventListener('inputreport', onReport);
+    try {
+      await this.sendPacket(packet);
+      if (replied || !this.device || timeoutMs <= 0) return;
+
+      await new Promise<void>(resolve => {
+        const finish = () => {
+          clearTimeout(timer);
+          if (this.cancelHandshakeWait === finish) {
+            this.cancelHandshakeWait = undefined;
+          }
+          resolveWait = undefined;
+          resolve();
+        };
+        const timer = setTimeout(finish, timeoutMs);
+        resolveWait = finish;
+        this.cancelHandshakeWait = finish;
+      });
+    } finally {
+      device.removeEventListener('inputreport', onReport);
     }
   }
 
@@ -117,6 +175,8 @@ export class Protocol implements IProtocol {
    * Disconnect from the amplifier
    */
   async disconnect(): Promise<void> {
+    this.cancelHandshakeWait?.();
+    this.cancelHandshakeWait = undefined;
     if (this.disconnectHandler && this.isSupported) {
       if (navigator.hid?.removeEventListener) {
         navigator.hid.removeEventListener('disconnect', this.disconnectHandler);

@@ -84,8 +84,11 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
     expect(findCabinetModel(0xff)).toBeNull();
   });
 
-  it('correctly maps hardware cabinet IDs to expected names and default amplifier pairings', () => {
-    // Specific hardware ID mappings
+  it('correctly maps hardware cabinet IDs (0x00-0x0c) to expected names and default amplifier pairings', () => {
+    expect(CABINET_MODELS.length).toBe(13);
+
+    // Specific hardware ID mappings (0x00-0x0c)
+    expect(findCabinetModel(0x00)?.name).toBe('Off');
     expect(findCabinetModel(0x01)?.name).toBe("1x12 '57 Deluxe");
     expect(findCabinetModel(0x02)?.name).toBe("4x10 '59 Bassman");
     expect(findCabinetModel(0x03)?.name).toBe("1x12 '65 Deluxe");
@@ -98,12 +101,14 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
     expect(findCabinetModel(0x0a)?.name).toBe("4x12 American '90s");
     expect(findCabinetModel(0x0b)?.name).toBe('2x12 Super-Sonic');
     expect(findCabinetModel(0x0c)?.name).toBe('1x12 Super-Sonic');
-    expect(findCabinetModel(0x0d)?.name).toBe("2x12 '57 Twin");
-    expect(findCabinetModel(0x0e)?.name).toBe("2x12 '60s Thrift");
-    expect(findCabinetModel(0x0f)?.name).toBe('4x12 British Watts');
-    expect(findCabinetModel(0x10)?.name).toBe('4x12 British Colour');
 
-    // Default cabinet pairings for all amplifiers
+    // Out-of-range cabinet IDs (> 0x0c) do not exist in Mustang V1/V2 firmware
+    expect(findCabinetModel(0x0d)).toBeNull();
+    expect(findCabinetModel(0x0e)).toBeNull();
+    expect(findCabinetModel(0x0f)).toBeNull();
+    expect(findCabinetModel(0x10)).toBeNull();
+
+    // Default cabinet pairings for all amplifiers (including V2 pcaps)
     const expectedPairings: Record<number, string> = {
       [AMP_MODELS.F57_DELUXE.id]: "1x12 '57 Deluxe",
       [AMP_MODELS.F59_BASSMAN.id]: "4x10 '59 Bassman",
@@ -118,10 +123,10 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
       [AMP_MODELS.US_90S.id]: "4x12 American '90s",
       [AMP_MODELS.METAL_2000.id]: "4x12 British '70s",
       [AMP_MODELS.STUDIO_PREAMP.id]: 'Off',
-      [AMP_MODELS.F57_TWIN.id]: "2x12 '57 Twin",
-      [AMP_MODELS.THRIFT_60S.id]: "2x12 '60s Thrift",
-      [AMP_MODELS.BRIT_WATTS.id]: '4x12 British Watts',
-      [AMP_MODELS.BRIT_COLOUR.id]: '4x12 British Colour',
+      [AMP_MODELS.F57_TWIN.id]: "2x12 '65 Twin",
+      [AMP_MODELS.THRIFT_60S.id]: "1x12 '57 Deluxe",
+      [AMP_MODELS.BRIT_WATTS.id]: "4x12 American '90s",
+      [AMP_MODELS.BRIT_COLOUR.id]: "4x12 British '70s",
     };
 
     for (const [ampIdStr, expectedCabName] of Object.entries(expectedPairings)) {
@@ -132,6 +137,19 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
       const cab = findCabinetModel(cabId);
       expect(cab?.name).toBe(expectedCabName);
     }
+  });
+
+  it('registers Orange Box (0x1001), Ranger Boost 4 knobs, and V2 Mod effects accurately', () => {
+    expect(EFFECT_MODELS.ORANGE_BOX.id).toBe(0x1001);
+    const orangeDefaults = getModelDefault(EFFECT_MODELS.ORANGE_BOX.id);
+    expect(orangeDefaults?.[OFFSETS.MODEL_ID_MSB]).toBe(0x10);
+    expect(orangeDefaults?.[OFFSETS.MODEL_ID_LSB]).toBe(0x01);
+
+    expect(EFFECT_MODELS.RANGER_BOOST.knobs.filter(Boolean)).toEqual(['Level', 'Gain', 'Lo-Cut', 'Bright']);
+    expect(EFFECT_MODELS.WAH_MOD.id).toBe(0xf400);
+    expect(EFFECT_MODELS.TOUCH_WAH_MOD.id).toBe(0xf500);
+    expect(EFFECT_MODELS.DIATONIC_PITCH_SHIFTER.id).toBe(0x1f10);
+    expect(EFFECT_MODELS.DIATONIC_PITCH_SHIFTER.knobs.filter(Boolean)).toEqual(['Mix', 'Pitch', 'Key', 'Scale', 'Tone']);
   });
 
   it('correctly classifies hardware form factors from model references without magic bitcodes', () => {
@@ -165,7 +183,16 @@ describe('Model Registry & Hardware Defaults Integrity', () => {
     expect(isRackUnit(undefined)).toBe(false);
   });
 
-  it('scopes FUSE ID resolution by DspType to prevent cross-category collisions', () => {
+  it('prioritizes official Fender FUSE decimal IDs over legacy ordinals and scopes by DspType', () => {
+    // Official Fender FUSE little-endian decimal IDs (regression: 100 was previously hijacked by Studio Preamp)
+    expect(resolveFuseModelId(100, DspType.AMP)).toBe(AMP_MODELS.F59_BASSMAN.id);
+    expect(resolveFuseModelId(103, DspType.AMP)).toBe(AMP_MODELS.F57_DELUXE.id);
+    expect(resolveFuseModelId(241, DspType.AMP)).toBe(AMP_MODELS.STUDIO_PREAMP.id);
+    expect(resolveFuseModelId(272, DspType.STOMP)).toBe(EFFECT_MODELS.ORANGE_BOX.id);
+    expect(resolveFuseModelId(244, DspType.MOD)).toBe(EFFECT_MODELS.WAH_MOD.id);
+    expect(resolveFuseModelId(245, DspType.MOD)).toBe(EFFECT_MODELS.TOUCH_WAH_MOD.id);
+    expect(resolveFuseModelId(287, DspType.MOD)).toBe(EFFECT_MODELS.DIATONIC_PITCH_SHIFTER.id);
+
     // 42 is Small Hall in REVERB, whereas 0x2a (42 decimal) is Stereo Tape Delay in DELAY
     expect(resolveFuseModelId(42, DspType.REVERB)).toBe(EFFECT_MODELS.SMALL_HALL.id);
     expect(resolveFuseModelId(42, DspType.DELAY)).toBe(EFFECT_MODELS.STEREO_TAPE_DELAY.id);

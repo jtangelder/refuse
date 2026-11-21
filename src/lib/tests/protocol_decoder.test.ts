@@ -170,6 +170,92 @@ describe('ProtocolDecoder', () => {
       }
     });
 
+    it('should decode DUMP_COMPLETE end-of-dump ACK (0xff 0x01)', () => {
+      const data = new Uint8Array(64);
+      data[0] = 0xff;
+      data[1] = 0x01;
+      expect(ProtocolDecoder.decode(data)).toEqual({ type: 'DUMP_COMPLETE' });
+    });
+
+    it('should decode empty-name 0x1c 0x01 0x00 confirmation packet as PRESET_ACK', () => {
+      const data = new Uint8Array(64);
+      data[0] = 0x1c;
+      data[1] = 0x01;
+      data[2] = 0x00;
+      data[3] = 0x00;
+      data[OFFSETS.PRESET_SLOT] = 5;
+
+      expect(ProtocolDecoder.decode(data)).toEqual({ type: 'PRESET_ACK', slot: 5 });
+    });
+
+    it('should decode real 0x05 0xc3 live hardware packets across all 5 DSP families (continuous & discrete)', () => {
+      // AMP continuous Gain: 0x05 0xc3 0x02 <model> <idx=1> <idx2=1> <type=0x03> 0x00 <lo> <hi=180>
+      const ampGain = new Uint8Array(64);
+      ampGain.set([0x05, 0xc3, 0x02, 0x67, 0x00, 0x01, 0x01, 0x03, 0x00, 0x42, 180]);
+      expect(ProtocolDecoder.decode(ampGain)).toEqual({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.AMP,
+        slot: 0,
+        knobIndex: 1,
+        value: 180,
+      });
+
+      // AMP discrete Cabinet (typeFlag 0x8e has bit 7 set -> value in byte[9], byte[10]=0x00)
+      const ampCab = new Uint8Array(64);
+      ampCab.set([0x05, 0xc3, 0x02, 0x67, 0x00, 0x11, 0x11, 0x8e, 0x00, 0x09, 0x00]);
+      expect(ProtocolDecoder.decode(ampCab)).toEqual({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.AMP,
+        slot: 0,
+        knobIndex: 17,
+        value: 9,
+      });
+
+      // STOMP discrete Simple Comp Type (dsp=0x03 -> STOMP, typeFlag 0x92 -> value in byte[9])
+      const simpleComp = new Uint8Array(64);
+      simpleComp.set([0x05, 0xc3, 0x03, 0x07, 0x00, 0x00, 0x00, 0x92, 0x00, 0x02, 0x00]);
+      expect(ProtocolDecoder.decode(simpleComp)).toEqual({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.STOMP,
+        slot: 0,
+        knobIndex: 0,
+        value: 2,
+      });
+
+      // MOD discrete Phaser Shape (dsp=0x04 -> MOD, typeFlag 0x8c -> value in byte[9])
+      const phaserShape = new Uint8Array(64);
+      phaserShape.set([0x05, 0xc3, 0x04, 0x4f, 0x00, 0x04, 0x04, 0x8c, 0x00, 0x01, 0x00]);
+      expect(ProtocolDecoder.decode(phaserShape)).toEqual({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.MOD,
+        slot: 0,
+        knobIndex: 4,
+        value: 1,
+      });
+
+      // DELAY discrete Multitap Mode (dsp=0x05 -> DELAY, typeFlag 0x8b -> value in byte[9])
+      const multitapMode = new Uint8Array(64);
+      multitapMode.set([0x05, 0xc3, 0x05, 0x44, 0x00, 0x04, 0x04, 0x8b, 0x00, 0x03, 0x00]);
+      expect(ProtocolDecoder.decode(multitapMode)).toEqual({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.DELAY,
+        slot: 0,
+        knobIndex: 4,
+        value: 3,
+      });
+
+      // REVERB continuous Level (dsp=0x06 -> REVERB, value in byte[10])
+      const reverbLevel = new Uint8Array(64);
+      reverbLevel.set([0x05, 0xc3, 0x06, 0x24, 0x00, 0x00, 0x00, 0x03, 0x00, 0x10, 145]);
+      expect(ProtocolDecoder.decode(reverbLevel)).toEqual({
+        type: 'KNOB_CHANGE',
+        dspType: DspType.REVERB,
+        slot: 0,
+        knobIndex: 0,
+        value: 145,
+      });
+    });
+
     it('should decode live hardware KnobChange when byte 1 is non-zero (e.g. 0x01 or 0xc3)', () => {
       const data = new Uint8Array(64);
       data[0] = DspType.AMP; // 0x05

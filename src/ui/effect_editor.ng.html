@@ -69,7 +69,13 @@
   <div class="knob-grid">
     @for (knob of effect()!.knobs; track knob.index) {
     <div class="knob-control">
-      <fuse-knob [name]="knob.name" [value]="knob.value" (valueChange)="onKnobChange(knob.index, $event)"></fuse-knob>
+      <fuse-knob
+        [name]="knob.name"
+        [value]="knob.value"
+        [max]="knob.max ?? 255"
+        [labels]="knob.labels"
+        (valueChange)="onKnobChange(knob.index, $event)"
+      ></fuse-knob>
     </div>
     }
   </div>

@@ -68,7 +68,7 @@
     height: 500px;
 }
 
-.device-0x0101 {
+.device-0x1001 {
     background-image: url('../assets/sprites/stomp.webp');
     background-position: -2000px -500px;
     width: 500px;
@@ -159,9 +159,24 @@
     height: 500px;
 }
 
-.device-0x1F00 {
+.device-0x1F00,
+.device-0x1F10 {
     background-image: url('../assets/sprites/mod.webp');
     background-position: 0 -1000px;
+    width: 500px;
+    height: 500px;
+}
+
+.device-0xF400 {
+    background-image: url('../assets/sprites/stomp.webp');
+    background-position: -500px 0;
+    width: 500px;
+    height: 500px;
+}
+
+.device-0xF500 {
+    background-image: url('../assets/sprites/stomp.webp');
+    background-position: -1000px 0;
     width: 500px;
     height: 500px;
 }

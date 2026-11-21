@@ -38,15 +38,37 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
 
   describe('Serialization and Deserialization Round-trips', () => {
     it('round-trips AmpState through PacketBuilder and ProtocolDecoder', () => {
-      const knobs = Array.from({ length: 32 }, (_, i) => (i * 7) % 256);
-      knobs[17] = 3; // Byte 49 is Cabinet ID in the 32-64 knob range
+      const knobs = new Array<number>(32).fill(0);
+      knobs[0] = 170; // Volume
+      knobs[1] = 153; // Gain
+      knobs[2] = 128; // Gain 2
+      knobs[3] = 128; // Master
+      knobs[4] = 190; // Treble
+      knobs[5] = 128; // Mid
+      knobs[6] = 140; // Bass
+      knobs[7] = 110; // Presence
+      knobs[8] = 0x80; // '57 Deluxe b40
+      knobs[9] = 160; // Depth (preserved when noiseGate === 5)
+      knobs[10] = 128; // Bias
+      knobs[11] = 0x80; // '57 Deluxe b43
+      knobs[12] = 0x01; // '57 Deluxe num
+      knobs[13] = 0x01;
+      knobs[14] = 0x01;
+      knobs[15] = 5; // Noise Gate = Custom
+      knobs[16] = 4; // Threshold (0..9)
+      knobs[17] = 3; // Cabinet ID (0..12)
+      knobs[18] = 0x01; // '57 Deluxe num
+      knobs[19] = 1; // Sag (0..2)
+      knobs[20] = 1; // Brightness (0..1)
+      knobs[21] = 0x01;
+      knobs[22] = 0x53; // '57 Deluxe b54
+
       const ampState: AmpState = {
         modelId: AMP_MODELS.F57_DELUXE.id,
         enabled: true,
         cabinetId: 3,
         knobs,
       };
-
 
       const packet = PacketBuilder.fromAmpState(ampState, 42).build();
       // Packet is 64 bytes
@@ -135,6 +157,32 @@ describe('Protocol Edge Cases & Defensive Parsing', () => {
 
       await ampController.setAdvancedSetting('bias', 300);
       expect(store.getState().amp.knobs[10]).toBe(255);
+    });
+
+    it('clamps discrete amp and effect parameters to their exact hardware bounds', async () => {
+      await ampController.setAdvancedSetting('noiseGate', 200);
+      expect(store.getState().amp.knobs[15]).toBe(5);
+
+      await ampController.setAdvancedSetting('threshold', 50);
+      expect(store.getState().amp.knobs[16]).toBe(9);
+
+      await ampController.setAdvancedSetting('sag', 10);
+      expect(store.getState().amp.knobs[19]).toBe(2);
+
+      await ampController.setAdvancedSetting('brightness', 9);
+      expect(store.getState().amp.knobs[20]).toBe(1);
+
+      await effectController.setEffectById(0, EFFECT_MODELS.SIMPLE_COMP.id);
+      await effectController.setEffectKnob(0, 0, 255);
+      expect(store.getState().slots[0]?.knobs[0]).toBe(3);
+
+      await effectController.setEffectById(5, EFFECT_MODELS.MULTITAP_DELAY.id);
+      await effectController.setEffectKnob(5, 4, 200);
+      expect(store.getState().slots[5]?.knobs[4]).toBe(3);
+
+      await effectController.setEffectById(4, EFFECT_MODELS.PHASER.id);
+      await effectController.setEffectKnob(4, 4, 50);
+      expect(store.getState().slots[4]?.knobs[4]).toBe(1);
     });
 
     it('clamps effect knobs to [0, 255]', async () => {

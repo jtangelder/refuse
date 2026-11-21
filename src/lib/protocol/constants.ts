@@ -4,17 +4,53 @@
 export const FENDER_VID = 0x1ed8;
 
 /**
+ * Supported Fender Mustang V1/V2 USB Product IDs and protocol quirks.
+ * Cross-verified against offa/plug and snhirsch/mustang-midi-bridge.
+ */
+export interface MustangDeviceSpec {
+  readonly pid: number;
+  readonly name: string;
+  readonly generation: 'v1' | 'v2';
+  /** Byte 1 of Handshake 2 (`0x1a <subCommand>`): 0x03 on early V1, 0xc1 on MIII-V V1 & all V2. */
+  readonly handshake2SubCommand: number;
+  readonly presetCount: number;
+}
+
+export const MUSTANG_DEVICE_SPECS: readonly MustangDeviceSpec[] = [
+  { pid: 0x0004, name: 'Mustang I/II (V1)', generation: 'v1', handshake2SubCommand: 0x03, presetCount: 24 },
+  { pid: 0x0005, name: 'Mustang III/IV/V (V1)', generation: 'v1', handshake2SubCommand: 0xc1, presetCount: 100 },
+  { pid: 0x000a, name: 'Mustang Bronco 40', generation: 'v1', handshake2SubCommand: 0x03, presetCount: 24 },
+  { pid: 0x0010, name: 'Mustang Mini', generation: 'v1', handshake2SubCommand: 0x03, presetCount: 24 },
+  { pid: 0x0012, name: 'Mustang Floor', generation: 'v1', handshake2SubCommand: 0x03, presetCount: 100 },
+  { pid: 0x0014, name: 'Mustang I/II (V2)', generation: 'v2', handshake2SubCommand: 0xc1, presetCount: 24 },
+  { pid: 0x0016, name: 'Mustang III/IV/V (V2)', generation: 'v2', handshake2SubCommand: 0xc1, presetCount: 100 },
+] as const;
+
+export function findMustangDeviceSpec(productId?: number): MustangDeviceSpec | undefined {
+  if (productId === undefined) return undefined;
+  return MUSTANG_DEVICE_SPECS.find(spec => spec.pid === productId);
+}
+
+/**
  * Protocol opcodes used in USB HID communication
  */
 export const OPCODES = {
-  // Connection
+  // Connection handshake
+  // Packet 1: [0x00, 0xc3, 0x00, ...]
+  // Packet 2: [0x1a, 0x03 | 0xc1, 0x00, ...]
   HANDSHAKE_1: 0xc3,
+  HANDSHAKE_1_BYTE1: 0x00,
+  HANDSHAKE_1_BYTE2: 0xc3,
   HANDSHAKE_2_BYTE1: 0x1a,
-  HANDSHAKE_2_BYTE2: 0x03,
+  HANDSHAKE_2_BYTE2: 0xc1,
+  HANDSHAKE_2_BYTE2_V1: 0x03,
+  HANDSHAKE_2_BYTE2_V2: 0xc1,
 
-  // State requests
+  // State requests & ACKs
   REQUEST_STATE: 0xff,
   REQUEST_STATE_BYTE2: 0xc1,
+  DUMP_COMPLETE: 0xff,
+  DUMP_COMPLETE_BYTE2: 0x01,
   REQUEST_BYPASS: 0x19,
   REQUEST_BYPASS_BYTE2: 0x00,
 
@@ -29,8 +65,9 @@ export const OPCODES = {
   BYPASS_SET: 0xc3,
   BYPASS_RESPONSE: 0xc3,
 
-  // Live hardware changes
+  // Live hardware parameter changes (0x05 0xc3 <dsp 0x02..0x06> ...)
   LIVE_CHANGE: 0x05,
+  LIVE_CHANGE_SUB: 0xc3,
 } as const;
 
 /**
@@ -52,6 +89,9 @@ export const OFFSETS = {
   MODEL_ID_MSB: 16,
   MODEL_ID_LSB: 17,
   SLOT_INDEX: 18, // Which slot the effect is in
+  EFFECT_META_0: 19,
+  EFFECT_META_1: 20,
+  EFFECT_META_2: 21,
   BYPASS: 22,
 
   // Controls
@@ -62,8 +102,13 @@ export const OFFSETS = {
   // Specific
   CABINET_ID: 49,
 
-  // Live Knob Changes
+  // Live Knob Changes (0x05 0xc3 <dsp> <model0> <model1> <idx> <idx2> <typeFlag> 0x00 <valLo> <valHi>)
+  LIVE_DSP: 2,
+  LIVE_MODEL_MSB: 3,
+  LIVE_MODEL_LSB: 4,
   LIVE_KNOB_INDEX: 5,
+  LIVE_CONTROL_TYPE: 7,
+  LIVE_KNOB_VALUE_LSB: 9,
   LIVE_KNOB_VALUE: 10,
   LIVE_SLOT_INDEX: 13,
 } as const;
@@ -88,10 +133,29 @@ export const LIMITS = {
   KNOB_COUNT: 32,
   /** Maximum value of a single parameter byte. */
   MAX_VALUE: 0xff,
+  /** Highest cabinet ID supported by Mustang V1/V2 firmware (0x00-0x0c). */
+  MAX_CABINET_ID: 0x0c,
   /** Highest preset slot addressable by the protocol. */
   MAX_PRESET_SLOT: 99,
   /** Maximum number of bytes in a preset name. */
   PRESET_NAME_BYTES: 32,
+} as const;
+
+/**
+ * Discrete hardware ranges and display labels for non-continuous Amp parameters.
+ */
+export interface DiscreteParamSpec {
+  readonly min: number;
+  readonly max: number;
+  readonly labels?: readonly string[];
+}
+
+export const AMP_DISCRETE_PARAMS: Readonly<Record<string, DiscreteParamSpec>> = {
+  noiseGate: { min: 0, max: 5, labels: ['Off', 'Low', 'Mid', 'High', 'Super', 'Custom'] },
+  threshold: { min: 0, max: 9 },
+  cabinet: { min: 0, max: LIMITS.MAX_CABINET_ID },
+  sag: { min: 0, max: 2, labels: ['More', 'Normal', 'Less'] },
+  brightness: { min: 0, max: 1, labels: ['Off', 'On'] },
 } as const;
 
 /**
@@ -116,13 +180,34 @@ export const AMP_KNOB_INDEX = {
   brightness: 20,
 } as const;
 
+/** Amp knob indices that carry discrete hardware values (clamped below 255). */
+export const AMP_DISCRETE_KNOB_LIMITS: Readonly<Record<number, DiscreteParamSpec>> = {
+  [AMP_KNOB_INDEX.noiseGate]: AMP_DISCRETE_PARAMS['noiseGate'],
+  [AMP_KNOB_INDEX.threshold]: AMP_DISCRETE_PARAMS['threshold'],
+  [AMP_KNOB_INDEX.cabinet]: AMP_DISCRETE_PARAMS['cabinet'],
+  [AMP_KNOB_INDEX.sag]: AMP_DISCRETE_PARAMS['sag'],
+  [AMP_KNOB_INDEX.brightness]: AMP_DISCRETE_PARAMS['brightness'],
+};
+
 /** Amp parameters exposed as "advanced" settings in the UI. */
 export type AdvancedAmpParam = 'depth' | 'bias' | 'noiseGate' | 'threshold' | 'sag' | 'brightness';
 
+/** Clamp an arbitrary number to an integer range [min, max] (NaN -> min). */
+export function clampRange(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
 /** Clamp an arbitrary number to a valid unsigned byte (NaN -> 0). */
 export function toByte(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(LIMITS.MAX_VALUE, Math.round(value)));
+  return clampRange(value, 0, LIMITS.MAX_VALUE);
+}
+
+/** Clamp an amp knob value to its hardware range (discrete params or 0..255). */
+export function clampAmpKnob(index: number, value: number): number {
+  const spec = AMP_DISCRETE_KNOB_LIMITS[index];
+  if (spec) return clampRange(value, spec.min, spec.max);
+  return toByte(value);
 }
 
 export function isValidSlot(slot: number): boolean {

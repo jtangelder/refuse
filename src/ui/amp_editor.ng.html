@@ -212,6 +212,9 @@
         <fuse-knob
           [name]="setting.label"
           [value]="getAmpSettingNumberValue(setting.key)"
+          [max]="setting.max ?? 255"
+          [labels]="setting.labels"
+          [disabled]="isAdvancedSettingDisabled(setting)"
           (valueChange)="onAdvancedSettingChange(setting.key, $event)"
         ></fuse-knob>
       </div>

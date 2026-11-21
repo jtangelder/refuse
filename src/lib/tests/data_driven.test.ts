@@ -27,15 +27,11 @@ class TraceMockProtocol implements IProtocol {
   });
 
   sendPacket = vi.fn().mockImplementation(async (data: Uint8Array) => {
-    if (data[0] === 0x19 && data[1] === 0x00) {
-      for (let slot = 0; slot < 8; slot++) {
-        const bp = new Uint8Array(64);
-        bp[0] = 0x19;
-        bp[1] = 0xc3;
-        bp[3] = 0x00;
-        bp[4] = slot;
-        this.emitReport(bp);
-      }
+    if (data[0] === 0xff && data[1] === 0xc1) {
+      const done = new Uint8Array(64);
+      done[0] = 0xff;
+      done[1] = 0x01; // DUMP_COMPLETE
+      this.emitReport(done);
     }
   });
 
@@ -51,14 +47,10 @@ describe('Data-Driven Hardware Trace Verification', () => {
   let protocol: TraceMockProtocol;
 
   beforeEach(async () => {
-    vi.useFakeTimers();
     const store = new Store();
     protocol = new TraceMockProtocol();
     api = new FuseAPI(store, protocol);
-    const connectPromise = api.connect();
-    await vi.advanceTimersByTimeAsync(100);
-    await connectPromise;
-    vi.useRealTimers();
+    await api.connect();
   });
 
   const replay = (hexString: string) => {
@@ -97,9 +89,10 @@ describe('Data-Driven Hardware Trace Verification', () => {
       '[0x1c, 0x01, 0x07, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf5, 0x00, 0x00, 0x01, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xed, 0x81, 0x07, 0xff, 0x00, 0x81, 0x81, 0x81]',
     );
 
-    // Slot 5 must be cleared and Slot 0 populated
+    // Slot 5 must be cleared and Slot 0 populated with Mod Touch Wah (0xf500)
     expect(api.effects.getEffectModel(5)).toBeNull();
     expect(api.state.slots[0]?.modelId).toBe(0xf500);
+    expect(api.effects.getEffectModel(0)?.name).toBe('Mod Touch Wah');
   });
 
   it('Scenario 3: Model/Effect Info Packets (Byte 3 != 0x00) Do Not Overwrite Preset Names', () => {

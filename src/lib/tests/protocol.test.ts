@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Protocol } from '../protocol/protocol';
-import { FENDER_VID, OPCODES } from '../protocol/constants';
+import { FENDER_VID, MUSTANG_DEVICE_SPECS, OPCODES } from '../protocol/constants';
 import { PacketBuilder } from '../protocol/packet_builder';
 
 // Mock objects
 const mockDevice = {
-  productId: 0,
+  productId: 0x0016, // Mustang III/IV/V V2
   vendorId: FENDER_VID,
-  productName: 'Mustang GT',
+  productName: 'Mustang III V2',
   open: vi.fn(),
   close: vi.fn(),
   sendReport: vi.fn(),
@@ -38,7 +38,7 @@ describe('Protocol', () => {
     mockDevice.addEventListener.mockReset();
     mockDevice.removeEventListener.mockReset();
 
-    protocol = new Protocol();
+    protocol = new Protocol({ handshakeTimeoutMs: 0 });
   });
 
   afterEach(() => {
@@ -57,23 +57,68 @@ describe('Protocol', () => {
       expect(Protocol.isHidSupported()).toBe(false);
     });
 
-    it('should connect successfully when device is selected', async () => {
+    it('should connect successfully when a Mustang V2 device is selected', async () => {
       mockHid.requestDevice.mockResolvedValue([mockDevice]);
 
       const success = await protocol.connect();
 
       expect(success).toBe(true);
       expect(protocol.isConnected).toBe(true);
-      expect(protocol.deviceName).toBe('Mustang GT');
-      expect(mockHid.requestDevice).toHaveBeenCalledWith({ filters: [{ vendorId: FENDER_VID }] });
+      expect(protocol.deviceName).toBe('Mustang III V2');
+      expect(protocol.productId).toBe(0x0016);
+      expect(protocol.deviceSpec?.generation).toBe('v2');
+      expect(mockHid.requestDevice).toHaveBeenCalledWith({
+        filters: MUSTANG_DEVICE_SPECS.map(spec => ({ vendorId: FENDER_VID, productId: spec.pid })),
+      });
       expect(mockDevice.open).toHaveBeenCalled();
 
-      // Should perform 2-step handshake
+      // Should perform 2-step Mustang handshake: [0x00, 0xc3] then [0x1a, 0xc1]
       expect(mockDevice.sendReport).toHaveBeenCalledTimes(2);
       expect(mockDevice.sendReport).toHaveBeenCalledWith(0, expect.any(Uint8Array));
 
       const handshake1 = mockDevice.sendReport.mock.calls[0][1];
-      expect(handshake1[0]).toBe(OPCODES.HANDSHAKE_1);
+      expect(handshake1[0]).toBe(OPCODES.HANDSHAKE_1_BYTE1);
+      expect(handshake1[1]).toBe(OPCODES.HANDSHAKE_1_BYTE2);
+
+      const handshake2 = mockDevice.sendReport.mock.calls[1][1];
+      expect(handshake2[0]).toBe(OPCODES.HANDSHAKE_2_BYTE1);
+      expect(handshake2[1]).toBe(OPCODES.HANDSHAKE_2_BYTE2_V2);
+    });
+
+    it('should send V1 handshake2 subcommand 0x03 for Mustang I/II V1 (PID 0x0004)', async () => {
+      const v1Device = { ...mockDevice, productId: 0x0004, productName: 'Mustang I' };
+      mockHid.requestDevice.mockResolvedValue([v1Device]);
+
+      const success = await protocol.connect();
+      expect(success).toBe(true);
+      expect(protocol.deviceSpec?.generation).toBe('v1');
+      expect(protocol.deviceSpec?.presetCount).toBe(24);
+
+      const handshake2 = v1Device.sendReport.mock.calls[1][1];
+      expect(handshake2[0]).toBe(OPCODES.HANDSHAKE_2_BYTE1);
+      expect(handshake2[1]).toBe(OPCODES.HANDSHAKE_2_BYTE2_V1);
+    });
+
+    it('should wait for an HID inputreport reply to each handshake packet before proceeding', async () => {
+      const waitProtocol = new Protocol({ handshakeTimeoutMs: 5000 });
+      const activeListeners = new Set<EventListener>();
+      const replyingDevice = {
+        ...mockDevice,
+        addEventListener: vi.fn((_type: string, fn: EventListener) => activeListeners.add(fn)),
+        removeEventListener: vi.fn((_type: string, fn: EventListener) => activeListeners.delete(fn)),
+        sendReport: vi.fn().mockImplementation(async () => {
+          setTimeout(() => {
+            const ack = new DataView(new Uint8Array(64).buffer);
+            activeListeners.forEach(fn => fn({ data: ack } as unknown as Event));
+          }, 0);
+        }),
+      };
+      mockHid.requestDevice.mockResolvedValue([replyingDevice]);
+
+      const success = await waitProtocol.connect();
+      expect(success).toBe(true);
+      expect(replyingDevice.sendReport).toHaveBeenCalledTimes(2);
+      expect(activeListeners.size).toBe(0); // Temporary handshake listeners cleaned up
     });
 
     it('should not call device.open() again if the selected HIDDevice is already opened', async () => {
@@ -212,6 +257,7 @@ describe('Protocol', () => {
     it('should handle incoming inputreport events with DataView byteOffset and byteLength', async () => {
       mockHid.requestDevice.mockResolvedValue([mockDevice]);
       await protocol.connect();
+      mockDevice.addEventListener.mockClear();
 
       const cb = vi.fn();
       protocol.addEventListener(cb);
@@ -231,6 +277,8 @@ describe('Protocol', () => {
     it('should remove the exact same event listener function that was added', async () => {
       mockHid.requestDevice.mockResolvedValue([mockDevice]);
       await protocol.connect();
+      mockDevice.addEventListener.mockClear();
+      mockDevice.removeEventListener.mockClear();
 
       const cb = vi.fn();
       protocol.addEventListener(cb);
