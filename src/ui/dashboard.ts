@@ -65,13 +65,24 @@ export class DashboardComponent {
   protected readonly ampSettings = this.ampService.settings;
   protected readonly ampKnobs = this.ampService.knobs;
   protected readonly allEffectSettings = this.effectService.allSettings;
+  private readonly pendingMovedType = signal<DspType | null>(null);
 
   constructor() {
-    // If an occupied slot becomes empty externally (preset switch, XML import, hardware clear)
-    // while the user wasn't explicitly browsing an empty category, snap selection back to the Amp.
+    // Track slot changes synchronously:
+    // 1. If an effect is mid-move, follow its DSP type to the new slot immediately without flickering to 'amp'.
+    // 2. If an occupied slot becomes empty externally (preset switch, XML import, hardware clear)
+    //    while the user wasn't explicitly browsing an empty category, snap selection back to the Amp.
     effect(() => {
       const slot = this.activeSlot();
       const effs = this.allEffectSettings();
+      const movedType = this.pendingMovedType();
+      if (movedType !== null) {
+        const nextIdx = effs.findIndex(e => e?.type === movedType);
+        if (nextIdx !== -1 && nextIdx !== slot) {
+          this.activeSlot.set(nextIdx);
+        }
+        return;
+      }
       if (typeof slot === 'number' && !effs[slot] && this.emptyCategorySelection() === null) {
         this.activeSlot.set('amp');
       }
@@ -122,20 +133,29 @@ export class DashboardComponent {
   }
 
   async clearSlot(slot: number) {
-    const clearedCategory = this.allEffectSettings()[slot]?.type ?? null;
-    await this.effectService.clearEffect(slot);
-
     const effs = this.allEffectSettings();
+    const clearedCategory = effs[slot]?.type ?? null;
     const groupBase = slot < 4 ? 0 : 4;
     let firstEmpty = slot;
     for (let s = groupBase; s < groupBase + 4; s++) {
-      if (!effs[s]) {
+      if (s === slot || !effs[s]) {
         firstEmpty = s;
         break;
       }
     }
+
+    // Update selection before awaiting USB transmit so the effect() never flashes the Amp Editor
     this.emptyCategorySelection.set(clearedCategory);
     this.activeSlot.set(firstEmpty);
+    try {
+      await this.effectService.clearEffect(slot);
+    } catch (err) {
+      if (this.allEffectSettings()[slot]) {
+        this.emptyCategorySelection.set(null);
+        this.activeSlot.set(slot);
+      }
+      throw err;
+    }
   }
 
   async changeAmp(modelId: number) {
@@ -173,9 +193,20 @@ export class DashboardComponent {
   }
 
   async moveEffectPosition(fromSlot: number, toSlot: number, appendToGroup?: boolean) {
+    const movedType = this.allEffectSettings()[fromSlot]?.type ?? null;
     this.emptyCategorySelection.set(null);
-    const landedSlot = await this.effectService.moveEffect(fromSlot, toSlot, { appendToGroup });
-    this.activeSlot.set(landedSlot);
+    this.pendingMovedType.set(movedType);
+    try {
+      const landedSlot = await this.effectService.moveEffect(fromSlot, toSlot, { appendToGroup });
+      this.activeSlot.set(landedSlot);
+    } catch (err) {
+      if (this.allEffectSettings()[fromSlot]) {
+        this.activeSlot.set(fromSlot);
+      }
+      throw err;
+    } finally {
+      this.pendingMovedType.set(null);
+    }
   }
 
   openAboutDialog() {

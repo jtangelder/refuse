@@ -32,14 +32,21 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onExploreDemo()">Try Demo</button>
-  <button
-    mat-flat-button
-    color="primary"
-    [disabled]="!service.isSupported() || service.connecting()"
-    (click)="onConnect()"
-  >
-    <mat-icon aria-hidden="true">usb</mat-icon>
-    <span>{{ service.connecting() ? 'Connecting...' : 'Connect Amp' }}</span>
-  </button>
+  @if (service.connected() && !service.isDemo()) {
+    <button type="button" mat-flat-button color="primary" mat-dialog-close>Close</button>
+  } @else {
+    <button type="button" mat-button (click)="onExploreDemo()">
+      {{ service.isDemo() ? 'Continue in Demo' : 'Try Demo' }}
+    </button>
+    <button
+      type="button"
+      mat-flat-button
+      color="primary"
+      [disabled]="!service.isSupported() || service.connecting()"
+      (click)="onConnect()"
+    >
+      <mat-icon aria-hidden="true">usb</mat-icon>
+      <span>{{ service.connecting() ? 'Connecting…' : 'Connect Amp' }}</span>
+    </button>
+  }
 </mat-dialog-actions>

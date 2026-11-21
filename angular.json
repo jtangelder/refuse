@@ -19,9 +19,6 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.json",
             "assets": [
-              "src/favicon.ico",
-              "src/favicon.png",
-              "src/assets",
               {
                 "glob": "**/*",
                 "input": "public",
@@ -35,6 +32,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "./",
               "budgets": [
                 {
                   "type": "initial",

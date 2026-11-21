@@ -4,6 +4,7 @@ export interface IProtocol {
   isConnected: boolean;
   isSupported: boolean;
   readonly deviceName?: string;
+  readonly lastError?: string | null;
   onDisconnect?: () => void;
 
   connect(): Promise<boolean>;

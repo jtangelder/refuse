@@ -202,8 +202,8 @@ export class SidebarComponent {
       const safeFilename = name.replace(/[^a-zA-Z0-9_-]+/g, '_') || 'preset';
       a.download = `${safeFilename}.fuse`;
       a.click();
-      URL.revokeObjectURL(url);
-      this.notifications.info(`Exported "${name}.fuse"`);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      this.notifications.info(`Exported "${safeFilename}.fuse"`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.notifications.error(`Failed to export preset: ${msg}`);

@@ -93,6 +93,7 @@ describe('Protocol', () => {
 
       expect(success).toBe(false);
       expect(protocol.isConnected).toBe(false);
+      expect(protocol.lastError).toBeNull();
       expect(mockDevice.open).not.toHaveBeenCalled();
     });
 
@@ -137,6 +138,7 @@ describe('Protocol', () => {
 
       expect(success).toBe(false);
       expect(protocol.isConnected).toBe(false);
+      expect(protocol.lastError).toBe('Handshake failed');
       expect(mockDevice.close).toHaveBeenCalled();
       expect(mockDevice.removeEventListener).toHaveBeenCalledWith('inputreport', expect.any(Function));
       expect(mockHid.removeEventListener).toHaveBeenCalledWith('disconnect', expect.any(Function));

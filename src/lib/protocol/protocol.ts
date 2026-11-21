@@ -17,6 +17,7 @@ export class Protocol implements IProtocol {
   private sequenceId = 0;
   private listeners = new Map<ProtocolEventListenerFn, EventListener>();
   private disconnectHandler?: (ev: HIDConnectionEvent) => void;
+  private _lastError: string | null = null;
   public onDisconnect?: () => void;
 
   public get isConnected(): boolean {
@@ -25,6 +26,10 @@ export class Protocol implements IProtocol {
 
   public get deviceName(): string | undefined {
     return this.device?.productName || undefined;
+  }
+
+  public get lastError(): string | null {
+    return this._lastError;
   }
 
   public get isSupported(): boolean {
@@ -39,7 +44,9 @@ export class Protocol implements IProtocol {
    * Connect to the amplifier via WebHID
    */
   async connect(): Promise<boolean> {
+    this._lastError = null;
     if (!this.isSupported) {
+      this._lastError = 'WebHID is not supported in this browser';
       console.error('Connection failed: WebHID is not supported');
       return false;
     }
@@ -79,6 +86,7 @@ export class Protocol implements IProtocol {
 
       return true;
     } catch (err) {
+      this._lastError = err instanceof Error ? err.message : String(err);
       console.error('Connection failed', err);
       if (openedDevice) {
         await this.disconnect();

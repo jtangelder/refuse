@@ -13,6 +13,8 @@ export class FuseService {
   private store = new Store();
   private storeUnsubscribe?: () => void;
   private protocol: IProtocol = new Protocol();
+  private sessionVersion = 0;
+  private demoInitializing = false;
 
   public api = this.createApi(this.store, this.protocol);
   public state = signal(this.store.getState());
@@ -49,6 +51,7 @@ export class FuseService {
   private createApi(store: Store, protocol: IProtocol): FuseAPI {
     const api = new FuseAPI(store, protocol);
     api.onConnectionLost = () => {
+      if (this.api !== api) return;
       this.zone.run(() => {
         this.deviceName.set(null);
       });
@@ -59,6 +62,7 @@ export class FuseService {
 
   async connect(): Promise<boolean> {
     if (this.connecting()) return false;
+    const version = ++this.sessionVersion;
     this.connecting.set(true);
     try {
       const nextStore = new Store();
@@ -67,8 +71,15 @@ export class FuseService {
       const connected = await physicalApi.connect();
 
       if (!connected) {
-        // User canceled or no device selected.
-        // If we were in Demo mode, keep Demo mode active!
+        if (physicalProtocol.lastError) {
+          this.notifications.error(`Could not connect to amplifier: ${physicalProtocol.lastError}`);
+        }
+        // User canceled or connection failed — keep existing Demo mode active.
+        return false;
+      }
+
+      if (version !== this.sessionVersion) {
+        await physicalApi.disconnect();
         return false;
       }
 
@@ -83,7 +94,9 @@ export class FuseService {
       await previousApi.disconnect();
       return true;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error('[FuseService] Connection failed:', err);
+      this.notifications.error(`Could not connect to amplifier: ${msg}`);
       return false;
     } finally {
       this.connecting.set(false);
@@ -97,19 +110,26 @@ export class FuseService {
   }
 
   async disconnect(): Promise<void> {
+    this.sessionVersion++;
     await this.api.disconnect();
     this.isDemo.set(false);
     this.deviceName.set(null);
   }
 
   async enableDemo(): Promise<boolean> {
-    if (this.connecting()) return false;
-    this.connecting.set(true);
+    if (this.connecting() || this.demoInitializing) return false;
+    const version = ++this.sessionVersion;
+    this.demoInitializing = true;
     try {
       const nextStore = new Store();
       const demoProtocol = new DemoProtocol();
       const demoApi = this.createApi(nextStore, demoProtocol);
       const connected = await demoApi.connect();
+
+      if (version !== this.sessionVersion) {
+        await demoApi.disconnect();
+        return false;
+      }
 
       const previousApi = this.api;
       this.protocol = demoProtocol;
@@ -120,7 +140,7 @@ export class FuseService {
       await previousApi.disconnect();
       return connected;
     } finally {
-      this.connecting.set(false);
+      this.demoInitializing = false;
     }
   }
 
