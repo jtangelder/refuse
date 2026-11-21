@@ -142,6 +142,32 @@ describe('Protocol', () => {
       expect(mockDevice.open).not.toHaveBeenCalled();
     });
 
+    it('should return null from Protocol.requestDevice() on empty result, AbortError, or NotFoundError', async () => {
+      mockHid.requestDevice.mockResolvedValueOnce([]);
+      expect(await Protocol.requestDevice()).toBeNull();
+
+      mockHid.requestDevice.mockRejectedValueOnce(new DOMException('Cancelled', 'AbortError'));
+      expect(await Protocol.requestDevice()).toBeNull();
+
+      mockHid.requestDevice.mockRejectedValueOnce(new DOMException('No device selected', 'NotFoundError'));
+      expect(await Protocol.requestDevice()).toBeNull();
+
+      mockHid.requestDevice.mockRejectedValueOnce(new DOMException('Blocked', 'SecurityError'));
+      await expect(Protocol.requestDevice()).rejects.toThrow('Blocked');
+    });
+
+    it('should connect directly using a pre-selected device without re-prompting requestDevice()', async () => {
+      const preselectedProtocol = new Protocol({
+        handshakeTimeoutMs: 0,
+        device: mockDevice as unknown as HIDDevice,
+      });
+
+      const success = await preselectedProtocol.connect();
+      expect(success).toBe(true);
+      expect(mockHid.requestDevice).not.toHaveBeenCalled();
+      expect(mockDevice.open).toHaveBeenCalledTimes(1);
+    });
+
     it('should disconnect and cleanup', async () => {
       mockHid.requestDevice.mockResolvedValue([mockDevice]);
       await protocol.connect();

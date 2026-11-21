@@ -14,6 +14,8 @@ const DEFAULT_HANDSHAKE_TIMEOUT_MS = 150;
 export interface ProtocolOptions {
   /** Max time (ms) to wait for the amp's 64-byte HID reply to each handshake packet. */
   handshakeTimeoutMs?: number;
+  /** Optional pre-selected HIDDevice (e.g. from Protocol.requestDevice()) to skip re-prompting. */
+  device?: HIDDevice;
 }
 
 function formatHexPacket(prefix: string, data: Uint8Array): string {
@@ -27,6 +29,7 @@ function formatHexPacket(prefix: string, data: Uint8Array): string {
  */
 export class Protocol implements IProtocol {
   private device: HIDDevice | null = null;
+  private pendingDevice?: HIDDevice;
   private sequenceId = 0;
   private listeners = new Map<ProtocolEventListenerFn, EventListener>();
   private disconnectHandler?: (ev: HIDConnectionEvent) => void;
@@ -34,7 +37,9 @@ export class Protocol implements IProtocol {
   private _lastError: string | null = null;
   public onDisconnect?: () => void;
 
-  constructor(private readonly options: ProtocolOptions = {}) {}
+  constructor(private readonly options: ProtocolOptions = {}) {
+    this.pendingDevice = options.device;
+  }
 
   public get isConnected(): boolean {
     return !!this.device;
@@ -65,6 +70,33 @@ export class Protocol implements IProtocol {
   }
 
   /**
+   * Prompt the user to select a Fender Mustang USB HID device via the browser chooser.
+   * Returns `null` if the user cancels the dialog; throws on unsupported browsers or real errors.
+   */
+  public static async requestDevice(): Promise<HIDDevice | null> {
+    if (!Protocol.isHidSupported()) {
+      throw new Error('WebHID is not supported in this browser');
+    }
+    try {
+      const devices = await navigator.hid.requestDevice({
+        filters: MUSTANG_DEVICE_SPECS.map(spec => ({ vendorId: FENDER_VID, productId: spec.pid })),
+      });
+      if (devices.length === 0) return null;
+      return (
+        devices.find(d =>
+          d.collections?.some(c => (c.inputReports?.length ?? 0) > 0 && (c.outputReports?.length ?? 0) > 0),
+        ) ?? devices[0]
+      );
+    } catch (err) {
+      const name = err instanceof Error ? err.name : (err as { name?: string } | null)?.name;
+      if (name === 'AbortError' || name === 'NotFoundError') {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Connect to the amplifier via WebHID
    */
   async connect(): Promise<boolean> {
@@ -81,15 +113,11 @@ export class Protocol implements IProtocol {
 
     let openedDevice: HIDDevice | null = null;
     try {
-      const devices = await navigator.hid.requestDevice({
-        filters: MUSTANG_DEVICE_SPECS.map(spec => ({ vendorId: FENDER_VID, productId: spec.pid })),
-      });
-      if (devices.length === 0) return false;
+      const preselected = this.pendingDevice;
+      this.pendingDevice = undefined;
+      const device = preselected ?? (await Protocol.requestDevice());
+      if (!device) return false;
 
-      const device =
-        devices.find(d =>
-          d.collections?.some(c => (c.inputReports?.length ?? 0) > 0 && (c.outputReports?.length ?? 0) > 0),
-        ) ?? devices[0];
       if (!device.opened) {
         await device.open();
       }

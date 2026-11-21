@@ -62,11 +62,34 @@ export class FuseService {
 
   async connect(): Promise<boolean> {
     if (this.connecting()) return false;
+    if (!this.isSupported()) {
+      this.notifications.error('WebHID is not supported in this browser');
+      return false;
+    }
+
     const version = ++this.sessionVersion;
-    this.connecting.set(true);
+
+    // Prompt the USB device chooser BEFORE entering the "Connecting…" busy state.
+    // This keeps the button in its default state while the OS dialog is open and prevents
+    // getting stuck on "Connecting…" if the user cancels (including Chromium/macOS picker quirks).
+    let selectedDevice: HIDDevice | null;
+    try {
+      selectedDevice = await Protocol.requestDevice();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[FuseService] Device selection failed:', err);
+      this.notifications.error(`Could not connect to amplifier: ${msg}`);
+      return false;
+    }
+
+    if (!selectedDevice || version !== this.sessionVersion || this.connecting()) {
+      return false;
+    }
+
+    this.zone.run(() => this.connecting.set(true));
     try {
       const nextStore = new Store();
-      const physicalProtocol = new Protocol();
+      const physicalProtocol = new Protocol({ device: selectedDevice });
       const physicalApi = this.createApi(nextStore, physicalProtocol);
       const connected = await physicalApi.connect();
 
@@ -74,7 +97,7 @@ export class FuseService {
         if (physicalProtocol.lastError) {
           this.notifications.error(`Could not connect to amplifier: ${physicalProtocol.lastError}`);
         }
-        // User canceled or connection failed — keep existing Demo mode active.
+        // Connection failed — keep existing Demo mode active.
         return false;
       }
 
@@ -88,8 +111,10 @@ export class FuseService {
       const previousApi = this.api;
       this.protocol = physicalProtocol;
       this.api = physicalApi;
-      this.isDemo.set(false);
-      this.deviceName.set(physicalProtocol.deviceName?.trim() || null);
+      this.zone.run(() => {
+        this.isDemo.set(false);
+        this.deviceName.set(physicalProtocol.deviceName?.trim() || null);
+      });
       this.attachStore(nextStore);
       await previousApi.disconnect();
       return true;
@@ -99,7 +124,7 @@ export class FuseService {
       this.notifications.error(`Could not connect to amplifier: ${msg}`);
       return false;
     } finally {
-      this.connecting.set(false);
+      this.zone.run(() => this.connecting.set(false));
     }
   }
 
@@ -112,8 +137,10 @@ export class FuseService {
   async disconnect(): Promise<void> {
     this.sessionVersion++;
     await this.api.disconnect();
-    this.isDemo.set(false);
-    this.deviceName.set(null);
+    this.zone.run(() => {
+      this.isDemo.set(false);
+      this.deviceName.set(null);
+    });
   }
 
   async enableDemo(): Promise<boolean> {
@@ -134,8 +161,10 @@ export class FuseService {
       const previousApi = this.api;
       this.protocol = demoProtocol;
       this.api = demoApi;
-      this.isDemo.set(true);
-      this.deviceName.set(null);
+      this.zone.run(() => {
+        this.isDemo.set(true);
+        this.deviceName.set(null);
+      });
       this.attachStore(nextStore);
       await previousApi.disconnect();
       return connected;
